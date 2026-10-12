@@ -60,6 +60,54 @@ const VIEWS: [&str; 4] = ["original", "optimized", "2up", "4up"];
 /// Zoom choices (`__zoom`: `fit` or a percentage).
 const ZOOMS: [&str; 5] = ["fit", "50", "100", "200", "400"];
 const ZOOM_LABELS: [&str; 5] = ["Fit in View", "50%", "100%", "200%", "400%"];
+/// The steps Cmd +/− and Cmd+scroll zoom the preview through (percent).
+const ZOOM_STEPS: [f32; 15] = [6.25, 12.5, 25.0, 33.33, 50.0, 66.67, 100.0, 150.0, 200.0, 300.0, 400.0, 600.0, 800.0, 1200.0, 1600.0];
+
+/// The zoom step after (`up`) or before `current` (percent).
+pub(super) fn zoom_step(current: f32, up: bool) -> f32 {
+    let next = if up { ZOOM_STEPS.iter().find(|&&z| z > current * 1.001) } else { ZOOM_STEPS.iter().rev().find(|&&z| z < current * 0.999) };
+    next.copied().unwrap_or(if up { ZOOM_STEPS[ZOOM_STEPS.len() - 1] } else { ZOOM_STEPS[0] })
+}
+
+/// `__zoom` for a percentage (whole numbers without decimals).
+pub(super) fn zoom_field(pct: f32) -> Value {
+    let pct = (pct * 100.0).round() / 100.0;
+    json!(if pct.fract() == 0.0 { format!("{}", pct as i64) } else { format!("{pct}") })
+}
+
+/// Zoom keys while the dialog is open: Cmd/Ctrl + `=`/`+` and `-` step the zoom, `0` fits the
+/// image, `1` shows it at 100%; Cmd/Ctrl+scroll or a pinch over the preview zoom too. `fit_pct` is
+/// the fitted zoom (percent), the starting point when the preview is fitted. → the new `__zoom`.
+fn zoom_input(ui: &egui::Ui, hovered: bool, current: Option<f32>, fit_pct: f32) -> Option<Value> {
+    let cur = current.map_or(fit_pct, |z| z * 100.0);
+    let cmd = egui::Modifiers::COMMAND;
+    ui.input_mut(|i| {
+        if i.consume_key(cmd, egui::Key::Equals)
+            || i.consume_key(cmd, egui::Key::Plus)
+            || i.consume_key(cmd | egui::Modifiers::SHIFT, egui::Key::Equals)
+        {
+            return Some(zoom_field(zoom_step(cur, true)));
+        }
+        if i.consume_key(cmd, egui::Key::Minus) {
+            return Some(zoom_field(zoom_step(cur, false)));
+        }
+        if i.consume_key(cmd, egui::Key::Num0) {
+            return Some(json!("fit"));
+        }
+        if i.consume_key(cmd, egui::Key::Num1) {
+            return Some(json!("100"));
+        }
+        if !hovered {
+            return None;
+        }
+        // A trackpad pinch, or the wheel with Cmd/Ctrl held (egui reports both as a zoom factor).
+        let factor = i.zoom_delta();
+        if (factor - 1.0).abs() > 1e-3 && factor.is_finite() {
+            return Some(zoom_field((cur * factor).clamp(ZOOM_STEPS[0], ZOOM_STEPS[ZOOM_STEPS.len() - 1])));
+        }
+        None
+    })
+}
 /// Palette sizes offered (any 2–256 can be typed).
 const COLOR_COUNTS: [&str; 8] = ["2", "4", "8", "16", "32", "64", "128", "256"];
 /// Matte values and their labels (`Other`: a colour).
@@ -362,7 +410,16 @@ fn preview_area(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog, setti
             let panes: Vec<WebSettings> = if view == 3 { vec![s.clone(), alts[0].clone(), alts[1].clone()] } else { vec![s.clone()] };
             // The current settings' image is made in every view: the colour table shows its colours.
             let (original, shots) = previews(app, ui.ctx(), s, &panes);
-            let zoom = d.str("__zoom").parse::<f32>().ok().filter(|z| z.is_finite() && *z > 0.0).map(|z| z / 100.0);
+            let mut zoom = d.str("__zoom").parse::<f32>().ok().filter(|z| z.is_finite() && *z > 0.0).map(|z| z / 100.0);
+            // The fitted zoom of the optimized image (the start for the zoom keys when fitted).
+            let fit_pct = shots.first().unwrap_or(&original).as_ref().map_or(100.0, |shot| {
+                let (w, h) = (shot.size[0].max(1) as f32, shot.size[1].max(1) as f32);
+                ((PREVIEW_W / w).min((PREVIEW_H - CAPTION_H) / h).min(1.0) * 100.0).max(ZOOM_STEPS[0])
+            });
+            if let Some(z) = zoom_input(ui, resp.hovered(), zoom, fit_pct) {
+                zoom = z.as_str().and_then(|s| s.parse::<f32>().ok()).map(|z| z / 100.0);
+                d.fields.insert("__zoom".into(), z);
+            }
             let kbps = d.f64("__kbps", 56.6);
             let Some(checker) = app.session.active().map(|st| crate::canvas::checker_texture(ui.ctx(), &st.doc.setup)) else { return false };
             let cells: Vec<(egui::Rect, Pane)> = match view {
@@ -391,8 +448,10 @@ fn preview_area(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog, setti
     ui.add_space(6.0);
     let mut browser = false;
     ui.horizontal(|ui| {
-        let z = ZOOMS.iter().position(|z| *z == d.str("__zoom")).unwrap_or(2);
-        if let Some(i) = widgets::dropdown(ui, "sfw-zoom", ZOOM_LABELS[z], &ZOOM_LABELS, 110.0) {
+        // A zoom the keys or a pinch set shows as its percentage.
+        let current = d.str("__zoom");
+        let label = ZOOMS.iter().position(|z| *z == current).map_or_else(|| format!("{current}%"), |z| ZOOM_LABELS[z].to_string());
+        if let Some(i) = widgets::dropdown(ui, "sfw-zoom", &label, &ZOOM_LABELS, 110.0) {
             d.fields.insert("__zoom".into(), json!(ZOOMS[i]));
             ui.ctx().data_mut(|m| m.insert_temp(pan_id, egui::Vec2::ZERO));
         }

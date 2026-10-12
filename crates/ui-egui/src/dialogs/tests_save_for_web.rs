@@ -151,3 +151,42 @@ fn cmd_shift_s_opens_save_for_web_and_asset_export_sits_with_artboards() {
     app.run("file.saveForWeb", json!({})).unwrap();
     assert_eq!(app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(save_for_web::KIND));
 }
+
+/// Cmd +/− step the preview's zoom from where it is (fitted to start), Cmd 0 fits it again and
+/// Cmd 1 shows it at 100%.
+#[test]
+fn zoom_keys_step_fit_and_reset_the_preview() {
+    let dir = logocraft_testkit::temp_dir("sfw-zoom-keys");
+    let (mut app, _) = app(&dir, false);
+    app.run("file.saveForWeb", json!({})).unwrap();
+    let ctx = egui::Context::default();
+    crate::theme::install_fonts(&ctx);
+    let press = |app: &mut LogocraftApp, key: egui::Key| {
+        let ev = egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND };
+        // Two frames: the dialog lays out in the first and takes the key in the second.
+        ctx.run_ui(Default::default(), |ui| crate::dialogs::show(app, ui.ctx())).textures_delta.clear();
+        let input = egui::RawInput { events: vec![ev], ..Default::default() };
+        ctx.run_ui(input, |ui| crate::dialogs::show(app, ui.ctx())).textures_delta.clear();
+        app.ui.dialog.as_ref().unwrap().str("__zoom")
+    };
+    let zoom = |s: &str| s.parse::<f32>().unwrap();
+    let first = zoom(&press(&mut app, egui::Key::Equals));
+    let second = zoom(&press(&mut app, egui::Key::Equals));
+    assert!(second > first, "{first} then {second}");
+    assert_eq!(zoom(&press(&mut app, egui::Key::Minus)), first);
+    assert_eq!(press(&mut app, egui::Key::Num0), "fit");
+    assert_eq!(press(&mut app, egui::Key::Num1), "100");
+    assert_eq!(press(&mut app, egui::Key::Equals), "150");
+}
+
+#[test]
+fn zoom_steps_go_through_the_list_and_stop_at_its_ends() {
+    use super::save_for_web::{zoom_field, zoom_step};
+    assert_eq!(zoom_step(100.0, true), 150.0);
+    assert_eq!(zoom_step(100.0, false), 66.67);
+    assert_eq!(zoom_step(70.0, false), 66.67);
+    assert_eq!(zoom_step(1600.0, true), 1600.0);
+    assert_eq!(zoom_step(6.25, false), 6.25);
+    assert_eq!(zoom_field(200.0), json!("200"));
+    assert_eq!(zoom_field(33.333), json!("33.33"));
+}
