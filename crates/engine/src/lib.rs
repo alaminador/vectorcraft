@@ -777,6 +777,13 @@ pub struct Prefs {
     /// File Handling → Use Compression: native saves are gzip-compressed (`document.save
     /// {compress}` overrides it).
     pub use_compression: bool,
+    /// Save for Web: the user's presets (the built-in ones aren't stored). A local library, not a
+    /// Preferences dialog field: resetting the preferences keeps it; `webExport.presets.*` edit it.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub web_export_presets: Vec<cmd::webexport::WebPreset>,
+    /// Save for Web: the settings the dialog opens on (`webExport.settings`); none until set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub web_export_settings: Option<cmd::webexport::WebSettings>,
     /// Constrain Width and Height Proportions: the link between W and H in the Transform panel,
     /// the Properties panel and the Control bar (their size fields pass `proportional` to
     /// `object.setBounds`).
@@ -927,6 +934,8 @@ impl Default for Prefs {
             templates_folder: String::new(),
             append_converted: true,
             use_compression: false,
+            web_export_presets: vec![],
+            web_export_settings: None,
             constrain_proportions: false,
             tool_settings: Default::default(),
             blend_options: None,
@@ -1790,6 +1799,8 @@ mod tests_typearea;
 mod tests_typescale;
 #[cfg(test)]
 mod tests_units;
+#[cfg(test)]
+mod tests_webexport;
 #[cfg(test)]
 mod tests_widthpoints;
 #[cfg(test)]

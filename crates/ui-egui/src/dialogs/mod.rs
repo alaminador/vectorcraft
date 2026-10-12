@@ -51,6 +51,7 @@ pub mod recolor;
 mod recovery;
 pub mod saturate;
 mod save_changes;
+pub mod save_for_web;
 pub(crate) mod save_options;
 mod save_pdf;
 pub mod save_swatch_library;
@@ -213,6 +214,7 @@ registry! {
     WidthPoint: [width_point::KIND] => width_point::SPEC,
     Justification: [justification::KIND] => justification::SPEC,
     Hyphenation: [hyphenation::KIND] => hyphenation::SPEC,
+    SaveForWeb: [save_for_web::KIND] => save_for_web::SPEC,
     Corners: [corners::KIND] => corners::SPEC,
     SavePdf: [save_pdf::KIND] => save_pdf::SPEC,
     SvgOptions: [svg_options::KIND] => svg_options::SPEC,
@@ -423,6 +425,8 @@ mod tests_raster_formats;
 #[cfg(test)]
 mod tests_svg_options_range;
 
+#[cfg(test)]
+mod tests_save_for_web;
 #[cfg(test)]
 mod tests_screen_assets;
 #[cfg(test)]

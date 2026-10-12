@@ -18,6 +18,7 @@ vectorcraft-brush = { workspace = true }
 vello_cpu = { workspace = true }
 # Filter types (Gaussian blur, drop shadow) are not re-exported by vello_cpu 0.2.
 vello_common = { version = "0.2", default-features = false }
+gif = { workspace = true }
 image = { workspace = true }
 flate2 = { workspace = true }
 jpeg-encoder = { workspace = true }

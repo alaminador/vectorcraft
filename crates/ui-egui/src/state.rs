@@ -139,7 +139,7 @@ pub const ICON_PANEL_GROUPS: &[&[&str]] = &[
     &["swatches", "brushes", "symbols", "patternOptions"],
     &["stroke", "gradient", "transparency"],
     &["appearance"],
-    &["artboards"],
+    &["artboards", "assetExport"],
     &["transform", "align", "pathfinder"],
     &["character", "paragraph", "glyphs"],
     &["history", "info"],

@@ -3,10 +3,12 @@
 //! ([`jpeg`]: RGB, CMYK or grey, progressive, resolution and colour profile), lossless WebP, or
 //! a palette image ([`quantize`]) as PNG-8. [`tiff`] writes the TIFF previews EPS files carry.
 
+pub mod gif;
 pub mod jpeg;
 pub mod png;
 pub mod quantize;
 pub mod tiff;
+pub mod web;
 
 use vectorcraft_doc::{Document, Node, NodeKind};
 use vectorcraft_geom::Rect;
@@ -169,3 +171,5 @@ mod tests;
 mod tests_jpeg;
 #[cfg(test)]
 mod tests_palette;
+#[cfg(test)]
+mod tests_web;

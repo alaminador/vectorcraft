@@ -63,6 +63,7 @@ pub(crate) mod threads;
 pub(crate) mod typecmd;
 mod typemenu;
 pub(crate) mod views;
+pub mod webexport;
 mod xform;
 
 use serde::Serialize;
@@ -241,6 +242,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(fileio::eps::specs());
         v.extend(recovery::specs());
         v.extend(assets::specs());
+        v.extend(webexport::specs());
         v
     })
 }

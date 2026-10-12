@@ -696,7 +696,8 @@ pub(super) fn specs() -> Vec<CommandSpec> {
             "file.saveAs",
             "Save As…",
             ["File"],
-            Some("Cmd+Shift+S"),
+            // Cmd+Shift+S opens Save for Web (LogoCraft's image export).
+            Some("Cmd+Alt+Shift+S"),
             "{path?, format?: vectorcraft|template|pdf|svg|svgz|ai (default: the path's extension, else the document's own), options?, svg?, modified? (as document.save)} the document takes on the new path, name and format (except a template, which is always a copy) → {path, format, bytes, warnings}; no path → {dataBase64, format, name, folder?, warnings}",
             has_doc,
             |s, p| save(s, SaveMode::SaveAs, p)
