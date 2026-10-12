@@ -20,7 +20,7 @@ pub const KIND: &str = "freehandOptions";
 pub(super) const SPEC: DialogSpec = DialogSpec { heading, body, confirm, min_width: 420.0, ..DialogSpec::FORM };
 
 /// The tools the dialog serves.
-pub const TOOLS: [&str; 2] = ["pencil", "smooth"];
+pub const TOOLS: [&str; 3] = ["pencil", "paintbrush", "smooth"];
 
 /// The options the dialog edits, in the order it shows them (a tool has those it reports).
 const KEYS: [&str; 5] = ["fidelity", "size", "fill", "closeWithin", "editWithin"];

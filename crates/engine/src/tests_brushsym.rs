@@ -456,3 +456,28 @@ fn brushes_and_symbols_survive_logocraft_round_trip() {
     let b = s2.doc().unwrap().doc.node(NodeId(r["id"].as_u64().unwrap())).unwrap().geometric_bounds().unwrap();
     assert!(close(b, Rect::new(60.0, 80.0, 140.0, 120.0), 1e-9));
 }
+
+/// LogoCraft keeps the Paintbrush: a drag draws a path stroked with the current brush, and a tool
+/// option picks another.
+#[test]
+fn paintbrush_tool_uses_the_current_brush() {
+    use crate::tooling::ViewInfo;
+    use logocraft_tools::{PointerEvent, PointerKind};
+    let mut s = session();
+    s.execute("brush.setCurrent", &json!({"name": "Arrow"})).unwrap();
+    let v = ViewInfo::default();
+    s.select_tool("paintbrush", v).unwrap();
+    for (k, x, y) in
+        [(PointerKind::Down, 10.0, 10.0), (PointerKind::Drag, 50.0, 30.0), (PointerKind::Drag, 90.0, 20.0), (PointerKind::Up, 130.0, 10.0)]
+    {
+        s.pointer(&PointerEvent::new(k, x, y), v).unwrap();
+    }
+    let id = s.doc().unwrap().selection.objects[0];
+    assert_eq!(brush_of(&s, id).as_deref(), Some("Arrow"));
+    s.set_tool_option("brush", &json!("Dots"));
+    for (k, x, y) in [(PointerKind::Down, 10.0, 110.0), (PointerKind::Drag, 50.0, 130.0), (PointerKind::Up, 130.0, 110.0)] {
+        s.pointer(&PointerEvent::new(k, x, y), v).unwrap();
+    }
+    let id = s.doc().unwrap().selection.objects[0];
+    assert_eq!(brush_of(&s, id).as_deref(), Some("Dots"));
+}

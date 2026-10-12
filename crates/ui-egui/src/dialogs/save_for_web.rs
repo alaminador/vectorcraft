@@ -54,9 +54,9 @@ const FIELD_W: f32 = 190.0;
 /// A pane's caption height.
 const CAPTION_H: f32 = 34.0;
 
-/// The views (`__view`) and their tabs.
+/// The views (`__view`): LogoCraft shows only the optimized image (no Original / 2-Up / 4-Up tabs);
+/// `__view` still picks one for scripts.
 const VIEWS: [&str; 4] = ["original", "optimized", "2up", "4up"];
-const VIEW_LABELS: [&str; 4] = ["Original", "Optimized", "2-Up", "4-Up"];
 /// Zoom choices (`__zoom`: `fit` or a percentage).
 const ZOOMS: [&str; 5] = ["fit", "50", "100", "200", "400"];
 const ZOOM_LABELS: [&str; 5] = ["Fit in View", "50%", "100%", "200%", "400%"];
@@ -79,8 +79,8 @@ pub fn open(app: &mut LogocraftApp) -> Result<Value, String> {
     let mut fields = settings_fields(&s);
     let slices = app.session.active().is_some_and(|st| !st.doc.slice_layout().is_empty());
     fields.extend([
-        ("__view".into(), json!("2up")),
-        ("__zoom".into(), json!("100")),
+        ("__view".into(), json!("optimized")),
+        ("__zoom".into(), json!("fit")),
         ("__kbps".into(), json!(56.6)),
         ("__hasSlices".into(), json!(slices)),
     ]);
@@ -344,11 +344,7 @@ fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 /// clicked.
 fn preview_area(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog, settings: &Result<WebSettings, String>) -> bool {
     let t = Tokens::get(ui.ctx());
-    let view = VIEWS.iter().position(|v| *v == d.str("__view")).unwrap_or(2);
-    if let Some(i) = widgets::tab_bar(ui, &VIEW_LABELS, view) {
-        d.fields.insert("__view".into(), json!(VIEWS[i]));
-    }
-    ui.add_space(4.0);
+    let view = VIEWS.iter().position(|v| *v == d.str("__view")).unwrap_or(1);
     let (area, resp) = ui.allocate_exact_size(egui::vec2(PREVIEW_W, PREVIEW_H), egui::Sense::click_and_drag());
     let pan_id = egui::Id::new("save-for-web-pan");
     let mut pan: egui::Vec2 = ui.ctx().data(|m| m.get_temp(pan_id)).unwrap_or_default();

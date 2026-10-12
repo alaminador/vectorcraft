@@ -49,6 +49,7 @@ pub const TOOL_GROUPS: &[&[ToolInfo]] = &[
         t("smooth", "Smooth Tool", None, "tool-smooth"),
         t("join", "Join Tool", None, "tool-join"),
     ],
+    &[t("paintbrush", "Paintbrush Tool", Some("B"), "tool-brush")],
     &[t("scissors", "Scissors Tool", Some("C"), "tool-scissors"), t("knife", "Knife", None, "tool-knife")],
     &[t("rotate", "Rotate Tool", Some("R"), "tool-rotate"), t("reflect", "Reflect Tool", Some("O"), "tool-reflect")],
     &[t("scale", "Scale Tool", Some("S"), "tool-scale"), t("shear", "Shear Tool", None, "tool-shear")],

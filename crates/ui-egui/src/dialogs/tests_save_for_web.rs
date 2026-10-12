@@ -44,7 +44,12 @@ fn every_view_and_format_draws() {
     app.run("file.saveForWeb", json!({})).unwrap();
     assert_eq!(kind(&app), Some(save_for_web::KIND));
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("format"), d.str("__view"), d.f64("colors", 0.0)), ("gif".into(), "2up".into(), 128.0));
+    assert_eq!((d.str("format"), d.str("__view"), d.str("__zoom"), d.f64("colors", 0.0)), ("gif".into(), "optimized".into(), "fit".into(), 128.0));
+    // Only the optimized image shows: no view tabs.
+    let text = crate::tests_labels::painted_text(&mut app, |app, ui| crate::dialogs::show(app, ui.ctx()));
+    for tab in ["Original", "2-Up", "4-Up"] {
+        assert!(!text.contains(tab), "{tab} in {text}");
+    }
     for view in ["original", "optimized", "2up", "4up"] {
         set(&mut app, "__view", json!(view));
         for format in ["gif", "jpg", "png8", "png24"] {

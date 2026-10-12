@@ -7,6 +7,7 @@ mod anchor;
 mod curvature;
 mod family;
 mod gesture;
+mod paintbrush;
 
 use logocraft_doc::{NodeId, NodeKind};
 use logocraft_geom::{Anchor, AnchorKind, BezPath, Point, SubPath};
@@ -18,6 +19,7 @@ pub use anchor::AnchorTool;
 pub use curvature::{CurvatureTool, EndCurve, curvature_close, curvature_extend, curvature_insert, curvature_move};
 pub use family::FamilyTool;
 pub use gesture::GestureTool;
+pub use paintbrush::BrushPaintTool;
 
 /// Colour of tool feedback (Illustrator's selection blue).
 pub const FEEDBACK: [u8; 3] = [0x4f, 0x9d, 0xff];
@@ -26,6 +28,7 @@ pub const FEEDBACK: [u8; 3] = [0x4f, 0x9d, 0xff];
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
     Some(match id {
         "pencil" | "knife" | "smooth" | "join" => Box::new(GestureTool::new(id)),
+        "paintbrush" => Box::new(BrushPaintTool::default()),
         "curvature" => Box::new(CurvatureTool::default()),
         "addAnchor" | "deleteAnchor" | "anchorPoint" | "scissors" => Box::new(AnchorTool::new(id)),
         "arc" => Box::new(FamilyTool::new(id)),
@@ -196,7 +199,7 @@ mod tests {
 
     #[test]
     fn all_tools_exist() {
-        for id in ["pencil", "knife", "smooth", "join", "curvature", "addAnchor", "deleteAnchor", "anchorPoint", "scissors", "arc"] {
+        for id in ["pencil", "paintbrush", "knife", "smooth", "join", "curvature", "addAnchor", "deleteAnchor", "anchorPoint", "scissors", "arc"] {
             assert_eq!(create(id).unwrap().id(), id);
         }
         assert!(create("selection").is_none());

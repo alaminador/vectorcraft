@@ -32,7 +32,18 @@ const STRIP_BUTTON: egui::Vec2 = vec2(32.0, PITCH);
 pub const BASIC: &[(&str, &[&[&str]])] = &[
     ("Select", &[&["selection"], &["directSelection", "groupSelection"], &["lasso"]]),
     ("Shapes", &[&["rectangle", "roundedRectangle", "star", "lineSegment", "arc"], &["ellipse"], &["polygon"]]),
-    ("Draw", &[&["pencil", "smooth", "join"], &["scissors", "knife"], &["pen", "addAnchor", "deleteAnchor", "anchorPoint"], &["curvature"]]),
+    (
+        "Draw",
+        &[
+            &["pen", "addAnchor", "deleteAnchor", "anchorPoint"],
+            &["curvature"],
+            &["pencil"],
+            &["paintbrush"],
+            &["smooth"],
+            &["join"],
+            &["scissors", "knife"],
+        ],
+    ),
     ("Modify", &[&["width"], &["rotate", "reflect", "scale", "shear", "freeTransform"], &["shapeBuilder"]]),
     ("Type", &[&["areaType", "typeOnPath"], &["type"]]),
     ("Navigate", &[&["zoom"], &["hand"]]),
@@ -770,6 +781,16 @@ pub(crate) mod tests {
     use logocraft_engine::Session;
 
     use super::*;
+
+    /// Paintbrush, Smooth, Join and Curvature each have their own slot in the Draw group, not
+    /// hidden in a flyout.
+    #[test]
+    fn the_drawing_tools_each_show_in_the_toolbar() {
+        let draw = BASIC.iter().find(|(c, _)| *c == "Draw").unwrap().1;
+        for tool in ["paintbrush", "smooth", "join", "curvature", "pencil", "pen"] {
+            assert!(draw.iter().any(|slot| slot.first() == Some(&tool)), "{tool} heads a slot");
+        }
+    }
 
     /// One headless frame of the toolbar; returns the tool buttons' rects, top to bottom.
     fn frame(app: &mut LogocraftApp, ctx: &egui::Context, time: f64, events: Vec<Event>) -> Vec<egui::Rect> {
