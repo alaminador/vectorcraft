@@ -7,7 +7,7 @@ mod affinity_corpus;
 mod assets;
 mod brands;
 mod bundle;
-mod ico;
+mod icons;
 mod layers;
 mod sha256;
 mod stats;
@@ -28,8 +28,7 @@ commands:
                   show where test corpora live; --download fetches PngSuite into corpus/pngsuite,
                   --affinity the pinned public Affinity documents into corpus/affinity
   bundle          build dist/LogoCraft.app (macOS) with assets/app-icon/logocraft.icns
-  ico <out.ico> <png>...
-                  pack PNGs into a Windows .ico (used by packaging/icons.sh)
+  icons           render the app icons from assets/app-icon/source/logocraft-source.png
   stats [--exact] count tests and lines per crate (--exact: ask the test harness via `-- --list`)
 ";
 
@@ -44,7 +43,7 @@ fn main() -> ExitCode {
         Some("corpus") if rest.contains(&"--affinity") => affinity_corpus::fetch(),
         Some("corpus") => cmd_corpus(rest.contains(&"--download")),
         Some("bundle") => bundle::run(&root()),
-        Some("ico") => ico::run(&rest),
+        Some("icons") => icons::run(&root()),
         Some("version") => version::run(&root(), &rest),
         Some("stats") => stats::run(&root(), rest.contains(&"--exact")),
         Some("-h" | "--help" | "help") | None => {

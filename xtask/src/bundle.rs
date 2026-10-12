@@ -23,6 +23,19 @@ pub fn run(root: &Path) -> Result<(), String> {
     std::fs::copy(root.join("assets/app-icon/logocraft.icns"), app.join("Resources/LogoCraft.icns")).map_err(|e| format!("copy icon: {e}"))?;
     let sha = std::env::var("LOGOCRAFT_BUILD_SHA").unwrap_or_else(|_| "unknown".into());
     std::fs::write(app.join("Info.plist"), info_plist(env!("CARGO_PKG_VERSION"), &sha)).map_err(|e| e.to_string())?;
+    // Ad-hoc sign the bundle: Apple silicon refuses an unsigned app copied off the internet as
+    // "damaged". Signed this way (no Developer ID) macOS asks once instead (right-click › Open).
+    if cfg!(target_os = "macos") {
+        let ok = Command::new("codesign")
+            .args(["--force", "--deep", "--sign", "-"])
+            .arg(root.join("dist/LogoCraft.app"))
+            .status()
+            .map_err(|e| format!("codesign: {e}"))?
+            .success();
+        if !ok {
+            return Err("ad-hoc signing (codesign --sign -) failed".into());
+        }
+    }
     println!("built {}", root.join("dist/LogoCraft.app").display());
     Ok(())
 }

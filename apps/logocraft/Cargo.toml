@@ -72,7 +72,3 @@ pollster = "1"
 # so Automatic draws on that one. Both are already in the build through winit.
 wayland-client = "0.31"
 wayland-protocols = { version = "0.32", features = ["client"] }
-
-[build-dependencies]
-# Icon + VERSIONINFO for logocraft.exe; build.rs only uses it when targeting Windows.
-winresource = "0.1"

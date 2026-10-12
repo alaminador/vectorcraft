@@ -543,8 +543,7 @@ fn open_file(path: &str) -> Result<(), String> {
 }
 
 /// The window, Dock, taskbar and app-switcher icon (`assets/app-icon/`, see its README). macOS gets
-/// the version with Apple's transparent margin; elsewhere the full-bleed tile. The app ID matches
-/// `packaging/linux/io.github.alaminador.logocraft.desktop` so Wayland docks find the launcher icon.
+/// the version with Apple's transparent margin; elsewhere (development builds) the full tile.
 fn app_icon() -> egui::IconData {
     #[cfg(target_os = "macos")]
     let png: &[u8] = include_bytes!("../../../assets/app-icon/logocraft-macos-512.png");
