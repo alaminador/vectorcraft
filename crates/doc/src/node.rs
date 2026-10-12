@@ -1122,6 +1122,8 @@ impl Node {
         }
         if sc.patterns {
             crate::pattern::transform_pattern_paints(self, a);
+        } else {
+            crate::pattern::transform_image_fills(self, a);
         }
         match &mut self.kind {
             NodeKind::Path { path, live, .. } => {

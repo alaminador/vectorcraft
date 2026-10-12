@@ -10,6 +10,7 @@ pub mod asset_export;
 pub mod brushes;
 pub mod character;
 pub mod color;
+pub mod fill_picker;
 pub mod glyphs;
 pub mod gradient;
 pub mod history;
@@ -302,8 +303,8 @@ pub(crate) fn proxy(app: &mut LogocraftApp, ui: &mut Ui, size: f32) {
 
 /// The Fill (or `stroke`) chip of the Control bar and the Properties panel, `size` square (with a
 /// `chevron` after it): the proxy's paint, "?" when the selected objects' paints differ. A click
-/// brings that proxy forward and opens a popover with the Swatches panel; Shift-click (or the
-/// popover's toggle) shows the Color panel's mixer instead.
+/// brings that proxy forward and opens the fill picker ([`fill_picker`]: Color, Gradient, Image,
+/// or the swatches).
 pub(crate) fn paint_chip(app: &mut LogocraftApp, ui: &mut Ui, stroke: bool, size: f32, chevron: bool) {
     let (fill, stroke_paint) = current_paints(app);
     let mixed = mixed_paints(app, ui.ctx());
@@ -311,42 +312,14 @@ pub(crate) fn paint_chip(app: &mut LogocraftApp, ui: &mut Ui, stroke: bool, size
     let resp = crate::widgets::chip_button(ui, size, chevron, |ui, chip| {
         crate::widgets::proxy_chip(ui, chip, &paint, mixed, stroke.then_some(size * 0.25));
     });
-    let resp = resp.on_hover_text(if stroke {
-        "Stroke: click for swatches, Shift-click for the color mixer"
-    } else {
-        "Fill: click for swatches, Shift-click for the color mixer"
-    });
+    let resp = resp.on_hover_text(if stroke { "Stroke: color, gradient or image" } else { "Fill: color, gradient or image" });
     if resp.clicked() {
         app.run("paint.toggleActive", json!({ "fill": !stroke })).ok();
-        set_pstate(ui.ctx(), MIXER, ui.input(|i| i.modifiers.shift));
+        fill_picker::reset(ui.ctx());
     }
     // A popover that keeps its own open state: the Swatches body opens menus of its own (Swatch
     // Libraries, Show Swatch Kinds), which a remembered egui popup would close with them (#536).
-    crate::widgets::popover(&resp, resp.clicked(), |ui| paint_popover(app, ui));
-}
-
-/// The chip popovers' width (a narrow Swatches or Color panel).
-const POPOVER_WIDTH: f32 = 248.0;
-/// Panel state: the chip popovers show the Color panel's mixer instead of the swatches.
-const MIXER: &str = "paint-popover-mixer";
-
-/// The body of a Fill/Stroke chip popover: a Swatches / Color mixer toggle above that panel's body.
-fn paint_popover(app: &mut LogocraftApp, ui: &mut Ui) {
-    ui.set_width(POPOVER_WIDTH);
-    let mixer: bool = pstate(ui.ctx(), MIXER);
-    ui.horizontal(|ui| {
-        for (icon, tip, m) in [("swatch-book", "Swatches", false), ("palette", "Color Mixer (Shift-click the chip)", true)] {
-            if crate::widgets::icon_button(ui, icon, tip, mixer == m, 22.0).clicked() {
-                set_pstate(ui.ctx(), MIXER, m);
-            }
-        }
-    });
-    crate::widgets::divider(ui);
-    if mixer {
-        color::show(app, ui);
-    } else {
-        swatches::popover(app, ui);
-    }
+    crate::widgets::popover(&resp, resp.clicked(), |ui| fill_picker::show(app, ui));
 }
 
 /// Run `cmd` live: while dragging, preview on top of an interaction snapshot; on release, commit

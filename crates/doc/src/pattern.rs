@@ -342,6 +342,39 @@ pub fn uses_pattern(n: &Node, name: Option<&str>) -> bool {
 }
 
 /// Apply `m` to the pattern placement of every pattern paint of `n` (Transform Patterns).
+/// The name every image fill's pattern starts with (the fill picker's Image tab): such patterns
+/// belong to one object each and move with it ([`transform_image_fills`]).
+pub const IMAGE_FILL_PREFIX: &str = "Image Fill";
+
+/// Is `name` an image fill's pattern?
+pub fn is_image_fill(name: &str) -> bool {
+    name.starts_with(IMAGE_FILL_PREFIX)
+}
+
+/// Move the image fills of `n` with it (by `m`): unlike other patterns, a picture painted inside
+/// a shape always follows the shape, whatever Transform Patterns says.
+pub fn transform_image_fills(n: &mut Node, m: Affine) {
+    let image = |p: &Paint| matches!(p, Paint::Pattern { pattern, .. } if is_image_fill(pattern));
+    let has = n.appearance.items.iter().any(|it| match it {
+        AppearanceItem::Fill(f) => image(&f.paint),
+        AppearanceItem::Stroke(s) => image(&s.paint),
+    });
+    if !has {
+        return;
+    }
+    for it in n.appearance.items.iter_mut() {
+        let p = match it {
+            AppearanceItem::Fill(f) => &mut f.paint,
+            AppearanceItem::Stroke(s) => &mut s.paint,
+        };
+        if let Paint::Pattern { pattern, xf } = p
+            && is_image_fill(pattern)
+        {
+            *xf = m * *xf;
+        }
+    }
+}
+
 pub fn transform_pattern_paints(n: &mut Node, m: Affine) {
     // Without pattern paints there is nothing to change: don't copy the shared appearance.
     let patterned = |it: &AppearanceItem| {

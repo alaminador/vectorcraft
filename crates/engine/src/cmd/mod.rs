@@ -27,6 +27,7 @@ mod fonts;
 pub(crate) mod freeform;
 pub(crate) mod gradient;
 pub mod help;
+mod imagefill;
 pub(crate) mod inline;
 mod layer;
 mod layerpanel;
@@ -245,6 +246,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(assets::specs());
         v.extend(webexport::specs());
         v.extend(components::specs());
+        v.extend(imagefill::specs());
         v
     })
 }

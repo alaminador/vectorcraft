@@ -1,4 +1,4 @@
-//! The Fill/Stroke proxies and chips (toolbar, Control bar, Properties), their swatch and mixer
+//! The Fill/Stroke proxies and chips (toolbar, Control bar, Properties), their fill picker
 //! popovers, the Recolor quick action and the panel shortcuts (M3.51).
 
 use egui::{Color32, Event, Modifiers, PointerButton, Pos2, Rect, Shape, vec2};
@@ -40,6 +40,13 @@ fn click(app: &mut LogocraftApp, ctx: &egui::Context, at: Pos2, modifiers: Modif
     frame(app, ctx, vec![Event::PointerMoved(at), button(true)], modifiers, draw);
     frame(app, ctx, vec![button(false)], modifiers, draw);
     frame(app, ctx, vec![], Modifiers::NONE, draw);
+}
+
+/// Click the open fill picker's `tab` ("Custom" or "Swatches").
+fn picker_tab(app: &mut LogocraftApp, ctx: &egui::Context, tab: &str, draw: fn(&mut LogocraftApp, &mut egui::Ui)) {
+    let shapes = frame(app, ctx, vec![], Modifiers::NONE, draw);
+    let r = text_rect(&shapes, tab).unwrap_or_else(|| panic!("the picker has a {tab} tab"));
+    click(app, ctx, r.center(), Modifiers::NONE, draw);
 }
 
 /// Whether `shapes` paint a rectangle filled with `color`.
@@ -105,15 +112,17 @@ fn a_popover_tile_click_sets_the_fill() {
     let (fill, stroke) = chips(&ctx);
     click(&mut app, &ctx, fill.center(), Modifiers::NONE, control_bar);
     assert!(app.session.fill_active, "the Fill chip brings its proxy forward");
-    let tile = ctx.read_response(egui::Id::new(("swatch-pop-tile", "Red"))).expect("the popover shows the swatches").rect;
+    assert!(ctx.read_response(egui::Id::new(("swatch-pop-tile", "Red"))).is_none(), "the picker opens on Custom");
+    picker_tab(&mut app, &ctx, "Swatches", control_bar);
+    let tile = ctx.read_response(egui::Id::new(("swatch-pop-tile", "Red"))).expect("the Swatches tab shows the swatches").rect;
     click(&mut app, &ctx, tile.center(), Modifiers::NONE, control_bar);
     assert_eq!(fill_hex(&app), "#ed1c24");
     assert_eq!(app.session.doc().unwrap().history.undo.last().unwrap().label, "Fill Color", "through paint.setFill");
-    // The Stroke chip: its proxy comes forward; Shift-click shows the mixer instead of swatches.
+    // The Stroke chip: its proxy comes forward; the Custom tab shows the colour controls.
     click(&mut app, &ctx, Pos2::new(1300.0, 900.0), Modifiers::NONE, control_bar);
-    click(&mut app, &ctx, stroke.center(), Modifiers::SHIFT, control_bar);
+    click(&mut app, &ctx, stroke.center(), Modifiers::NONE, control_bar);
     assert!(!app.session.fill_active);
-    assert!(ctx.read_response(egui::Id::new(("swatch-pop-tile", "Red"))).is_none(), "no swatches in the mixer");
+    picker_tab(&mut app, &ctx, "Custom", control_bar);
     let text = {
         let mut t = String::new();
         for s in frame(&mut app, &ctx, vec![], Modifiers::NONE, control_bar) {
@@ -124,7 +133,7 @@ fn a_popover_tile_click_sets_the_fill() {
         }
         t
     };
-    assert!(text.contains("Recent Colors"), "the Color panel's body: {text}");
+    assert!(text.contains("Contrast") && !text.contains("Swatch Tiles"), "the colour controls, not the swatches: {text}");
 }
 
 /// The Properties panel has the Control bar's Fill and Stroke chips and stroke weight, with
@@ -142,6 +151,7 @@ fn the_properties_panel_has_the_control_bars_fill_and_stroke() {
     let (fill, stroke) = chips(&ctx);
     assert!(stroke.top() > fill.bottom(), "Fill above Stroke");
     click(&mut app, &ctx, fill.center(), Modifiers::NONE, props);
+    picker_tab(&mut app, &ctx, "Swatches", props);
     let tile = ctx.read_response(egui::Id::new(("swatch-pop-tile", "Red"))).expect("the popover shows the swatches").rect;
     click(&mut app, &ctx, tile.center(), Modifiers::NONE, props);
     assert_eq!(fill_hex(&app), "#ed1c24", "the next object's fill");
@@ -310,6 +320,7 @@ fn the_popover_swatch_libraries_button_opens_the_libraries_menu() {
     frame(&mut app, &ctx, vec![], Modifiers::NONE, control_bar);
     let (fill, _) = chips(&ctx);
     click(&mut app, &ctx, fill.center(), Modifiers::NONE, control_bar);
+    picker_tab(&mut app, &ctx, "Swatches", control_bar);
     let libraries = *popover_bottom_buttons(&ctx).first().expect("the popover has a bottom bar");
     click(&mut app, &ctx, libraries.center(), Modifiers::NONE, control_bar);
     let shapes = frame(&mut app, &ctx, vec![], Modifiers::NONE, control_bar);

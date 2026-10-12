@@ -1671,6 +1671,8 @@ mod tests_gradpanel;
 #[cfg(test)]
 mod tests_history_mem;
 #[cfg(test)]
+mod tests_imagefill;
+#[cfg(test)]
 mod tests_inline;
 #[cfg(test)]
 mod tests_journal;
