@@ -112,26 +112,6 @@ fn edit_original_and_show_in_folder_hand_the_file_to_the_system() {
 }
 
 #[test]
-fn placement_options_dialog_sets_the_options() {
-    let dir = Folder::new("dialog");
-    let (mut app, linked, _) = app(&dir);
-    app.run("select.set", json!({"ids": [linked]})).unwrap();
-    assert!(crate::menus::enabled(&app, "ui.placementOptionsDialog"));
-    app.run("ui.placementOptionsDialog", json!({})).unwrap();
-    let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.kind.as_str(), d.str("preserve"), d.str("align")), ("placementOptions", "bounds".into(), "center".into()));
-    let text = painted_text(&mut app, |app, ui| crate::dialogs::show(app, ui.ctx()));
-    assert!(text.contains("Clip to Bounding Box") && text.contains("Preserve"), "{text}");
-    let fields = &mut app.ui.dialog.as_mut().unwrap().fields;
-    fields.insert("preserve".into(), json!("fit"));
-    fields.insert("align".into(), json!("bottomRight"));
-    crate::dialogs::confirm(&mut app).unwrap();
-    assert!(app.ui.dialog.is_none());
-    let r = app.run("links.placementOptions", json!({"ids": [linked]})).unwrap();
-    assert_eq!(r["placement"], json!({"preserve": "fit", "align": "bottomRight", "clip": false}));
-}
-
-#[test]
 fn properties_shows_the_selected_image_and_its_link_actions() {
     let dir = Folder::new("props");
     let (mut app, linked, _) = app(&dir);

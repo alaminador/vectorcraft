@@ -530,20 +530,6 @@ fn artboard_tool_scales_art_with_the_artboard() {
 }
 
 #[test]
-fn magic_wand_selects_same_fill() {
-    let mut s = session();
-    let a = rect(&mut s, 10.0, 10.0, 20.0, 20.0);
-    let b = rect(&mut s, 50.0, 10.0, 20.0, 20.0);
-    let c = rect(&mut s, 90.0, 10.0, 20.0, 20.0);
-    s.execute("paint.setFill", &json!({"color": "#ff0000", "ids": [c.0]})).unwrap();
-    s.execute("select.none", &json!({})).unwrap();
-    gesture(&mut s, "magicWand", &[(20.0, 20.0), (20.0, 20.0)], Mods::default());
-    assert_eq!(s.doc().unwrap().selection.objects, vec![a, b]);
-    gesture(&mut s, "magicWand", &[(100.0, 20.0), (100.0, 20.0)], Mods { shift: true, ..Default::default() });
-    assert_eq!(s.doc().unwrap().selection.len(), 3);
-}
-
-#[test]
 fn lasso_selects_anchor_subset() {
     let mut s = session();
     let a = rect(&mut s, 100.0, 100.0, 100.0, 100.0);

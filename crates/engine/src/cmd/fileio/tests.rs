@@ -49,49 +49,6 @@ fn image_of(s: &Session) -> vectorcraft_doc::ImageObject {
 }
 
 #[test]
-fn opens_every_readable_format() {
-    let mut s = session(200.0, 100.0, 1);
-    s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 50, "height": 40})).unwrap();
-    let native = b64(&s.execute("document.serialize", &json!({})).unwrap());
-    let svg = s.execute("document.serialize", &json!({"format": "svg"})).unwrap()["text"].as_str().unwrap().to_string();
-    let pdf = b64(&s.execute("document.serialize", &json!({"format": "pdf"})).unwrap());
-    let svgz = vectorcraft_svg::compress(&svg);
-
-    for (name, bytes, format) in [
-        ("a.vectorcraft", native.clone(), "vectorcraft"),
-        ("a.drawcraft", native, "vectorcraft"),
-        ("a.svg", svg.into_bytes(), "svg"),
-        ("a.svgz", svgz, "svgz"),
-        ("a.pdf", pdf.clone(), "pdf"),
-        ("a.ai", pdf, "ai"),
-    ] {
-        let r = open(&mut s, name, &bytes);
-        assert_eq!(r["format"], format, "{name}");
-        assert_eq!(r["title"], if format == "vectorcraft" { "Untitled-1" } else { name }, "{name}");
-        assert!(s.doc().unwrap().doc.node_count() >= 2, "{name}: the rectangle came through");
-    }
-    for (name, kind) in [
-        ("p.png", image::ImageFormat::Png),
-        ("p.jpg", image::ImageFormat::Jpeg),
-        ("p.gif", image::ImageFormat::Gif),
-        ("p.webp", image::ImageFormat::WebP),
-        ("p.tif", image::ImageFormat::Tiff),
-        ("p.bmp", image::ImageFormat::Bmp),
-    ] {
-        let r = open(&mut s, name, &image_bytes(5, 4, kind));
-        assert_eq!(r["format"], format(name.rsplit('.').next().unwrap()).unwrap().id, "{name}");
-        let im = image_of(&s);
-        assert_eq!((im.width, im.height), (5, 4), "{name}");
-        let doc = &s.doc().unwrap().doc;
-        assert_eq!((doc.artboards[0].rect.width(), doc.artboards[0].rect.height()), (5.0, 4.0));
-        // Browser-safe formats keep their bytes; TIFF and BMP are stored as PNG.
-        let mime = &doc.images[&im.key].mime;
-        assert_eq!(mime, if name.ends_with("tif") || name.ends_with("bmp") { "image/png" } else { format_for_name(name).unwrap().mime });
-    }
-    assert!(s.execute("document.open", &json!({"name": "x.txt", "dataBase64": "aGVsbG8="})).is_err());
-}
-
-#[test]
 fn webp_opens_at_its_pixel_size() {
     let mut s = Session::new();
     open(&mut s, "tiny.webp", &image_bytes(3, 2, image::ImageFormat::WebP));
@@ -101,17 +58,6 @@ fn webp_opens_at_its_pixel_size() {
     assert_eq!((ab.width(), ab.height()), (3.0, 2.0));
     let r = raster_image(&image_bytes(3, 2, image::ImageFormat::WebP)).unwrap();
     assert_eq!((r.width, r.height, r.blob.mime.as_str()), (3, 2, "image/webp"));
-}
-
-#[test]
-fn cmyk_tiffs_keep_their_inks_and_other_tiffs_become_png() {
-    let inks = vectorcraft_doc::cmyk::Inks::new(2, 1, vec![0, 102, 255, 0, 10, 20, 30, 40]).unwrap();
-    let tiff = vectorcraft_doc::ImageBlob::cmyk_tiff(&inks).unwrap();
-    let r = raster_image(&tiff.bytes).unwrap();
-    assert_eq!((r.width, r.height, r.blob.mime.as_str()), (2, 1, "image/tiff"));
-    assert_eq!(r.blob.cmyk(), Some(inks));
-    let rgb = raster_image(&image_bytes(2, 1, image::ImageFormat::Tiff)).unwrap();
-    assert_eq!(rgb.blob.mime, "image/png");
 }
 
 #[test]
@@ -157,11 +103,7 @@ fn open_exts_cover_every_readable_format() {
     }
     let filters: Vec<_> = open_filters().collect();
     assert_eq!(filters[0], ("All readable files", OPEN_EXTS));
-    assert_eq!(
-        filters.len(),
-        6 + FORMATS.iter().filter(|f| f.read).count(),
-        "and swatch libraries, libraries, flattener, PDF and print presets"
-    );
+    assert_eq!(filters.len(), 4 + FORMATS.iter().filter(|f| f.read).count(), "and swatch libraries, flattener and PDF presets");
 }
 
 /// The extensions usage texts list for export: one per writable format, each picking that format
@@ -169,30 +111,7 @@ fn open_exts_cover_every_readable_format() {
 #[test]
 fn export_extensions_name_every_writable_format() {
     let exts = export_extensions();
-    assert_eq!(
-        exts,
-        [
-            "vectorcraft",
-            "svg",
-            "svgz",
-            "pdf",
-            "ai",
-            "png",
-            "jpg",
-            "gif",
-            "webp",
-            "tif",
-            "bmp",
-            "vctemplate",
-            "txt",
-            "dxf",
-            "eps",
-            "emf",
-            "wmf",
-            "tga",
-            "psd"
-        ]
-    );
+    assert_eq!(exts, ["vectorcraft", "svg", "svgz", "pdf", "ai", "png", "jpg", "webp", "vctemplate", "eps"]);
     for e in exts {
         assert!(format_for_name(&format!("x.{e}")).is_some_and(|f| f.write), "{e}");
     }
@@ -203,32 +122,8 @@ fn formats_query_lists_readers_writers_and_options() {
     let mut s = Session::new();
     let r = s.execute("document.formats", &json!({})).unwrap();
     let ids = |k: &str| r[k].as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect::<Vec<_>>();
-    assert_eq!(
-        ids("writable"),
-        [
-            "vectorcraft",
-            "svg",
-            "svgz",
-            "pdf",
-            "ai",
-            "png",
-            "jpg",
-            "gif",
-            "webp",
-            "tiff",
-            "bmp",
-            "template",
-            "png8",
-            "txt",
-            "dxf",
-            "eps",
-            "emf",
-            "wmf",
-            "tga",
-            "psd"
-        ]
-    );
-    assert!(ids("readable").contains(&"tiff".to_string()) && ids("readable").contains(&"ait".to_string()));
+    assert_eq!(ids("writable"), ["vectorcraft", "svg", "svgz", "pdf", "ai", "png", "jpg", "webp", "template", "png8", "eps"]);
+    assert!(ids("readable").contains(&"affinity".to_string()) && ids("readable").contains(&"ait".to_string()));
     let png = r["formats"].as_array().unwrap().iter().find(|f| f["id"] == "png").unwrap();
     assert_eq!(png["options"]["scale"]["default"], 1);
     assert_eq!(r["openExtensions"].as_array().unwrap().len(), OPEN_EXTS.len());

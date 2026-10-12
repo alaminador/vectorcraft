@@ -220,19 +220,6 @@ fn swatch_groups_duplicate_sort() {
 }
 
 #[test]
-fn graphic_style_delete_duplicate() {
-    let mut s = session();
-    let id = rect(&mut s);
-    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
-    s.execute("graphicStyle.new", &json!({"name": "S1"})).unwrap();
-    assert_eq!(s.execute("graphicStyle.duplicate", &json!({"name": "S1"})).unwrap()["name"], "S1 copy");
-    s.execute("graphicStyle.delete", &json!({"name": "S1"})).unwrap();
-    let d = &s.doc().unwrap().doc;
-    assert!(d.graphic_styles.iter().all(|g| g.name != "S1"));
-    assert!(s.execute("graphicStyle.delete", &json!({"name": "nope"})).is_err());
-}
-
-#[test]
 fn text_set_format() {
     let mut s = session();
     let r = s.execute("text.create", &json!({"x": 10, "y": 100, "text": "Hello"})).unwrap();

@@ -764,71 +764,14 @@ fn probing_operators_answer() {
     assert!(near(bounds(&o[0]), Rect::new(10.0, 48.0, 90.0, 52.0)), "{:?}", bounds(&o[0]));
 }
 
-/// A file whose PostScript can't be read opens its Windows metafile preview (vectors) when its
-/// binary header has one, else its EPSI bitmap preview.
+/// A file whose PostScript can't be read opens its EPSI bitmap preview.
 #[test]
-fn metafile_and_epsi_previews_stand_in() {
-    let ps = super::tests::eps("0 0 10 10 rectfill frobnicate");
-    // A placeable metafile of one red rectangle over its 1000-unit frame.
-    let wmf = wmf_rectangle();
-    let mut bytes = vec![0xC5, 0xD0, 0xD3, 0xC6];
-    let words = [30u32, ps.len() as u32, 30 + ps.len() as u32, wmf.len() as u32, 0, 0];
-    for w in words {
-        bytes.extend(w.to_le_bytes());
-    }
-    bytes.extend(0xFFFFu16.to_le_bytes());
-    bytes.extend(&ps);
-    bytes.extend(&wmf);
-    let r = import(&bytes).unwrap();
-    assert!(r.preview);
-    assert!(r.warnings[0].contains("frobnicate") && r.warnings[0].contains("metafile"), "{:?}", r.warnings);
-    let paths: Vec<_> = all(&r.document).into_iter().filter(|n| n.kind_label() == "Path").collect();
-    assert!(!paths.is_empty());
-    assert!(near(bounds(&paths[0]), Rect::new(10.0, 10.0, 90.0, 90.0)), "{:?}", bounds(&paths[0]));
-
+fn epsi_previews_stand_in() {
     // An EPSI preview: 4 × 2 pixels, 1 bit, black on the left.
     let epsi = "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n%%EndComments\n%%BeginPreview: 4 2 1 2\n% C0\n% C0\n%%EndPreview\nfrobnicate\n";
     let r = import(epsi.as_bytes()).unwrap();
     assert!(r.preview, "{:?}", r.warnings);
     assert_eq!([pixel(&r.document, 0, 0), pixel(&r.document, 3, 1)], [[0, 0, 0, 255], [255, 255, 255, 255]]);
-}
-
-/// A placeable Windows metafile (1000 units an inch) of a red rectangle from (100, 100) to
-/// (900, 900) on a frame of 1000 × 1000 units.
-fn wmf_rectangle() -> Vec<u8> {
-    let mut v = vec![];
-    let w16 = |v: &mut Vec<u8>, x: u16| v.extend(x.to_le_bytes());
-    let w32 = |v: &mut Vec<u8>, x: u32| v.extend(x.to_le_bytes());
-    w32(&mut v, 0x9AC6_CDD7);
-    for x in [0u16, 0, 0, 1000, 1000, 1000] {
-        w16(&mut v, x);
-    }
-    w32(&mut v, 0);
-    let sum = v.chunks(2).fold(0u16, |a, c| a ^ u16::from_le_bytes([c[0], c[1]]));
-    w16(&mut v, sum);
-    let records: Vec<Vec<u16>> = vec![
-        vec![0x020B, 0, 0],               // SetWindowOrg
-        vec![0x020C, 1000, 1000],         // SetWindowExt
-        vec![0x02FC, 0, 0x00FF, 0, 0],    // CreateBrushIndirect: solid red
-        vec![0x012D, 0],                  // SelectObject
-        vec![0x041B, 900, 900, 100, 100], // Rectangle (bottom, right, top, left)
-        vec![0x0000],                     // EOF
-    ];
-    let size: usize = 9 + records.iter().map(|r| r.len() + 2).sum::<usize>();
-    for x in [1u16, 9, 0x0300] {
-        w16(&mut v, x);
-    }
-    w32(&mut v, size as u32);
-    w16(&mut v, 1);
-    w32(&mut v, 7);
-    w16(&mut v, 0);
-    for r in records {
-        w32(&mut v, r.len() as u32 + 2);
-        for x in r {
-            w16(&mut v, x);
-        }
-    }
-    v
 }
 
 /// Immediately evaluated names (`//name`) are their values when read: inside a procedure that

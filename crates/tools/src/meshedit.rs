@@ -145,31 +145,6 @@ mod tests {
     }
 
     #[test]
-    fn the_mesh_tool_drags_envelope_points_and_adds_lines() {
-        let (d, e) = doc_with_envelope();
-        let (s, p) = (Selection::default(), paint());
-        let c = cx(&d, &s, &p);
-        let mut t = crate::meshblend::create("mesh").unwrap();
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 100.0)), vec![Action::Begin("Move Mesh Point".into())]);
-        assert_eq!(
-            t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 210.0, 90.0)),
-            vec![Action::Preview("object.mesh.movePoint".into(), json!({"id": e.0, "index": 1, "x": 210.0, "y": 90.0}))]
-        );
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Up, 210.0, 90.0)), vec![Action::Commit]);
-        // The clicked point shows its handles (the smooth mesh's) and they can be dragged.
-        assert!(t.overlays(&c).iter().any(|o| matches!(o, Overlay::Handle { .. })));
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 133.33333)), vec![Action::Begin("Move Mesh Point".into())]);
-        let drag = t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 220.0, 140.0));
-        assert!(matches!(&drag[..], [Action::Preview(id, p)] if id == "object.mesh.movePoint" && p["handle"] == json!(2)), "{drag:?}");
-        t.pointer(&c, &PointerEvent::new(PointerKind::Up, 220.0, 140.0));
-        // Inside the envelope: a new row and column.
-        assert_eq!(
-            t.pointer(&c, &PointerEvent::new(PointerKind::Down, 150.0, 160.0)),
-            vec![Action::Exec("object.mesh.addLine".into(), json!({"id": e.0, "x": 150.0, "y": 160.0}))]
-        );
-    }
-
-    #[test]
     fn direct_selection_drags_a_selected_envelopes_points() {
         let (d, e) = doc_with_envelope();
         let mut s = Selection::default();

@@ -54,28 +54,4 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> DialogResult {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use vectorcraft_engine::Session;
-
-    #[test]
-    fn the_symbolism_tools_share_the_options_ok_sets() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        app.run("tool.options", json!({"tool": "symbolSizer"})).unwrap();
-        let text = crate::tests_labels::painted_text(&mut app, |app, ui| super::super::show(app, ui.ctx()));
-        for label in ["Symbolism Tools Options", "Diameter:", "Intensity:", "Symbol Set Density:"] {
-            assert!(text.contains(label), "{label} in {text}");
-        }
-        let d = app.ui.dialog.as_mut().unwrap();
-        assert_eq!((d.str("tool"), d.f64("diameter", 0.0), d.f64("intensity", 0.0)), ("symbolSizer".to_string(), 80.0, 5.0));
-        for (k, v) in [("diameter", json!(120)), ("intensity", json!(9)), ("density", json!(2))] {
-            d.fields.insert(k.into(), v);
-        }
-        super::super::confirm(&mut app).unwrap();
-        assert!(app.ui.dialog.is_none());
-        // The Sprayer has them too: one brush for the eight tools.
-        let o = app.session.tool_options_of("symbolSprayer");
-        assert_eq!((o["diameter"].as_f64(), o["intensity"].as_f64(), o["density"].as_f64()), (Some(120.0), Some(9.0), Some(2.0)));
-    }
-}
+mod tests {}

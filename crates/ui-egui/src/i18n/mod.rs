@@ -359,4 +359,3 @@ pub fn msg(s: &str) -> String {
 pub fn tn(n: u64, one: &str, other: &str) -> String {
     trn(current(), n, one, other)
 }
-

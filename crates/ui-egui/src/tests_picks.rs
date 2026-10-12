@@ -11,7 +11,6 @@ use egui::{Pos2, Rect, vec2};
 use serde_json::{Value, json};
 use vectorcraft_engine::Session;
 
-use crate::panels::graphic_styles::GraphicStyleLibraries;
 use crate::panels::library_panel::library_menu;
 use crate::panels::swatches::SwatchLibraries;
 use crate::picks::{self, PickRequest};
@@ -206,21 +205,6 @@ fn a_dialogs_folder_button_fills_its_field_when_the_picker_answers() {
     assert_eq!(app.ui.dialog.as_ref().map(|d| d.str("folder")).as_deref(), Some("/out"));
 }
 
-/// Separations Preview › Load Profile… asks off the UI thread, and the profile picked is loaded
-/// when the dialog answers (here a missing file, whose error names it).
-#[test]
-fn load_profile_asks_off_the_ui_thread() {
-    let (mut app, shown, _) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    click(&mut app, "Load Profile…", crate::panels::separations::show);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(p)] if p.filters.iter().any(|(_, e)| e.contains(&"icc"))));
-    poll(&mut app);
-    assert!(app.ui.status.is_empty(), "{}", app.ui.status);
-    shown.answer(&["/no/such/profile.icc"]);
-    poll(&mut app);
-    assert!(app.ui.status.contains("/no/such/profile.icc"), "color.loadProfile ran on the path: {}", app.ui.status);
-}
-
 /// The Swatches libraries menu's Other Library… asks off the UI thread; the file picked (another
 /// document) loads as a library and opens in the library panel.
 #[test]
@@ -239,26 +223,6 @@ fn other_swatch_library_asks_off_the_ui_thread() {
     assert_eq!(open.kind, "swatches");
     let (_, lib) = vectorcraft_engine::cmd::swatchlib::library(&app.session, &open.id).unwrap();
     assert!(lib.swatch("Signal").is_some(), "{}", open.id);
-    let _ = std::fs::remove_dir_all(dir);
-}
-
-/// The Graphic Styles libraries menu's Other Library… asks off the UI thread; the file picked
-/// (another document) loads as a library and opens in the library panel.
-#[test]
-fn other_graphic_style_library_asks_off_the_ui_thread() {
-    let (mut app, shown, _) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap()["id"].clone();
-    app.run("graphicStyle.new", json!({"name": "Poster Look", "id": id})).unwrap();
-    let (dir, file) = saved_document(&mut app, "styles");
-    click(&mut app, "Other Library…", library_menu::<GraphicStyleLibraries>);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
-    shown.answer(&[&file]);
-    poll(&mut app);
-    let open = app.ui.library_panel.clone().unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
-    assert_eq!(open.kind, "graphicStyles");
-    let (_, lib) = vectorcraft_engine::cmd::stylelib::library(&app.session, &open.id).unwrap();
-    assert!(lib.style("Poster Look").is_some(), "{}", open.id);
     let _ = std::fs::remove_dir_all(dir);
 }
 
@@ -315,17 +279,12 @@ fn a_folder_for_a_closed_dialog_is_dropped() {
     assert_eq!(app.ui.status, picks::dialog_gone());
 }
 
-/// Export… in the PDF, Print, Transparency Flattener and Perspective Grid Presets dialogs asks off
+/// Export… in the PDF Presets dialog asks off
 /// the UI thread and writes the selected preset where the dialog answers; the dialog stays open.
 #[test]
 fn preset_dialogs_export_asks_off_the_ui_thread() {
-    use vectorcraft_engine::cmd::{flatten, pdfcmds, perspgrid, printpresets};
-    let cases = [
-        ("pdf.preset.save", json!({"name": "Mine"}), "ui.pdfPresetsDialog", pdfcmds::PRESET_FORMAT),
-        ("print.presets.save", json!({"name": "Mine", "settings": {"copies": 2}}), "ui.printPresetsDialog", printpresets::PRESET_FORMAT),
-        ("flattener.presets.save", json!({"name": "Mine", "balance": 20}), "ui.flattenerPresetsDialog", flatten::PRESET_FORMAT),
-        ("perspective.presets.save", json!({"name": "Mine"}), "ui.perspectivePresetsDialog", perspgrid::PRESET_FORMAT),
-    ];
+    use vectorcraft_engine::cmd::pdfcmds;
+    let cases = [("pdf.preset.save", json!({"name": "Mine"}), "ui.pdfPresetsDialog", pdfcmds::PRESET_FORMAT)];
     for (save, params, open, ext) in cases {
         let (mut app, shown, written) = app();
         app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
@@ -807,7 +766,6 @@ fn only_picks_shows_the_hosts_dialogs() {
         ("shortcut_editor.rs", "fnimport_into_dialog"),
         ("ui_fonts.rs", "fnpainted_text"),
         ("place.rs", ".pick_open_multi.is_some()"),
-        ("panels/separations.rs", "picks::open("),
     ] {
         let flat: String = scanned.get(file).unwrap_or_else(|| panic!("{file} not read")).chars().filter(|c| !c.is_whitespace()).collect();
         assert!(flat.contains(code), "{file} lost `{code}`");

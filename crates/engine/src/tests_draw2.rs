@@ -131,29 +131,6 @@ fn pencil_continues_selected_open_path() {
 }
 
 #[test]
-fn paintbrush_uses_stroke_blob_brush_fills() {
-    let mut s = session();
-    drag(&mut s, "paintbrush", &wave(50.0, 200.0, 100.0), Mods::default());
-    let n = s.doc().unwrap().doc.node(paths(&s)[0].0).unwrap().clone();
-    assert!(n.appearance.fill_paint().is_none());
-    s.execute("select.none", &json!({})).unwrap();
-    drag(&mut s, "blobBrush", &[(100.0, 400.0), (200.0, 400.0)], Mods::default());
-    let ps = paths(&s);
-    assert_eq!(ps.len(), 2);
-    let blob = &ps[1].1;
-    assert!(blob.is_closed());
-    // 100 × 10 capsule ≈ 1000 + π·25.
-    assert!((area(blob) - (1000.0 + std::f64::consts::PI * 25.0)).abs() < 10.0, "{}", area(blob));
-    let bn = s.doc().unwrap().doc.node(ps[1].0).unwrap().clone();
-    assert!(bn.appearance.stroke_paint().is_none() && !bn.appearance.fill_paint().is_none());
-    // A second overlapping stroke of the same colour merges.
-    drag(&mut s, "blobBrush", &[(150.0, 380.0), (150.0, 450.0)], Mods::default());
-    let ps = paths(&s);
-    assert_eq!(ps.len(), 2, "merged into the first blob");
-    assert!(area(&ps[1].1) > 1500.0);
-}
-
-#[test]
 fn curvature_clicks_build_smooth_path() {
     let mut s = session();
     let v = view();
@@ -364,43 +341,6 @@ fn knife_partial_cut_does_nothing() {
 }
 
 #[test]
-fn eraser_splits_shapes_and_lines() {
-    let mut s = session();
-    rect(&mut s, 100.0, 100.0, 200.0, 100.0);
-    line(&mut s, 100.0, 300.0, 300.0, 300.0);
-    s.execute("select.none", &json!({})).unwrap();
-    drag(&mut s, "eraser", &[(200.0, 50.0), (200.0, 350.0)], Mods::default());
-    let ps = paths(&s);
-    assert_eq!(ps.len(), 4, "two rect halves + two line pieces");
-    let closed: Vec<&PathData> = ps.iter().map(|p| &p.1).filter(|p| p.is_closed()).collect();
-    assert_eq!(closed.len(), 2);
-    let total: f64 = closed.iter().map(|p| area(p)).sum();
-    assert!((total - (20000.0 - 1000.0)).abs() < 50.0, "{total}");
-    let open: Vec<&PathData> = ps.iter().map(|p| &p.1).filter(|p| !p.is_closed()).collect();
-    let len: f64 = open.iter().map(|p| p.length()).sum();
-    assert!((len - 190.0).abs() < 0.1, "{len}");
-}
-
-#[test]
-fn eraser_removes_small_shape_entirely() {
-    let mut s = session();
-    rect(&mut s, 100.0, 100.0, 4.0, 4.0);
-    s.execute("select.none", &json!({})).unwrap();
-    s.execute("path.eraseRegion", &json!({"points": [[102, 102]], "size": 20})).unwrap();
-    assert!(paths(&s).is_empty());
-}
-
-#[test]
-fn path_eraser_splits_selected_path() {
-    let mut s = session();
-    let id = line(&mut s, 100.0, 100.0, 300.0, 100.0);
-    drag(&mut s, "pathEraser", &[(180.0, 100.0), (220.0, 100.0)], Mods::default());
-    let ps = paths(&s);
-    assert_eq!(ps.len(), 2);
-    assert!(path(&s, id).subpaths[0].anchors[1].p.x < 180.0);
-}
-
-#[test]
 fn smooth_tool_reduces_jagged_path() {
     let mut s = session();
     let anchors: Vec<_> = (0..=40).map(|i| json!({"x": 100.0 + i as f64 * 5.0, "y": 200.0 + if i % 2 == 0 { 0.0 } else { 1.5 }})).collect();
@@ -428,144 +368,13 @@ fn join_tool_joins_two_lines() {
 }
 
 #[test]
-fn line_family_tools_draw_and_click_asks_dialog() {
+fn the_arc_tool_draws_an_arc_in_the_dragged_box() {
     let mut s = session();
     drag(&mut s, "arc", &[(100.0, 100.0), (200.0, 150.0)], Mods::default());
-    drag(&mut s, "spiral", &[(400.0, 300.0), (450.0, 300.0)], Mods::default());
-    drag(&mut s, "rectangularGrid", &[(100.0, 300.0), (200.0, 400.0)], Mods::default());
-    drag(&mut s, "polarGrid", &[(500.0, 100.0), (600.0, 200.0)], Mods::default());
     let top = s.doc().unwrap().doc.layers[0].children().unwrap().len();
-    assert_eq!(top, 4);
+    assert_eq!(top, 1);
     let b = paths(&s)[0].1.bounds().unwrap();
     assert!((b.width() - 100.0).abs() < 1e-6 && (b.height() - 50.0).abs() < 1e-6, "{b:?}");
-    let ui = click(&mut s, "polarGrid", 10.0, 10.0);
-    assert_eq!(ui, vec![UiRequest::Dialog("polarGrid".into(), json!({"x": 10.0, "y": 10.0}))]);
-}
-
-/// The children of the grid a `shape.rectangularGrid` / `shape.polarGrid` call made, bottom first.
-fn grid(s: &mut Session, cmd: &str, p: serde_json::Value) -> Vec<std::sync::Arc<vectorcraft_doc::Node>> {
-    let id = NodeId(s.execute(cmd, &p).unwrap()["id"].as_u64().unwrap());
-    s.doc().unwrap().doc.node(id).unwrap().children().unwrap().to_vec()
-}
-
-/// `base` with the keys of `extra` added.
-fn with(base: &serde_json::Value, extra: serde_json::Value) -> serde_json::Value {
-    let mut p = base.clone();
-    p.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
-    p
-}
-
-fn is_filled(n: &vectorcraft_doc::Node) -> bool {
-    n.appearance.fill().is_some_and(|f| f.paint != vectorcraft_color::Paint::None)
-}
-
-/// #1377: the Rectangular Grid options. By default the frame is one rectangle under evenly spaced
-/// dividers and nothing is filled; `frame: false` draws its four sides instead, `fill` paints the
-/// current fill and the skews crowd the dividers to the top / right (positive) or bottom / left.
-#[test]
-fn rectangular_grid_options_frame_fill_and_skew() {
-    const CMD: &str = "shape.rectangularGrid";
-    let mut s = session();
-    s.execute("paint.setFill", &json!({"color": "#ff0000"})).unwrap();
-    let base = json!({"x": 0, "y": 0, "width": 100, "height": 100, "rows": 3, "columns": 3});
-    // The y of the three horizontal dividers and the x of the three vertical ones (the last six children).
-    let dividers = |g: &[std::sync::Arc<vectorcraft_doc::Node>]| {
-        let starts: Vec<Point> = g[g.len() - 6..].iter().map(|n| n.path_data().unwrap().subpaths[0].anchors[0].p).collect();
-        starts[..3].iter().map(|p| p.y).chain(starts[3..].iter().map(|p| p.x)).collect::<Vec<_>>()
-    };
-    let plain = grid(&mut s, CMD, base.clone());
-    assert_eq!(plain.len(), 7);
-    assert!(plain[0].path_data().unwrap().is_closed(), "the frame lies under the dividers");
-    assert!(plain.iter().all(|n| !is_filled(n) && n.appearance.stroke().is_some()));
-    assert_eq!(dividers(&plain), [25.0, 50.0, 75.0, 25.0, 50.0, 75.0]);
-    // No frame: its four sides are lines of their own.
-    let sides = grid(&mut s, CMD, with(&base, json!({"frame": false})));
-    assert_eq!(sides.len(), 10);
-    assert!(sides.iter().all(|n| !n.path_data().unwrap().is_closed() && n.path_data().unwrap().anchor_count() == 2));
-    assert_eq!(dividers(&sides), dividers(&plain));
-    let filled = grid(&mut s, CMD, with(&base, json!({"fill": true})));
-    assert!(filled.iter().all(|n| is_filled(n)), "Fill Grid paints the current fill");
-    assert_eq!(filled[0].appearance.fill().unwrap().paint, s.paint.fill);
-    // Skew: toward the top and the right when positive, the bottom and the left when negative;
-    // past ±500 % is ±500 %.
-    let top_right = dividers(&grid(&mut s, CMD, with(&base, json!({"rowSkew": 100, "columnSkew": 100}))));
-    for (got, want) in top_right.iter().zip([6.25, 25.0, 56.25, 43.75, 75.0, 93.75]) {
-        assert!((got - want).abs() < 1e-9, "{top_right:?}");
-    }
-    let bottom_left = dividers(&grid(&mut s, CMD, with(&base, json!({"rowSkew": -100, "columnSkew": -100}))));
-    assert!(bottom_left[1] > 50.0 && bottom_left[4] < 50.0, "{bottom_left:?}");
-    let most = dividers(&grid(&mut s, CMD, with(&base, json!({"rowSkew": 500, "columnSkew": -500}))));
-    let beyond = dividers(&grid(&mut s, CMD, with(&base, json!({"rowSkew": 1e300, "columnSkew": -1e300}))));
-    assert_eq!(most, beyond);
-    assert!(most.iter().all(|v| *v > 0.0 && *v < 100.0), "{most:?}");
-}
-
-/// #1377: the Polar Grid options. The ellipses lie under the radial dividers, largest first;
-/// `compound` pairs them into compound-path rings, `fill` paints the current fill and the skews
-/// crowd the ellipses outward and the radial dividers clockwise of the top one (positive).
-#[test]
-fn polar_grid_options_compound_fill_and_skew() {
-    const CMD: &str = "shape.polarGrid";
-    let mut s = session();
-    s.execute("paint.setFill", &json!({"color": "#00ff00"})).unwrap();
-    let base = json!({"x": 0, "y": 0, "width": 100, "height": 100, "concentric": 3, "radial": 4});
-    let width = |n: &vectorcraft_doc::Node| n.geometric_bounds().unwrap().width();
-    let tips =
-        |g: &[std::sync::Arc<vectorcraft_doc::Node>]| g[4..].iter().map(|n| n.path_data().unwrap().subpaths[0].anchors[1].p).collect::<Vec<_>>();
-    let plain = grid(&mut s, CMD, base.clone());
-    assert_eq!(plain.len(), 8);
-    assert_eq!(plain[..4].iter().map(|n| width(n).round()).collect::<Vec<_>>(), [100.0, 75.0, 50.0, 25.0], "largest at the bottom");
-    assert!(plain[..4].iter().all(|n| n.path_data().unwrap().is_closed()) && plain[4..].iter().all(|n| !n.path_data().unwrap().is_closed()));
-    assert!(plain.iter().all(|n| !is_filled(n)));
-    assert!(grid(&mut s, CMD, with(&base, json!({"fill": true}))).iter().all(|n| is_filled(n)));
-    // Compound: 4 ellipses make 2 rings, each a compound path of an outside and a hole running
-    // against it that carries the grid's paint itself; with 5, the innermost ellipse stays a path.
-    let rings = grid(&mut s, CMD, with(&base, json!({"compound": true, "fill": true})));
-    assert_eq!(rings.len(), 6);
-    for (ring, sizes) in rings[..2].iter().zip([[100.0, 75.0], [50.0, 25.0]]) {
-        let NodeKind::Compound { children, rule } = &ring.kind else { panic!("{:?}", ring.kind) };
-        assert_eq!(*rule, FillRule::NonZero);
-        assert_eq!(children.iter().map(|n| width(n).round()).collect::<Vec<_>>(), sizes);
-        let areas: Vec<f64> = children.iter().map(|n| n.path_data().unwrap().subpaths[0].signed_area()).collect();
-        assert!(areas[0] * areas[1] < 0.0, "the hole runs against the outside: {areas:?}");
-        assert!(is_filled(ring) && ring.appearance.stroke().is_some());
-    }
-    let five = grid(&mut s, CMD, with(&base, json!({"compound": true, "concentric": 4, "radial": 0})));
-    assert_eq!(five.iter().map(|n| matches!(n.kind, NodeKind::Compound { .. })).collect::<Vec<_>>(), [true, true, false]);
-    // Skew.
-    let out = grid(&mut s, CMD, with(&base, json!({"concentricSkew": 100, "radialSkew": 500})));
-    for (n, want) in out[..4].iter().zip([100.0, 93.75, 75.0, 43.75]) {
-        assert!((width(n) - want).abs() < 1e-6, "{}", width(n));
-    }
-    assert!(tips(&out)[0].distance(Point::new(50.0, 0.0)) < 1e-9, "the top divider stays");
-    assert!(tips(&out)[1..].iter().all(|t| t.x > 50.0), "clockwise of the top: {:?}", tips(&out));
-    let inward = grid(&mut s, CMD, with(&base, json!({"concentricSkew": -100, "radialSkew": -500})));
-    assert!((width(&inward[1]) - 56.25).abs() < 1e-6);
-    assert!(tips(&inward)[1..].iter().all(|t| t.x < 50.0), "counterclockwise of the top: {:?}", tips(&inward));
-}
-
-/// The grid options are checked: a skew is a number and a switch true or false, or the command
-/// fails without an undo step.
-#[test]
-fn grid_commands_reject_options_of_the_wrong_type() {
-    let mut s = session();
-    let size = json!({"x": 0, "y": 0, "width": 10, "height": 10});
-    for (cmd, key, value) in [
-        ("shape.rectangularGrid", "rowSkew", json!("50")),
-        ("shape.rectangularGrid", "columnSkew", json!(true)),
-        ("shape.rectangularGrid", "frame", json!(1)),
-        ("shape.rectangularGrid", "fill", json!("yes")),
-        ("shape.polarGrid", "concentricSkew", json!([1])),
-        ("shape.polarGrid", "radialSkew", json!({})),
-        ("shape.polarGrid", "compound", json!(0)),
-        ("shape.polarGrid", "fill", json!("true")),
-    ] {
-        let before = s.doc().unwrap().history.undo.len();
-        let p = with(&size, json!({key: value}));
-        assert!(s.execute(cmd, &p).is_err(), "{cmd} {p}");
-        assert_eq!(s.doc().unwrap().history.undo.len(), before, "{cmd} left an undo step");
-        assert!(s.execute(cmd, &with(&size, json!({key: null}))).is_ok(), "{cmd}: null is the default");
-    }
 }
 
 #[test]

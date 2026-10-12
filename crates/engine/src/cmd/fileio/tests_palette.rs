@@ -28,7 +28,7 @@ fn plte_len(file: &[u8]) -> usize {
 }
 
 #[test]
-fn png8_and_gif_export_palettes() {
+fn png8_exports_palettes() {
     let mut s = session();
     let png8 = b64(&s.execute("document.export", &json!({"format": "png8", "colors": 16})).unwrap());
     assert_eq!(png8[25], 3, "colour type 3");
@@ -38,9 +38,8 @@ fn png8_and_gif_export_palettes() {
     assert_eq!(img.get_pixel(5, 15).0, [255, 0, 0, 255]);
     assert_eq!(img.get_pixel(39, 0)[3], 0, "transparent where there is no art");
 
-    let gif = b64(&s.execute("document.export", &json!({"format": "gif", "background": "white", "dither": "none"})).unwrap());
-    assert_eq!(&gif[..6], b"GIF89a");
-    let img = image::load_from_memory_with_format(&gif, image::ImageFormat::Gif).unwrap().to_rgba8();
+    let white = b64(&s.execute("document.export", &json!({"format": "png8", "background": "white", "dither": "none"})).unwrap());
+    let img = image::load_from_memory(&white).unwrap().to_rgba8();
     assert_eq!(img.get_pixel(5, 15).0, [255, 0, 0, 255]);
     assert_eq!(img.get_pixel(39, 0).0, [255, 255, 255, 255], "the white background");
 
@@ -48,25 +47,6 @@ fn png8_and_gif_export_palettes() {
     let bw = b64(&s.execute("document.export", &json!({"format": "png8", "reduction": "blackWhite", "transparency": false})).unwrap());
     assert!(plte_len(&bw) <= 2);
     for bad in [json!({"reduction": "octree"}), json!({"dither": "lots"}), json!({"matte": "plaid"})] {
-        assert!(s.execute("document.export", &merge(json!({"format": "gif"}), bad.clone())).is_err(), "{bad}");
+        assert!(s.execute("document.export", &merge(json!({"format": "png8"}), bad.clone())).is_err(), "{bad}");
     }
-}
-
-#[test]
-fn palette_formats_reach_export_as_and_screens() {
-    let mut s = session();
-    // A .png path stays PNG; png8 is asked for by format.
-    let r = s.execute("document.formats", &json!({})).unwrap();
-    let f = |id: &str| r["formats"].as_array().unwrap().iter().find(|f| f["id"] == id).unwrap().clone();
-    assert_eq!((f("png8")["extensions"][0].as_str(), f("png8")["read"].as_bool()), (Some("png"), Some(false)));
-    assert_eq!(f("gif")["write"], true);
-    for k in ["colors", "reduction", "dither", "ditherAmount", "transparency", "matte", "interlaced"] {
-        assert!(f("gif")["options"].get(k).is_some() && f("png8")["options"].get(k).is_some(), "{k}");
-    }
-    assert_eq!(format_for_name("a.png").unwrap().id, "png");
-    let r = s.execute("document.exportForScreens", &json!({"formats": [{"format": "gif", "scale": 2}, {"format": "png8"}]})).unwrap();
-    let names: Vec<&str> = r["files"].as_array().unwrap().iter().map(|f| f["name"].as_str().unwrap()).collect();
-    assert_eq!(names, ["Artboard-1@2x.gif", "Artboard-1.png"]);
-    let gif = vectorcraft_format::base64_decode(r["files"][0]["dataBase64"].as_str().unwrap()).unwrap();
-    assert_eq!(image::load_from_memory(&gif).unwrap().width(), 80);
 }

@@ -43,7 +43,6 @@ pub mod panels;
 pub mod picks;
 pub mod place;
 pub mod prefs_dialog;
-pub mod print;
 pub mod recovery;
 pub mod render_worker;
 mod scrub;
@@ -73,8 +72,6 @@ mod tests_background;
 mod tests_clipboard;
 #[cfg(test)]
 mod tests_contextmenu;
-#[cfg(test)]
-mod tests_cut;
 #[cfg(test)]
 mod tests_distortkeys;
 #[cfg(test)]
@@ -108,12 +105,6 @@ mod tests_picks;
 #[cfg(test)]
 mod tests_place;
 #[cfg(test)]
-mod tests_printps;
-#[cfg(test)]
-mod tests_printtiling;
-#[cfg(test)]
-mod tests_puppetwarp;
-#[cfg(test)]
 mod tests_recolor;
 #[cfg(test)]
 mod tests_recovery;
@@ -131,8 +122,6 @@ mod tests_screenmode;
 mod tests_scrub;
 #[cfg(test)]
 mod tests_selectall;
-#[cfg(test)]
-mod tests_slices;
 #[cfg(test)]
 mod tests_svg;
 #[cfg(test)]
@@ -242,9 +231,6 @@ pub struct Services {
     /// Where Data Recovery keeps its copies when not in a folder (the web's browser storage;
     /// tests): installed into the session ([`vectorcraft_engine::cmd::recovery`]).
     pub recovery_store: Option<std::sync::Arc<dyn vectorcraft_engine::cmd::recovery::RecoveryStore>>,
-    /// File → Print: the system's printers and print queue (desktop), the browser's print dialog
-    /// (web). Without it Print saves the job as a PDF.
-    pub print: Option<Box<dyn print::PrintService>>,
     /// The macOS menu bar, when the desktop app installed one: the in-window menus are hidden then.
     pub native_menu: Option<native_menu::NativeMenu>,
     /// Show file dialogs off the UI thread (desktop Linux, where a dialog in line holds the window
@@ -271,8 +257,6 @@ pub struct CanvasCache {
     pub worker_started: bool,
     /// The slices as laid out for (document uid, revision): the canvas draws them every frame.
     pub slices: Option<SliceCache>,
-    /// The print tiling's pages for (document uid, revision) (View → Show Print Tiling).
-    pub print_tiling: Option<PrintTilingCache>,
     /// [`VectorcraftApp::selection_box`] for (document uid, revision, Use Preview Bounds).
     pub selection_box: Option<((u64, u64, bool), Option<vectorcraft_doc::OrientedBox>)>,
     /// [`VectorcraftApp::selection_bounds`] for (document uid, revision).
@@ -283,9 +267,6 @@ pub struct CanvasCache {
 
 /// [`CanvasCache::slices`]: the layout of the slices of (document uid, revision).
 pub type SliceCache = ((u64, u64), std::sync::Arc<Vec<vectorcraft_doc::SliceArea>>);
-
-/// [`CanvasCache::print_tiling`]: the print tiling of (document uid, revision).
-pub type PrintTilingCache = ((u64, u64), std::sync::Arc<Vec<vectorcraft_pdf::TilingPage>>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CacheKey {
@@ -460,7 +441,6 @@ impl VectorcraftApp {
                 worker: None,
                 worker_started: false,
                 slices: None,
-                print_tiling: None,
                 selection_box: None,
                 selection_bounds: None,
                 cursors: Default::default(),

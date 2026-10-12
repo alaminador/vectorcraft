@@ -11,7 +11,7 @@ use crate::DocState;
 
 use super::super::*;
 use super::encode::single_artboard;
-use super::{ARTBOARD_PARAMS, Format, default_name, encode, encode_all, encode_with_warnings, merge, writable, write_encoded, write_or_return};
+use super::{ARTBOARD_PARAMS, Format, default_name, encode_all, encode_with_warnings, merge, writable, write_encoded, write_or_return};
 
 pub(super) fn serialize(s: &mut Session, p: &Value) -> Result<Value> {
     let f = writable("document.serialize", Some(str_param(p, "format").unwrap_or("vectorcraft")), None)?;
@@ -181,28 +181,4 @@ pub(super) fn export_selection(s: &mut Session, p: &Value) -> Result<Value> {
     // out), as document.export reports them.
     let (bytes, warnings) = encode_with_warnings(&d, f.id, &without_artboards(p))?;
     write_or_return(path, &bytes, json!({ "format": f.id, "warnings": warnings, "bounds": [bounds.x0, bounds.y0, bounds.width(), bounds.height()] }))
-}
-
-/// File → Save for Office Documents: one artboard as a PNG at `ppi`, on white unless
-/// `transparent`.
-pub(super) fn export_for_office(s: &mut Session, p: &Value) -> Result<Value> {
-    const C: &str = "document.exportForOffice";
-    if let Some(path) = str_param(p, "path") {
-        super::check_not_lossy_overwrite(s.doc()?, path, p, C)?;
-    }
-    let path = str_param(p, "path");
-    let ppi = f64_or(p, "ppi", 150.0);
-    let doc = &s.doc()?.doc;
-    let artboard = match p.get("artboard") {
-        None | Some(Value::Null) => 0,
-        Some(v) => v.as_u64().and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(C, "artboard is a 0-based index"))?,
-    };
-    if artboard >= doc.artboards.len() {
-        return Err(bad(C, format!("no artboard {artboard} (0-based; the document has {})", doc.artboards.len())));
-    }
-    let background = if bool_or(p, "transparent", false) { "transparent" } else { "white" };
-    let bytes = encode(doc, "png", &json!({ "ppi": ppi, "background": background, "artboard": artboard }))?;
-    // The pixel size, from the PNG header.
-    let side = |at: usize| bytes.get(at..at + 4).and_then(|b| b.try_into().ok()).map_or(0, u32::from_be_bytes);
-    write_or_return(path, &bytes, json!({ "width": side(16), "height": side(20) }))
 }

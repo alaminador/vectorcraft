@@ -1,19 +1,12 @@
 //! Raster export: render a document region with [`RasterExportOptions`] (resolution, background,
 //! anti-aliasing) and encode it as PNG ([`png`]: resolution in `pHYs`, Adam7 interlacing), JPEG
 //! ([`jpeg`]: RGB, CMYK or grey, progressive, resolution and colour profile), lossless WebP, or
-//! a palette image ([`quantize`]) as PNG-8 or [`gif`], [`tiff`] (RGB, CMYK or grey, LZW, either byte
-//! order, the profile), [`bmp`] (1–32 bits, RLE) or [`tga`]; [`web`] adds what Save for Web optimises
-//! further (web snap, colour table edits, lossy GIF, comments); [`psd`] writes layered bitmaps.
+//! a palette image ([`quantize`]) as PNG-8. [`tiff`] writes the TIFF previews EPS files carry.
 
-pub mod bmp;
-pub mod gif;
 pub mod jpeg;
 pub mod png;
-pub mod psd;
 pub mod quantize;
-pub mod tga;
 pub mod tiff;
-pub mod web;
 
 use vectorcraft_doc::{Document, Node, NodeKind};
 use vectorcraft_geom::Rect;
@@ -28,12 +21,6 @@ pub enum RasterFormat {
     WebP,
     /// Indexed PNG: a palette of up to 256 colours.
     Png8,
-    Gif,
-    Tiff,
-    Bmp,
-    Tga,
-    /// Layered bitmap (.psd).
-    Psd,
 }
 
 /// How a raster export renders and encodes.
@@ -52,14 +39,6 @@ pub struct RasterExportOptions {
     pub jpeg: jpeg::JpegOptions,
     /// PNG-8 and GIF: the colour reduction (also BMP's at 1, 4 and 8 bits).
     pub palette: quantize::PaletteOptions,
-    /// TIFF colour model, compression, byte order and profile.
-    pub tiff: tiff::TiffOptions,
-    /// BMP layout, depth, compression and row order.
-    pub bmp: bmp::BmpOptions,
-    /// Targa depth.
-    pub tga: tga::TgaOptions,
-    /// PSD colour model, layers and profile.
-    pub psd: psd::PsdOptions,
 }
 
 impl Default for RasterExportOptions {
@@ -72,10 +51,6 @@ impl Default for RasterExportOptions {
             quality: 90,
             jpeg: jpeg::JpegOptions::default(),
             palette: quantize::PaletteOptions::default(),
-            tiff: tiff::TiffOptions::default(),
-            bmp: bmp::BmpOptions::default(),
-            tga: tga::TgaOptions::default(),
-            psd: psd::PsdOptions::default(),
         }
     }
 }
@@ -87,9 +62,9 @@ impl RasterExportOptions {
     }
 
     /// What the renderer draws for `format`: template layers and guides left out, over the background
-    /// (white for a JPEG or a flat PSD without one), composited in floating point.
+    /// (white for a JPEG without one), composited in floating point.
     pub fn render_options(&self, format: RasterFormat) -> RenderOptions {
-        let flat = format == RasterFormat::Jpeg || (format == RasterFormat::Psd && !self.psd.layers);
+        let flat = format == RasterFormat::Jpeg;
         let background = self.background.or(flat.then_some([255; 3]));
         RenderOptions {
             background: background.map(|[r, g, b]| [r, g, b, 255]),
@@ -103,8 +78,8 @@ impl RasterExportOptions {
         }
     }
 
-    /// Encode a rendered image as `format`. A CMYK JPEG separates the screen colours, and a PSD is
-    /// flat; [`Renderer::export_region`] draws the inks and the layers instead.
+    /// Encode a rendered image as `format`. A CMYK JPEG separates the screen colours;
+    /// [`Renderer::export_region`] draws the inks instead.
     pub fn encode(&self, img: &Rendered, format: RasterFormat) -> Result<Vec<u8>, String> {
         match format {
             RasterFormat::Png => {
@@ -118,45 +93,28 @@ impl RasterExportOptions {
                 jpeg::encode(&px, img.width, img.height, self.quality, Some(self.ppi), &self.jpeg)
             }
             RasterFormat::WebP => webp(img),
-            RasterFormat::Png8 | RasterFormat::Gif => {
+            RasterFormat::Png8 => {
                 let ix = quantize::quantize(&img.to_straight(), img.width, img.height, &self.palette);
-                match format {
-                    RasterFormat::Gif => gif::encode(&ix, self.interlaced),
-                    _ => png::encode_indexed(&ix, &png::PngOptions { ppi: Some(self.ppi), interlaced: self.interlaced }),
-                }
+                png::encode_indexed(&ix, &png::PngOptions { ppi: Some(self.ppi), interlaced: self.interlaced })
             }
-            RasterFormat::Tiff => tiff::encode(img, self.ppi, &self.tiff),
-            RasterFormat::Bmp => bmp::encode(&img.to_straight(), img.width, img.height, self.ppi, &self.bmp, &self.palette),
-            RasterFormat::Tga => tga::encode(&img.to_straight(), img.width, img.height, &self.tga),
-            RasterFormat::Psd => psd::encode(img, self.ppi, &self.psd),
         }
     }
 
-    /// Does `format` write ink amounts (a CMYK JPEG or TIFF)?
+    /// Does `format` write ink amounts (a CMYK JPEG)?
     fn cmyk(&self, format: RasterFormat) -> bool {
-        match format {
-            RasterFormat::Jpeg => self.jpeg.color_model == jpeg::ColorModel::Cmyk,
-            RasterFormat::Tiff => self.tiff.color_model == jpeg::ColorModel::Cmyk,
-            _ => false,
-        }
+        format == RasterFormat::Jpeg && self.jpeg.color_model == jpeg::ColorModel::Cmyk
     }
 }
 
 impl Renderer {
     /// Render `region` of `doc` (an artboard or any rect) as exported and encode it as `format`.
-    /// Callers check the size first ([`crate::raster_size`]). A CMYK JPEG or TIFF is drawn as ink
-    /// amounts ([`Renderer::render_region_inks`]); a PSD with its layers ([`psd::export`]).
+    /// Callers check the size first ([`crate::raster_size`]). A CMYK JPEG is drawn as ink amounts
+    /// ([`Renderer::render_region_inks`]).
     pub fn export_region(&mut self, doc: &Document, region: Rect, format: RasterFormat, opts: &RasterExportOptions) -> Result<Vec<u8>, String> {
-        if format == RasterFormat::Psd {
-            return psd::export(self, doc, region, opts);
-        }
         if opts.cmyk(format) {
             let (w, h) = crate::region_pixels(region, opts.scale());
             let inks = self.render_region_inks(doc, region, opts.scale(), &opts.render_options(format));
-            return match format {
-                RasterFormat::Tiff => tiff::encode_samples(&inks, w, h, opts.ppi, &opts.tiff),
-                _ => jpeg::encode(&inks, w, h, opts.quality, Some(opts.ppi), &opts.jpeg),
-            };
+            return jpeg::encode(&inks, w, h, opts.quality, Some(opts.ppi), &opts.jpeg);
         }
         let img = self.render_region_with(doc, region, opts.scale(), &opts.render_options(format));
         opts.encode(&img, format)
@@ -208,16 +166,6 @@ fn drawn_bounds(n: &Node) -> Option<Rect> {
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
-mod tests_bmp;
-#[cfg(test)]
 mod tests_jpeg;
 #[cfg(test)]
 mod tests_palette;
-#[cfg(test)]
-mod tests_psd;
-#[cfg(test)]
-mod tests_tga;
-#[cfg(test)]
-mod tests_tiff;
-#[cfg(test)]
-mod tests_web;

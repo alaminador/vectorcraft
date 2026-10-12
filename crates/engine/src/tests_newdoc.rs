@@ -111,39 +111,6 @@ fn a_preset_starts_the_document_and_params_change_it() {
 }
 
 #[test]
-fn ppi_overprint_preview_and_bad_params() {
-    // Overprint Preview is process-wide.
-    let _view = crate::tests_colormgmt::GLOBAL.lock().unwrap_or_else(|e| e.into_inner());
-    let mut s = new_doc(json!({"rasterEffectsPpi": 300, "previewMode": "overprint"}));
-    assert_eq!(s.doc().unwrap().doc.raster_effects_ppi, 300.0);
-    let overprint = |s: &mut Session| s.execute("view.proofSetup", &json!({})).unwrap()["overprintPreview"].clone();
-    assert_eq!(overprint(&mut s), true);
-    s.execute("view.overprintPreview", &json!({"on": false})).unwrap();
-    let r = s.execute("file.new", &json!({"previewMode": "pixel"})).unwrap();
-    assert_eq!(r["previewMode"], "pixel", "for the app's Pixel Preview");
-    assert_eq!(overprint(&mut s), false);
-    for p in [
-        json!({"orientation": "sideways"}),
-        json!({"width": -5}),
-        json!({"width": "wide"}),
-        json!({"bleed": 100}),
-        json!({"backgroundContents": "plaid"}),
-        json!({"colorMode": "lab"}),
-        json!({"rasterEffectsPpi": 0}),
-        json!({"previewMode": "xray"}),
-        json!({"artboardLayout": {"layout": "spiral"}}),
-        json!({"artboardLayout": {"columns": 0}}),
-        json!({"artboardLayout": {"rows": 2}}),
-        json!({"units": "furlongs"}),
-        json!({"width": 160000, "artboards": 1000}),
-    ] {
-        let mut s = Session::new();
-        assert!(s.execute("file.new", &p).is_err(), "{p}");
-        assert!(s.active().is_none(), "{p}: no document on an error");
-    }
-}
-
-#[test]
 fn categories_list_generated_presets_with_neutral_names() {
     let mut s = Session::new();
     let r = s.execute("file.newPresets", &json!({})).unwrap();

@@ -25,10 +25,10 @@ pub const FEEDBACK: [u8; 3] = [0x4f, 0x9d, 0xff];
 /// Create a drawing tool by id (None = not one of ours).
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
     Some(match id {
-        "pencil" | "paintbrush" | "blobBrush" | "eraser" | "knife" | "smooth" | "pathEraser" | "join" => Box::new(GestureTool::new(id)),
+        "pencil" | "knife" | "smooth" | "join" => Box::new(GestureTool::new(id)),
         "curvature" => Box::new(CurvatureTool::default()),
         "addAnchor" | "deleteAnchor" | "anchorPoint" | "scissors" => Box::new(AnchorTool::new(id)),
-        "arc" | "spiral" | "rectangularGrid" | "polarGrid" => Box::new(FamilyTool::new(id)),
+        "arc" => Box::new(FamilyTool::new(id)),
         _ => return None,
     })
 }
@@ -196,25 +196,7 @@ mod tests {
 
     #[test]
     fn all_tools_exist() {
-        for id in [
-            "pencil",
-            "paintbrush",
-            "blobBrush",
-            "eraser",
-            "knife",
-            "smooth",
-            "pathEraser",
-            "join",
-            "curvature",
-            "addAnchor",
-            "deleteAnchor",
-            "anchorPoint",
-            "scissors",
-            "arc",
-            "spiral",
-            "rectangularGrid",
-            "polarGrid",
-        ] {
+        for id in ["pencil", "knife", "smooth", "join", "curvature", "addAnchor", "deleteAnchor", "anchorPoint", "scissors", "arc"] {
             assert_eq!(create(id).unwrap().id(), id);
         }
         assert!(create("selection").is_none());

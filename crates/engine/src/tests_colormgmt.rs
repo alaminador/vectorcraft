@@ -237,38 +237,6 @@ fn rgb_art_separates_with_gcr() {
 }
 
 #[test]
-fn spot_colours_get_their_own_plate() {
-    let _g = GLOBAL.lock().unwrap_or_else(|e| e.into_inner());
-    let mut s = session();
-    s.execute("swatch.new", &json!({"name": "Brand Orange", "color": {"c": 0, "m": 60, "y": 100, "k": 0}, "global": true})).unwrap();
-    s.execute("swatch.setSpot", &json!({"name": "Brand Orange"})).unwrap();
-    assert!(s.execute("swatch.setSpot", &json!({"name": "Nope"})).is_err());
-    let a = NodeId(s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap());
-    s.execute("paint.setFill", &json!({"ids": [a.0], "swatch": "Brand Orange"})).unwrap();
-    let plates = s.execute("color.plates", &json!({})).unwrap();
-    let names: Vec<&str> = plates["plates"].as_array().unwrap().iter().map(|p| p["name"].as_str().unwrap()).collect();
-    assert_eq!(names, ["Cyan", "Magenta", "Yellow", "Black", "Brand Orange"]);
-    let doc = s.doc().unwrap().doc.clone();
-    let plate = |n: &str| {
-        render(&doc, RenderOptions { proof: Some(ProofSetup { separations: Some(vec![n.into()]), ..Default::default() }), ..Default::default() })
-            .pixel(50, 50)
-    };
-    assert_eq!(plate("Brand Orange"), [0, 0, 0, 255]);
-    assert_eq!(plate("Magenta"), [255, 255, 255, 255], "spot ink isn't on the process plates");
-    // Panel commands: only / toggle.
-    let r = s.execute("view.separationsPreview", &json!({"only": "Brand Orange"})).unwrap();
-    let vis: Vec<bool> = r["plates"].as_array().unwrap().iter().map(|p| p["visible"].as_bool().unwrap()).collect();
-    assert_eq!(vis, [false, false, false, false, true]);
-    let r = s.execute("view.separationsPreview", &json!({"toggle": "Cyan"})).unwrap();
-    assert_eq!(r["plates"][0]["visible"], true);
-    assert_eq!(vectorcraft_render::proof::active_proof().unwrap().separations.unwrap().len(), 2);
-    assert!(vectorcraft_render::proof::overprint_preview_on(), "separations imply overprint preview");
-    assert!(s.execute("view.separationsPreview", &json!({"only": "Mauve"})).is_err());
-    s.execute("view.separationsPreview", &json!({"on": false})).unwrap();
-    assert!(vectorcraft_render::proof::active_proof().is_none_or(|p| p.separations.is_none()));
-}
-
-#[test]
 fn overprint_black_multiplies_in_preview() {
     let _g = GLOBAL.lock().unwrap_or_else(|e| e.into_inner());
     let mut s = session();
@@ -286,29 +254,6 @@ fn overprint_black_multiplies_in_preview() {
     assert!(over[2] < knock[2] + 60 && over[2] <= 128, "and stays dark: {over:?}");
     s.execute("edit.colors.overprintBlack", &json!({"remove": true})).unwrap();
     assert!(!s.doc().unwrap().doc.node(k).unwrap().has_overprint());
-}
-
-#[test]
-fn view_toggles_redraw_without_dirtying() {
-    let _g = GLOBAL.lock().unwrap_or_else(|e| e.into_inner());
-    let mut s = session();
-    let rev = s.doc().unwrap().revision;
-    let r = s.execute("view.proofColors", &json!({"on": true})).unwrap();
-    assert_eq!(r["proofColors"], true);
-    assert!(s.doc().unwrap().revision > rev, "canvas redraws");
-    assert!(!s.doc().unwrap().is_dirty(), "not marked modified");
-    let r = s.execute("view.proofSetup", &json!({"target": "deuteranopia", "intent": "perceptual"})).unwrap();
-    assert_eq!(r["target"], "deuteranopia");
-    assert_eq!(vectorcraft_render::proof::active_proof().unwrap().target, ProofTarget::Deuteranopia);
-    assert!(s.execute("view.proofSetup", &json!({"target": "cmyk:Nope"})).is_err());
-    assert!(s.execute("view.proofSetup", &json!({"target": format!("cmyk:{}", cms::WIDE_GAMUT_RGB)})).is_err(), "an RGB profile");
-    s.execute("view.proofSetup", &json!({"target": format!("cmyk:{}", cms::DEVICE_CMYK)})).unwrap();
-    s.execute("view.proofSetup", &json!({"target": "workingCmyk", "intent": "relative"})).unwrap();
-    let r = s.execute("view.proofColors", &json!({"on": false})).unwrap();
-    assert_eq!(r["proofColors"], false);
-    let r = s.execute("view.overprintPreview", &json!({"on": true})).unwrap();
-    assert_eq!(r["overprintPreview"], true);
-    s.execute("view.overprintPreview", &json!({"on": false})).unwrap();
 }
 
 /// Whether the content has a DeviceCMYK fill/stroke operator (`c m y k k` / `K`).

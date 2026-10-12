@@ -1,49 +1,13 @@
-//! Magic Wand (Y) and Lasso (Q).
-//!
-//! Magic Wand: click an object to select every object with similar attributes. The matching and
-//! its settings (Magic Wand panel) live in the engine's `select.magicWand` command; Shift adds,
-//! Alt subtracts. Lasso: freehand loop selecting anchor points inside it (direct-selection
-//! style); Shift adds, Alt subtracts.
+//! Lasso (Q): freehand loop selecting anchor points inside it (direct-selection style); Shift adds,
+//! Alt subtracts.
 
 use std::collections::BTreeSet;
 
 use serde_json::{Value, json};
-use vectorcraft_doc::hit::hit_test;
 use vectorcraft_doc::{AnchorRef, NodeId, NodeKind};
 use vectorcraft_geom::Point;
 
-use super::paint_owner;
 use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey};
-
-#[derive(Default)]
-pub struct MagicWandTool;
-
-impl Tool for MagicWandTool {
-    fn id(&self) -> &'static str {
-        "magicWand"
-    }
-
-    fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
-        if ev.kind != PointerKind::Down {
-            return vec![];
-        }
-        let Some(h) = hit_test(cx.doc, ev.pos, cx.hit_options()) else {
-            return if ev.mods.shift || ev.mods.alt { vec![] } else { vec![Action::Exec("select.none".into(), json!({}))] };
-        };
-        let mode = if ev.mods.alt {
-            "subtract"
-        } else if ev.mods.shift {
-            "add"
-        } else {
-            "set"
-        };
-        vec![Action::Exec("select.magicWand".into(), json!({ "id": paint_owner(cx.doc, h.leaf).0, "mode": mode }))]
-    }
-
-    fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
-        Cursor::Crosshair
-    }
-}
 
 /// Even-odd point-in-polygon.
 pub fn point_in_polygon(poly: &[Point], p: Point) -> bool {
@@ -154,22 +118,6 @@ mod tests {
     use super::*;
     use crate::testutil::*;
     use vectorcraft_doc::Selection;
-
-    #[test]
-    fn magic_wand_emits_the_engine_command() {
-        let (d, a) = doc_with_rect();
-        let s = Selection::default();
-        let p = paint();
-        let cx = cx(&d, &s, &p);
-        let mut t = MagicWandTool;
-        let r = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 150.0));
-        assert_eq!(r, vec![Action::Exec("select.magicWand".into(), json!({"id": a.0, "mode": "set"}))]);
-        let shift = Mods { shift: true, ..Default::default() };
-        let r = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 150.0).with_mods(shift));
-        assert_eq!(r, vec![Action::Exec("select.magicWand".into(), json!({"id": a.0, "mode": "add"}))]);
-        let miss = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 900.0, 900.0));
-        assert_eq!(miss, vec![Action::Exec("select.none".into(), json!({}))]);
-    }
 
     #[test]
     fn lasso_selects_anchors_inside() {

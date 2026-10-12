@@ -2,7 +2,6 @@
 
 use serde_json::{Map, Value};
 use vectorcraft_geom::Point;
-use vectorcraft_tools::distort::perspective::widget::WidgetPlace;
 use vectorcraft_tools::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, settings};
 
 use crate::{EngineError, Prefs, Result, Session};
@@ -69,13 +68,6 @@ impl Session {
 
     /// Choose a tool (the toolbar, its shortcut, MCP), finishing any pending tool work first.
     pub fn select_tool(&mut self, id: &str, view: ViewInfo) -> Result<()> {
-        // Choosing a perspective tool shows the document's perspective grid; Hide Grid hides it
-        // again, the tool staying chosen.
-        if matches!(id, "perspectiveGrid" | "perspectiveSelection")
-            && self.active().is_some_and(|d| !vectorcraft_tools::distort::perspective::PerspectiveGrid::current(&d.doc).visible)
-        {
-            crate::cmd::distortcmds::silent(self, |g| g.visible = true)?;
-        }
         self.switch_tool(id, view)
     }
 
@@ -201,8 +193,6 @@ impl Session {
             unit,
             stroke_unit,
             paste_plain_text: self.prefs.paste_text_formatting == "plain",
-            slices_hidden: self.menu.slices_hidden,
-            slices_locked: self.menu.slices_locked,
             auto_add_delete: !self.prefs.disable_auto_add_delete,
             selection_tolerance: self.prefs.selection_tolerance,
             anchor_size: self.prefs.anchor_size,
@@ -231,7 +221,6 @@ impl Session {
                 &[]
             },
             screen: view.screen,
-            plane_widget: self.prefs.perspective_widget.show.then_some(self.prefs.perspective_widget.position),
         };
         let tool = &mut self.tool;
         match crate::guard::catch_panic(|| f(tool.as_mut(), &cx)) {
@@ -255,10 +244,6 @@ impl Session {
     /// Feed a pointer event to the active tool. Returns requests for the UI.
     pub fn pointer(&mut self, ev: &PointerEvent, view: ViewInfo) -> Result<Vec<UiRequest>> {
         self.last_view = view;
-        // The Plane Switching Widget takes its clicks whatever the tool.
-        if let Some(r) = self.plane_widget_pointer(ev, view) {
-            return r;
-        }
         let ev = &self.lend_selection_tool(ev);
         let acts = self.with_tool_cx(view, |t, cx| t.pointer(cx, ev));
         let r = self.take_tool_panic().and_then(|()| {
@@ -315,11 +300,6 @@ impl Session {
     }
 
     pub fn tool_key(&mut self, key: ToolKey, mods: Mods, view: ViewInfo) -> Result<Vec<UiRequest>> {
-        // 1–4 pick the active perspective plane while the grid is shown.
-        if let Some(plane) = self.plane_key(key) {
-            self.execute("perspective.plane.set", &serde_json::json!({ "plane": plane.id() }))?;
-            return Ok(vec![]);
-        }
         let acts = self.with_tool_cx(view, |t, cx| t.key(cx, key, mods));
         self.take_tool_panic()?;
         self.apply_actions(acts)
@@ -365,7 +345,7 @@ impl Session {
 
     /// Does the active tool take `key` ahead of the shortcuts bound to it (see `Tool::claims_key`)?
     pub fn tool_claims_key(&mut self, key: ToolKey, view: ViewInfo) -> bool {
-        self.plane_key(key).is_some() || self.with_tool_cx(view, |t, cx| t.claims_key(cx, key))
+        self.with_tool_cx(view, |t, cx| t.claims_key(cx, key))
     }
 
     pub fn overlays(&mut self, view: ViewInfo) -> Vec<Overlay> {
@@ -373,11 +353,6 @@ impl Session {
         if let Some(g) = self.ruler_guide.take() {
             v.extend(self.with_tool_cx(view, |_, cx| g.overlays(cx)));
             self.ruler_guide = Some(g);
-        }
-        if let Some(d) = self.active() {
-            let w = self.prefs.perspective_widget;
-            let place = w.show.then_some(WidgetPlace { screen: view.screen.as_ref(), corner: w.position });
-            v.splice(0..0, vectorcraft_tools::distort::perspective::grid_overlays_in(&d.doc, 1.0 / view.zoom.max(1e-9), place));
         }
         v
     }
@@ -484,15 +459,8 @@ impl Session {
                     }
                     Err(e) => log::warn!("preview {cmd}: {e}"),
                 },
-                // The drag is over: the dabs of a Liquify stroke have no further use.
-                Action::Commit => {
-                    self.liquify_stroke = None;
-                    self.commit_interaction()?
-                }
-                Action::Cancel => {
-                    self.liquify_stroke = None;
-                    self.cancel_interaction()?
-                }
+                Action::Commit => self.commit_interaction()?,
+                Action::Cancel => self.cancel_interaction()?,
                 Action::Exec(cmd, p) => {
                     self.execute(&cmd, &p)?;
                 }

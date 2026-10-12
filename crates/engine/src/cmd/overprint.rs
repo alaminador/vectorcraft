@@ -15,26 +15,15 @@ use super::edit::selected_roots;
 use super::*;
 
 pub fn specs() -> Vec<CommandSpec> {
-    vec![
-        cmd!(
-            "object.setOverprint",
-            "Overprint",
-            [],
-            None,
-            "{fill?: bool, stroke?: bool, item?: appearance item index|null, ids?} make fills and/or strokes overprint (Overprint Preview, Separations Preview) or knock out: item's, else every fill or stroke of the painted objects (groups: their contents; type: its characters too). Without item and ids, the Appearance panel's active item stands in when it is of that kind → {changed: objects}",
-            has_doc,
-            set_overprint
-        ),
-        cmd!(
-            query "attributes.info",
-            "Attributes",
-            [],
-            None,
-            "{ids?, item?} → {ids, overprintFill, overprintStroke, showCenter, imageMap: \"none\"|\"rectangle\"|\"polygon\", url, note, fillRule: \"nonZero\"|\"evenOdd\" (of the paths and compound paths in them), reversed (their subpaths run counter-clockwise on screen: Reverse Path Direction On), recentUrls: [newest first]} the Attributes panel's values for `ids` or the selection, overprint aimed as object.setOverprint aims; a value is null where they differ (or nothing has a fill, stroke or path)",
-            has_doc,
-            |s, p| Ok(attributes(s, p)?.to_json())
-        ),
-    ]
+    vec![cmd!(
+        "object.setOverprint",
+        "Overprint",
+        [],
+        None,
+        "{fill?: bool, stroke?: bool, item?: appearance item index|null, ids?} make fills and/or strokes overprint (Overprint Preview, Separations Preview) or knock out: item's, else every fill or stroke of the painted objects (groups: their contents; type: its characters too). Without item and ids, the Appearance panel's active item stands in when it is of that kind → {changed: objects}",
+        has_doc,
+        set_overprint
+    )]
 }
 
 /// The Attributes panel's values ([`Session::attributes_info`], `attributes.info`).
@@ -59,22 +48,7 @@ pub struct AttributesInfo {
     pub recent_urls: Vec<String>,
 }
 
-impl AttributesInfo {
-    fn to_json(&self) -> Value {
-        json!({
-            "ids": self.ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            "overprintFill": self.overprint_fill,
-            "overprintStroke": self.overprint_stroke,
-            "showCenter": self.show_center,
-            "imageMap": self.image_map,
-            "url": self.url,
-            "note": self.note,
-            "fillRule": self.fill_rule.map(super::attributes::rule_name),
-            "reversed": self.reversed,
-            "recentUrls": self.recent_urls,
-        })
-    }
-}
+impl AttributesInfo {}
 
 impl Session {
     /// The Attributes panel's values for the selection.

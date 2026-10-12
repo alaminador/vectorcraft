@@ -1324,28 +1324,6 @@ mod tests {
         out.shapes.iter().filter(|c| matches!(&c.shape, egui::Shape::Circle(cs) if cs.radius == 3.2 && cs.fill != Color32::TRANSPARENT)).count()
     }
 
-    /// A generated `<Kind>` name is translated where painted; an unnamed text object's text never
-    /// is, even when it reads like one.
-    #[test]
-    fn only_generated_names_are_translated() {
-        let zh = crate::i18n::Lang::from_code("zh-hant").unwrap();
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
-        run(&mut app, "file.new", json!({"width": 100, "height": 100}));
-        let rect = run(&mut app, "shape.rectangle", json!({"x": 0, "y": 0, "width": 50, "height": 50}))["id"].as_u64().unwrap();
-        let text = run(&mut app, "text.create", json!({"x": 10, "y": 40, "text": "<Path>"}))["id"].as_u64().unwrap();
-        let doc = &app.session.active().unwrap().doc;
-        let names = |id: u64| {
-            let n = doc.node(NodeId(id)).unwrap();
-            (n.display_name(), painted_name(n, &n.display_name(), zh))
-        };
-        assert_eq!(names(text), ("<Path>".to_string(), "<Path>".to_string()));
-        let (stored, painted) = names(rect);
-        let inner = stored.trim_start_matches('<').trim_end_matches('>');
-        assert_eq!(painted, format!("<{}>", crate::i18n::tr(zh, inner)));
-        assert_ne!(painted, stored, "translated");
-    }
-
     #[test]
     fn target_circle_fills_for_non_default_transparency() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());

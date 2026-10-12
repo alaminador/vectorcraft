@@ -92,22 +92,6 @@ fn placing_a_preview_is_rejected_even_when_renamed_or_queued() {
 }
 
 #[test]
-fn templates_and_libraries_cannot_silently_extract_preview_content() {
-    let mut s = Session::new();
-    s.execute("file.new", &json!({"width":100,"height":100})).unwrap();
-    let original = s.doc().unwrap().doc.clone();
-    for name in ["test.af", "renamed.svg"] {
-        let p = json!({"name":name, "dataBase64":vectorcraft_format::base64_encode(&file(&png()))});
-        for cmd in ["file.newFromTemplate", "swatch.library.load", "graphicStyle.loadLibrary"] {
-            let e = s.execute(cmd, &p).unwrap_err().to_string();
-            assert!(e.contains("File › Open"), "{cmd}: {e}");
-        }
-    }
-    assert_eq!(s.documents().len(), 1);
-    assert_eq!(s.doc().unwrap().doc, original);
-}
-
-#[test]
 fn malformed_crc_and_every_truncation_fail() {
     let b = file(&png());
     for end in 0..b.len() {

@@ -11,52 +11,14 @@
 /// (tools, the store they share (None: each tool's own), option keys).
 type Row = (&'static [&'static str], Option<&'static str>, &'static [&'static str]);
 
-/// The Liquify tools.
-pub const LIQUIFY: &[&str] = &["warp", "twirl", "pucker", "bloat", "scallop", "crystallize", "wrinkle"];
-
-/// The Symbolism tools.
-pub const SYMBOLISM: &[&str] =
-    &["symbolSprayer", "symbolShifter", "symbolScruncher", "symbolSizer", "symbolSpinner", "symbolStainer", "symbolScreener", "symbolStyler"];
-
 const ROWS: &[Row] = &[
-    // Global Brush Dimensions.
-    (LIQUIFY, Some("liquify"), &["width", "height", "angle", "intensity", "usePressure", "showBrush"]),
-    (LIQUIFY, None, &["detail", "simplify", "simplifyOn", "rate", "complexity", "horizontal", "vertical", "affectAnchors", "affectIn", "affectOut"]),
-    (SYMBOLISM, Some("symbolism"), &["diameter", "intensity", "density"]),
-    (&["mirrorCut"], None, &["axis", "keep"]),
-    (&["puppetWarp"], None, &["showMesh", "expand"]),
     (&["arc"], None, &["closed"]),
-    (&["spiral"], None, &["decay", "segments", "clockwise"]),
-    (&["rectangularGrid"], None, &["rows", "columns", "rowSkew", "columnSkew", "frame", "fill"]),
-    (&["polarGrid"], None, &["concentric", "radial", "concentricSkew", "radialSkew", "compound", "fill"]),
-    (&["pencil", "paintbrush"], None, &["fidelity", "fill", "editWithin", "closeWithin"]),
+    (&["pencil"], None, &["fidelity", "fill", "editWithin", "closeWithin"]),
     (&["smooth"], None, &["fidelity"]),
-    (&["blobBrush", "eraser"], None, &["size"]),
     (&["polygon"], None, &["sides"]),
     (&["star"], None, &["points"]),
     (&["freeTransform"], None, &["constrain"]),
     (&["artboard"], None, &["moveArt", "scaleArt"]),
-    // Flare Tool Options (`extra::FLARE_OPTIONS` and the Rays and Rings checkboxes).
-    (
-        &["flare"],
-        None,
-        &[
-            "diameter",
-            "opacity",
-            "brightness",
-            "growth",
-            "fuzziness",
-            "raysOn",
-            "rays",
-            "longest",
-            "rayFuzziness",
-            "ringsOn",
-            "pathLength",
-            "rings",
-            "largest",
-            "direction",
-        ],
-    ),
 ];
 
 /// The stores `tool`'s persistent options live in, each with the option keys it holds.
@@ -82,15 +44,5 @@ mod tests {
                 }
             }
         }
-    }
-
-    #[test]
-    fn liquify_tools_share_the_global_brush() {
-        let warp: Vec<_> = stores("warp").collect();
-        let twirl: Vec<_> = stores("twirl").collect();
-        assert_eq!(warp[0], twirl[0]);
-        assert_eq!(warp[0].0, "liquify");
-        assert_eq!((warp[1].0, twirl[1].0), ("warp", "twirl"));
-        assert_eq!(stores("selection").count(), 0);
     }
 }

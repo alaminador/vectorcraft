@@ -42,6 +42,27 @@ pub const UNSUPPORTED: &[Unsupported] = &[
         extensions: &["wmf"],
         hint: "WMF is not supported in LogoCraft: use SVG or PDF for vector art, PNG for pictures",
     },
+    Unsupported {
+        id: "psd",
+        label: "PSD",
+        extensions: &["psd", "psb"],
+        hint: "PSD files are not supported in LogoCraft: save a PNG or JPEG and place that",
+    },
+    Unsupported { id: "tiff", label: "TIFF", extensions: &["tif", "tiff"], hint: "TIFF is not supported in LogoCraft: use PNG, JPEG or WebP" },
+    Unsupported { id: "bmp", label: "BMP", extensions: &["bmp"], hint: "BMP is not supported in LogoCraft: use PNG, JPEG or WebP" },
+    Unsupported { id: "tga", label: "Targa", extensions: &["tga"], hint: "Targa is not supported in LogoCraft: use PNG, JPEG or WebP" },
+    Unsupported {
+        id: "gif",
+        label: "GIF",
+        extensions: &["gif"],
+        hint: "GIF is not supported in LogoCraft: use PNG (PNG-8 for a small palette file), JPEG or WebP",
+    },
+    Unsupported {
+        id: "txt",
+        label: "Text",
+        extensions: &["txt"],
+        hint: "Plain-text import and export are not part of LogoCraft: paste the text into a type object",
+    },
 ];
 
 /// The unsupported format an id or extension (any case, leading dot allowed) names.

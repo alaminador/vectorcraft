@@ -256,7 +256,6 @@ pub fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                 // An image or an Image Trace object shows its own controls in place of Fill and Stroke.
                 let image = crate::place::control_bar_details(app, ui) || crate::panels::image_trace::control_bar(app, ui);
                 crate::toolbar::control_bar_options(app, ui);
-                crate::dialogs::envelope::control_bar(app, ui);
                 let opacity = if first.is_some() { crate::panels::current_transparency(app).map_or(1.0, |t| t.0) } else { 1.0 };
                 if !image {
                     let shown_stroke = crate::panels::current_stroke(app);
@@ -281,16 +280,6 @@ pub fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                     && !sel.is_empty()
                 {
                     app.run("transparency.set", json!({"opacity": o.clamp(0.0, 100.0)})).ok();
-                }
-                if !sel.is_empty() {
-                    // Style picker: the selection's graphic style; its menu applies another.
-                    ui.add_space(4.0);
-                    if ui.link(egui::RichText::new(tl!("Style:")).size(12.0).color(t.text).underline()).clicked() {
-                        app.ui.open_panel = Some("graphicStyles".into());
-                    }
-                    let resp = widgets::chip_button(ui, 22.0, true, |ui, r| crate::panels::graphic_styles::paint_linked(app, ui, r))
-                        .on_hover_text(tl!("Graphic Style"));
-                    egui::Popup::menu(&resp).show(|ui| crate::panels::graphic_styles::picker(app, ui));
                 }
                 ui.separator();
                 crate::panels::character::control_bar(app, ui);

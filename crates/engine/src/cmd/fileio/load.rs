@@ -8,7 +8,7 @@ use vectorcraft_geom::Affine;
 
 use super::super::*;
 use super::pdfimport::LoadOptions;
-use super::{Format, SAVE_FORMATS, absolute_path, file_stamp, format, format_for_name, psdread, read_file};
+use super::{Format, SAVE_FORMATS, absolute_path, file_stamp, format, format_for_name, read_file};
 use crate::{EngineError, Prefs};
 
 /// A file read into a document, with its format and non-fatal import notes.
@@ -81,9 +81,6 @@ pub fn detect(name: &str, bytes: &[u8]) -> Option<&'static Format> {
     if bytes.starts_with(b"%PDF") {
         // .ai and .ait files are PDF inside; the extension keeps the template meaning.
         return by_name.filter(|f| matches!(f.id, "ai" | "ait")).or_else(|| format("pdf"));
-    }
-    if psdread::is_psd(bytes) {
-        return format(if psdread::is_psb(bytes) { "psb" } else { "psd" });
     }
     if let Some(f) = image::guess_format(bytes).ok().and_then(image_format) {
         return Some(f);
@@ -380,32 +377,42 @@ pub(super) fn new_from_template(s: &mut Session, p: &Value) -> Result<Value> {
 /// that default: wasm32 has 4 GB to address and aborts when an allocation fails.
 const MAX_RASTER_ALLOC: u64 = if cfg!(target_arch = "wasm32") { 512 << 20 } else { 2 << 30 };
 
+/// The images [`raster_image`] decodes, (id, MIME type): the formats File › Open and Place read,
+/// and the TIFF, GIF and BMP pictures other apps paste (macOS copies pictures as TIFF).
+fn decodable(f: image::ImageFormat) -> Option<(&'static str, &'static str)> {
+    use image::ImageFormat as F;
+    Some(match f {
+        F::Png => ("png", "image/png"),
+        F::Jpeg => ("jpg", "image/jpeg"),
+        F::WebP => ("webp", "image/webp"),
+        F::Gif => ("gif", "image/gif"),
+        F::Tiff => ("tiff", "image/tiff"),
+        F::Bmp => ("bmp", "image/bmp"),
+        _ => return None,
+    })
+}
+
 /// Decode an image's header (and, for formats stored as PNG, its pixels). CMYK TIFFs are kept as
 /// they are, with their ink amounts ([`ImageBlob::cmyk`]); CMYK TIFFs with an alpha channel, which
-/// the decoder can't read, become RGBA in the active colour settings' CMYK, as do CMYK Photoshop
-/// documents, whose merged image is read ([`psdread`]).
+/// the decoder can't read, become RGBA in the active colour settings' CMYK.
 pub fn raster_image(bytes: &[u8]) -> Result<RasterImage> {
     let ppi = super::ppi::resolution(bytes);
-    if psdread::is_psd(bytes) {
-        let cms = vectorcraft_color::cms::active();
-        return as_png(psdread::decode(bytes, MAX_RASTER_ALLOC, |c| cms.cmyk_to_srgb(c, false)).map_err(err)?, ppi);
-    }
     let mut reader = image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().map_err(err)?;
     let mut limits = image::Limits::default();
     limits.max_alloc = Some(MAX_RASTER_ALLOC);
     reader.limits(limits);
     let kind = reader.format().ok_or_else(|| err("not an image VectorCraft reads (see document.formats)"))?;
-    let f = image_format(kind).ok_or_else(|| err(format!("{kind:?} images can't be opened (see document.formats)")))?;
-    let cmyk = || ImageBlob::new(f.mime, bytes.to_vec()).cmyk().is_some();
-    if matches!(f.id, "png" | "jpg" | "gif" | "webp") || (f.id == "tiff" && cmyk()) {
+    let (id, mime) = decodable(kind).ok_or_else(|| err(format!("{kind:?} images can't be opened (see document.formats)")))?;
+    let cmyk = || ImageBlob::new(mime, bytes.to_vec()).cmyk().is_some();
+    if matches!(id, "png" | "jpg" | "gif" | "webp") || (id == "tiff" && cmyk()) {
         let (width, height) = reader.into_dimensions().map_err(err)?;
-        return stored(bytes.to_vec(), f.mime, (width, height), ppi);
+        return stored(bytes.to_vec(), mime, (width, height), ppi);
     }
     let cmyka = || {
         let cms = vectorcraft_color::cms::active();
         vectorcraft_doc::cmyk::cmyka_tiff_rgba(bytes, |c| cms.cmyk_to_srgb(c, false))
     };
-    let img = match (f.id == "tiff").then(cmyka).flatten() {
+    let img = match (id == "tiff").then(cmyka).flatten() {
         Some(img) => img,
         None => reader.decode().map_err(err)?.to_rgba8(),
     };

@@ -23,7 +23,6 @@ pub const TOOL_GROUPS: &[&[ToolInfo]] = &[
         t("directSelection", "Direct Selection Tool", Some("A"), "tool-direct"),
         t("groupSelection", "Group Selection Tool", None, "tool-group-select"),
     ],
-    &[t("magicWand", "Magic Wand Tool", Some("Y"), "tool-magic-wand")],
     &[t("lasso", "Lasso Tool", Some("Q"), "tool-lasso")],
     &[
         t("pen", "Pen Tool", Some("P"), "tool-pen"),
@@ -36,103 +35,30 @@ pub const TOOL_GROUPS: &[&[ToolInfo]] = &[
         t("type", "Type Tool", Some("T"), "tool-type"),
         t("areaType", "Area Type Tool", None, "tool-type-area"),
         t("typeOnPath", "Type on a Path Tool", None, "tool-type-path"),
-        t("verticalType", "Vertical Type Tool", None, "tool-type-vertical"),
-        t("verticalAreaType", "Vertical Area Type Tool", None, "tool-type-vertical"),
-        t("verticalTypeOnPath", "Vertical Type on a Path Tool", None, "tool-type-path"),
-        t("touchType", "Touch Type Tool", Some("Shift+T"), "tool-touch-type"),
     ],
-    &[
-        t("lineSegment", "Line Segment Tool", Some("\\"), "tool-line"),
-        t("arc", "Arc Tool", None, "tool-arc"),
-        t("spiral", "Spiral Tool", None, "tool-spiral"),
-        t("rectangularGrid", "Rectangular Grid Tool", None, "tool-rect-grid"),
-        t("polarGrid", "Polar Grid Tool", None, "tool-polar-grid"),
-    ],
+    &[t("lineSegment", "Line Segment Tool", Some("\\"), "tool-line"), t("arc", "Arc Tool", None, "tool-arc")],
     &[
         t("rectangle", "Rectangle Tool", Some("M"), "tool-rect"),
         t("roundedRectangle", "Rounded Rectangle Tool", None, "tool-rounded-rect"),
         t("ellipse", "Ellipse Tool", Some("L"), "tool-ellipse"),
         t("polygon", "Polygon Tool", None, "tool-polygon"),
         t("star", "Star Tool", None, "tool-star"),
-        t("flare", "Flare Tool", None, "tool-flare"),
     ],
-    &[t("paintbrush", "Paintbrush Tool", Some("B"), "tool-brush"), t("blobBrush", "Blob Brush Tool", Some("Shift+B"), "tool-blob-brush")],
     &[
-        t("shaper", "Shaper Tool", Some("Shift+N"), "tool-shaper"),
         t("pencil", "Pencil Tool", Some("N"), "tool-pencil"),
         t("smooth", "Smooth Tool", None, "tool-smooth"),
-        t("pathEraser", "Path Eraser Tool", None, "tool-path-eraser"),
         t("join", "Join Tool", None, "tool-join"),
     ],
-    &[
-        t("eraser", "Eraser Tool", Some("Shift+E"), "tool-eraser"),
-        t("scissors", "Scissors Tool", Some("C"), "tool-scissors"),
-        t("knife", "Knife", None, "tool-knife"),
-        t("mirrorCut", "Mirror & Cut Tool", None, "tool-mirror-cut"),
-        t("lineCut", "Line Cut Tool", None, "tool-line-cut"),
-        t("rectCut", "Rectangle Cut Tool", None, "tool-rect-cut"),
-    ],
+    &[t("scissors", "Scissors Tool", Some("C"), "tool-scissors"), t("knife", "Knife", None, "tool-knife")],
     &[t("rotate", "Rotate Tool", Some("R"), "tool-rotate"), t("reflect", "Reflect Tool", Some("O"), "tool-reflect")],
-    &[
-        t("scale", "Scale Tool", Some("S"), "tool-scale"),
-        t("shear", "Shear Tool", None, "tool-shear"),
-        t("reshape", "Reshape Tool", None, "tool-reshape"),
-    ],
-    &[
-        t("width", "Width Tool", Some("Shift+W"), "tool-width"),
-        t("warp", "Warp Tool", Some("Shift+R"), "tool-warp"),
-        t("twirl", "Twirl Tool", None, "tool-twirl"),
-        t("pucker", "Pucker Tool", None, "tool-pucker"),
-        t("bloat", "Bloat Tool", None, "tool-bloat"),
-        t("scallop", "Scallop Tool", None, "tool-scallop"),
-        t("crystallize", "Crystallize Tool", None, "tool-crystallize"),
-        t("wrinkle", "Wrinkle Tool", None, "tool-wrinkle"),
-    ],
-    &[t("freeTransform", "Free Transform Tool", Some("E"), "tool-free-transform"), t("puppetWarp", "Puppet Warp Tool", None, "tool-puppet")],
-    &[
-        t("shapeBuilder", "Shape Builder Tool", Some("Shift+M"), "tool-shape-builder"),
-        t("livePaintBucket", "Live Paint Bucket", Some("K"), "tool-bucket"),
-        t("livePaintSelection", "Live Paint Selection Tool", Some("Shift+L"), "tool-live-select"),
-    ],
-    &[
-        t("perspectiveGrid", "Perspective Grid Tool", Some("Shift+P"), "tool-perspective"),
-        t("perspectiveSelection", "Perspective Selection Tool", Some("Shift+V"), "tool-perspective-select"),
-    ],
-    &[t("mesh", "Mesh Tool", Some("U"), "tool-mesh")],
+    &[t("scale", "Scale Tool", Some("S"), "tool-scale"), t("shear", "Shear Tool", None, "tool-shear")],
+    &[t("width", "Width Tool", Some("Shift+W"), "tool-width")],
+    &[t("freeTransform", "Free Transform Tool", Some("E"), "tool-free-transform")],
+    &[t("shapeBuilder", "Shape Builder Tool", Some("Shift+M"), "tool-shape-builder")],
     &[t("gradient", "Gradient Tool", Some("G"), "tool-gradient")],
     &[t("eyedropper", "Eyedropper Tool", Some("I"), "tool-eyedropper"), t("measure", "Measure Tool", None, "tool-measure")],
-    &[t("blend", "Blend Tool", Some("W"), "tool-blend")],
-    &[
-        t("symbolSprayer", "Symbol Sprayer Tool", Some("Shift+S"), "tool-symbol"),
-        t("symbolShifter", "Symbol Shifter Tool", None, "tool-symbol"),
-        t("symbolScruncher", "Symbol Scruncher Tool", None, "tool-symbol"),
-        t("symbolSizer", "Symbol Sizer Tool", None, "tool-symbol"),
-        t("symbolSpinner", "Symbol Spinner Tool", None, "tool-symbol"),
-        t("symbolStainer", "Symbol Stainer Tool", None, "tool-symbol"),
-        t("symbolScreener", "Symbol Screener Tool", None, "tool-symbol"),
-        t("symbolStyler", "Symbol Styler Tool", None, "tool-symbol"),
-    ],
-    &[
-        t("columnGraph", "Column Graph Tool", Some("J"), "tool-graph"),
-        t("stackedColumnGraph", "Stacked Column Graph Tool", None, "tool-graph"),
-        t("barGraph", "Bar Graph Tool", None, "tool-graph"),
-        t("stackedBarGraph", "Stacked Bar Graph Tool", None, "tool-graph"),
-        t("lineGraph", "Line Graph Tool", None, "tool-graph"),
-        t("areaGraph", "Area Graph Tool", None, "tool-graph"),
-        t("scatterGraph", "Scatter Graph Tool", None, "tool-graph"),
-        t("pieGraph", "Pie Graph Tool", None, "tool-graph"),
-        t("radarGraph", "Radar Graph Tool", None, "tool-graph"),
-    ],
-    &[
-        t("artboard", "Artboard Tool", Some("Shift+O"), "tool-artboard"),
-        t("slice", "Slice Tool", Some("Shift+K"), "tool-slice"),
-        t("sliceSelection", "Slice Selection Tool", None, "tool-slice"),
-    ],
-    &[
-        t("hand", "Hand Tool", Some("H"), "tool-hand"),
-        t("rotateView", "Rotate View Tool", Some("Shift+H"), "tool-rotate-view"),
-        t("printTiling", "Print Tiling Tool", None, "tool-print-tiling"),
-    ],
+    &[t("artboard", "Artboard Tool", Some("Shift+O"), "tool-artboard")],
+    &[t("hand", "Hand Tool", Some("H"), "tool-hand")],
     &[t("zoom", "Zoom Tool", Some("Z"), "tool-zoom")],
 ];
 
@@ -181,7 +107,7 @@ mod tests {
         sc.sort();
         sc.dedup();
         assert_eq!(sc.len(), n, "duplicate shortcuts");
-        assert!(n > 40);
+        assert!(n > 20);
     }
 
     #[test]

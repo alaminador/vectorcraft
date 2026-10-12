@@ -13,10 +13,7 @@ use vectorcraft_doc::appearance::{AppearanceItem, FillLayer, LineCap, LineJoin, 
 use vectorcraft_doc::{Appearance, Document, Node, NodeId, NodeKind, TraceView};
 use vectorcraft_geom::{FillRule, PathData, Point, Rect, SubPath};
 use vectorcraft_pathops as po;
-use vectorcraft_tools::builder::{
-    self as b, BuilderMap, Touched, sample_polyline,
-    sorted_roots,
-};
+use vectorcraft_tools::builder::{self as b, BuilderMap, Touched, sample_polyline, sorted_roots};
 use vectorcraft_trace as tr;
 
 use super::edit::selected_roots;

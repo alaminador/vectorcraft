@@ -40,8 +40,6 @@ fn kinds_map_to_their_dialogs() {
         ("newDocument", DialogKind::NewDocument),
         ("roundedRectangle", DialogKind::Shape),
         ("lineSegment", DialogKind::Shape),
-        ("rectangularGrid", DialogKind::Shape),
-        ("polarGrid", DialogKind::Shape),
         ("shear", DialogKind::Transform),
         ("splitIntoGrid", DialogKind::PathOp),
         ("artboardOptions", DialogKind::ArtboardOptions),
@@ -237,26 +235,6 @@ fn effect_dialog_applies_to_its_appearance_item() {
 }
 
 #[test]
-fn revolve_dialog_preview_cancel_confirm_and_undo() {
-    let mut app = app();
-    app.run("path.create", json!({"d":"M150 40 L180 60 L180 140 L150 160"})).unwrap();
-    app.run("select.all", json!({})).unwrap();
-    let before = app.session.doc().unwrap().doc.clone();
-    app.run("effect.dialog", json!({"effect":"threeD.revolve","item":null})).unwrap();
-    frame(&mut app, Default::default());
-    assert!(app.session.in_interaction());
-    cancel(&mut app);
-    assert_eq!(app.session.doc().unwrap().doc, before);
-    app.run("effect.dialog", json!({"effect":"threeD.revolve","item":null})).unwrap();
-    app.ui.dialog.as_mut().unwrap().fields.insert("angle".into(), json!(180));
-    frame(&mut app, Default::default());
-    confirm(&mut app).unwrap();
-    assert_ne!(app.session.doc().unwrap().doc, before);
-    app.run("edit.undo", json!({})).unwrap();
-    assert_eq!(app.session.doc().unwrap().doc, before);
-}
-
-#[test]
 fn dialogs_are_as_tall_as_their_content() {
     // The save prompt, shown after a taller dialog, is as tall as its text and buttons: no empty
     // band around the buttons, nothing inherited from the other dialog.
@@ -367,21 +345,6 @@ fn menu_parameter_dialogs_are_compact() {
         eprintln!("{id}: {:.0} × {:.0} in a 1600-point window", wide.width(), wide.height());
         assert!(wide.width() < 420.0, "{id} is {:.0} wide in a 1600-point window", wide.width());
     }
-}
-
-/// A list mixing built-in labels with names translates only the built-in entries: names that
-/// happen to be catalog keys ("Black", "Regular") are shown as they are.
-#[test]
-fn mixed_lists_translate_only_their_built_in_entries() {
-    use crate::i18n::{Lang, tr};
-    let zh = Lang::from_code("zh-hant").unwrap();
-    for key in ["None", "Black", "Regular", "Default"] {
-        assert_ne!(tr(zh, key), key, "{key} must be a catalog key for this test");
-    }
-    let names = ["None", "Black", "Regular", "Default"];
-    assert_eq!(shown_names(zh, &names, |k| k == 0 || k == 3), [tr(zh, "None"), "Black", "Regular", tr(zh, "Default")]);
-    assert_eq!(shown_names(zh, &names, |_| false), names);
-    assert_eq!(shown_names(Lang::EN, &names, |_| true), names);
 }
 
 /// Confirmations and plug-in dialogs are headed by the text they are given (callers translate
@@ -606,121 +569,4 @@ fn zig_zag_has_sliders_and_radio_buttons() {
         assert!(lines.contains(&want), "no {want:?} in {lines:?}");
     }
     assert!(!lines.contains(&"Ridges:"), "{lines:?}");
-}
-
-#[test]
-fn polar_grid_shared_canvas_click_defaults_units_counts_and_history() {
-    use vectorcraft_doc::NodeId;
-    use vectorcraft_tools::{PointerEvent, PointerKind};
-    let mut app = app();
-    app.select_tool("polarGrid");
-    app.run("tool.setOption", json!({"tool": "polarGrid", "values": {"concentric": 2, "radial": 3}})).unwrap();
-    let before = app.session.doc().unwrap().doc.clone();
-    let undo = app.session.doc().unwrap().history.undo.len();
-    for kind in [PointerKind::Down, PointerKind::Up] {
-        crate::canvas::dispatch(&mut app, &PointerEvent::new(kind, 30.0, 40.0), Default::default());
-    }
-    assert_eq!(DialogKind::of("polarGrid"), Some(DialogKind::Shape));
-    let d = app.ui.dialog.as_mut().expect("canvas click opens the shared shape form");
-    assert_eq!(d.fields["width"], json!("100 pt"));
-    assert_eq!(d.fields["height"], json!("100 pt"));
-    assert_eq!((d.fields["concentric"].clone(), d.fields["radial"].clone()), (json!(2), json!(3)));
-    d.fields.insert("width".into(), json!("25.4 mm"));
-    d.fields.insert("height".into(), json!("0.5 in"));
-    frame(&mut app, Default::default());
-    let result = confirm(&mut app).unwrap();
-    assert!(app.ui.dialog.is_none());
-    let s = app.session.doc().unwrap();
-    let group = s.doc.node(NodeId(result["id"].as_u64().unwrap())).unwrap();
-    let children = group.children().unwrap();
-    assert_eq!(children.len(), 6);
-    assert_eq!(children.iter().filter(|n| n.path_data().unwrap().is_closed()).count(), 3);
-    assert_eq!(s.history.undo.len(), undo + 1);
-    let made = s.doc.clone();
-    app.run("edit.undo", json!({})).unwrap();
-    assert_eq!(app.session.doc().unwrap().doc, before);
-    app.run("edit.redo", json!({})).unwrap();
-    assert_eq!(app.session.doc().unwrap().doc, made);
-}
-
-/// #1377: Polar Grid's dialog has a skew slider under each divider count, Create Compound Path
-/// From Ellipses and Fill Grid, opened with the tool's stored values; OK draws with them and
-/// stores them.
-#[test]
-fn polar_grid_dialog_edits_skews_compound_and_fill() {
-    use vectorcraft_doc::{NodeId, NodeKind};
-    let mut app = app();
-    app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
-    app.run("tool.setOption", json!({"tool": "polarGrid", "values": {"concentric": 3, "radial": 4, "radialSkew": 500}})).unwrap();
-    open_tool_dialog(&mut app, "polarGrid", json!({"x": 10, "y": 20}));
-    let text = crate::tests_labels::painted_text(&mut app, |app, ui| show(app, ui.ctx()));
-    let labels = [
-        "Concentric Dividers:",
-        "Skew:",
-        "Inside",
-        "Outside",
-        "Radial Dividers:",
-        "Skew:",
-        "Left",
-        "Right",
-        "Create Compound Path From Ellipses",
-        "Fill Grid",
-    ];
-    let mut from = 0;
-    for label in labels {
-        from += text[from..].find(&format!("{label}\n")).unwrap_or_else(|| panic!("no {label:?} in order in {text}")) + label.len();
-    }
-    assert!(!text.contains("Use Outside Rectangle As Frame"), "{text}");
-    let d = app.ui.dialog.as_mut().unwrap();
-    assert_eq!((d.fields["concentricSkew"].clone(), d.fields["radialSkew"].clone()), (json!(0.0), json!(500.0)));
-    assert_eq!((d.fields["compound"].clone(), d.fields["fill"].clone()), (json!(false), json!(false)));
-    for (key, value) in [("concentricSkew", json!(100)), ("compound", json!(true)), ("fill", json!(true))] {
-        d.fields.insert(key.into(), value);
-    }
-    let result = confirm(&mut app).unwrap();
-    let s = app.session.doc().unwrap();
-    let children = s.doc.node(NodeId(result["id"].as_u64().unwrap())).unwrap().children().unwrap();
-    // Two rings under four radial dividers, all in the current fill.
-    assert_eq!(children.iter().map(|n| matches!(n.kind, NodeKind::Compound { .. })).collect::<Vec<_>>(), [true, true, false, false, false, false]);
-    assert!(children.iter().all(|n| n.appearance.fill().is_some_and(|f| f.paint != vectorcraft_color::Paint::None)));
-    let widths: Vec<f64> = children[0].children().unwrap().iter().map(|n| n.geometric_bounds().unwrap().width()).collect();
-    assert!((widths[0] - 100.0).abs() < 1e-6 && (widths[1] - 93.75).abs() < 1e-6, "outward: {widths:?}");
-    let tips: Vec<f64> = children[3..].iter().map(|n| n.path_data().unwrap().subpaths[0].anchors[1].p.x).collect();
-    assert!(tips.iter().all(|x| *x > 60.0), "right of the top divider: {tips:?}");
-    let saved = json!({"concentric": 3, "radial": 4, "concentricSkew": 100.0, "radialSkew": 500.0, "compound": true, "fill": true});
-    assert_eq!(app.session.tool_options_of("polarGrid"), saved);
-}
-
-#[test]
-fn polar_grid_shared_cancel_reopen_zero_counts_and_failed_creation() {
-    let mut app = app();
-    app.run("tool.setOption", json!({"tool": "polarGrid", "values": {"concentric": 2, "radial": 3}})).unwrap();
-    let before = app.session.doc().unwrap().doc.clone();
-    open_tool_dialog(&mut app, "polarGrid", json!({"x": 10, "y": 20}));
-    let d = app.ui.dialog.as_mut().expect("shared Polar Grid form opens");
-    d.fields.insert("concentric".into(), json!(8));
-    cancel(&mut app);
-    assert_eq!(app.session.doc().unwrap().doc, before);
-    open_tool_dialog(&mut app, "polarGrid", json!({"x": 10, "y": 20}));
-    assert_eq!(app.ui.dialog.as_ref().unwrap().fields["concentric"], json!(2));
-    for key in ["concentric", "radial"] {
-        app.ui.dialog.as_mut().unwrap().fields.insert(key.into(), json!(0));
-    }
-    let result = confirm(&mut app).unwrap();
-    let group = app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(result["id"].as_u64().unwrap())).unwrap();
-    assert_eq!(group.children().unwrap().len(), 1);
-    assert!(group.children().unwrap()[0].path_data().unwrap().is_closed());
-    open_tool_dialog(&mut app, "polarGrid", json!({"x": 10, "y": 20}));
-    assert_eq!(app.ui.dialog.as_ref().unwrap().fields["radial"], json!(0));
-    cancel(&mut app);
-    let layer = app.session.doc().unwrap().doc.layers[0].id;
-    app.run("layer.setProps", json!({"ids": [layer.0], "locked": true})).unwrap();
-    let options = app.session.tool_options_of("polarGrid");
-    let before = app.session.doc().unwrap().doc.clone();
-    open_tool_dialog(&mut app, "polarGrid", json!({"x": 10, "y": 20}));
-    app.ui.dialog.as_mut().unwrap().fields.insert("radial".into(), json!(9));
-    assert!(confirm(&mut app).is_err());
-    assert!(app.ui.dialog.is_none());
-    assert_eq!(app.session.tool_options_of("polarGrid"), options);
-    assert_eq!(app.session.doc().unwrap().doc, before);
 }

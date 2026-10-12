@@ -131,17 +131,6 @@ fn transparency_is_flattened_with_the_flattener_preset() {
 }
 
 #[test]
-fn overprints_are_kept_or_discarded() {
-    let mut s = session(100.0, 100.0, 1);
-    let id = s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 30, "height": 30})).unwrap()["id"].as_u64().unwrap();
-    s.execute("attributes.set", &json!({"ids": [id], "overprintFill": true})).unwrap();
-    let kept = postscript(&b64(&s.execute("document.exportEps", &json!({"previewFormat": "none"})).unwrap()));
-    assert!(kept.contains("true op\n"), "{kept}");
-    let dropped = postscript(&b64(&s.execute("document.exportEps", &json!({"previewFormat": "none", "overprints": "discard"})).unwrap()));
-    assert!(!dropped.contains("true op"));
-}
-
-#[test]
 fn placed_images_are_written_and_previews_are_black_and_white_on_request() {
     let mut s = super::tests_svg::image_session();
     let r = s.execute("document.exportEps", &json!({"previewFormat": "tiffBw", "level": 2})).unwrap();

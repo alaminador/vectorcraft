@@ -76,54 +76,6 @@ fn files_open_only_from_inside_the_read_root() {
 }
 
 #[test]
-fn saves_exports_and_captures_go_only_into_the_write_root() {
-    let (mut server, base) = confined("write", true, true);
-    let sep = std::path::MAIN_SEPARATOR;
-    ok(&mut server, "draw_shape", json!({"shape": "rectangle", "x": 10, "y": 10, "width": 50, "height": 40, "fill": "#1e88e5"}));
-
-    ok(&mut server, "export", json!({"path": s(&base.join("out/art.png"))}));
-    assert!(base.join("out/art.png").is_file());
-    ok(&mut server, "export", json!({"path": s(&base.join("out/art.svg"))}));
-    ok(&mut server, "save_file", json!({"path": s(&base.join("out/doc.vectorcraft"))}));
-    ok(&mut server, "screenshot", json!({"path": s(&base.join("out/shot.png"))}));
-    assert!(base.join("out/shot.png").is_file(), "the backend wrote the capture");
-
-    refused(&mut server, "export", json!({"path": s(&base.join("in/art.png"))}), "outside the write root");
-    refused(&mut server, "export", json!({"path": s(&base.join("outside/art.svg"))}), "outside the write root");
-    refused(&mut server, "export", json!({"path": format!("{}{sep}..{sep}outside{sep}up.png", s(&base.join("out")))}), "outside the write root");
-    refused(&mut server, "save_file", json!({"path": s(&base.join("outside/doc.vectorcraft"))}), "outside the write root");
-    refused(&mut server, "screenshot", json!({"path": s(&base.join("outside/shot.png"))}), "outside the write root");
-    refused(
-        &mut server,
-        "run_command",
-        json!({"command": "document.exportForScreens", "params": {"folder": s(&base.join("outside/screens"))}}),
-        "outside the write root",
-    );
-    refused(
-        &mut server,
-        "run_command",
-        json!({"command": "file.package", "params": {"folder": s(&base.join("outside/pkg"))}}),
-        "outside the write root",
-    );
-    // Folders the app writes on its own later: only inside the roots.
-    refused(
-        &mut server,
-        "run_command",
-        json!({"command": "prefs.set", "params": {"key": "recoveryFolder", "value": s(&base.join("outside"))}}),
-        "outside the write root",
-    );
-    ok(&mut server, "run_command", json!({"command": "prefs.set", "params": {"key": "recoveryFolder", "value": s(&base.join("out"))}}));
-    refused(&mut server, "run_command", json!({"command": "plugin.reload", "params": {"path": s(&base.join("outside"))}}), "outside the read root");
-
-    // The document saved inside the write root saves again in place.
-    ok(&mut server, "save_file", json!({}));
-    let written: Vec<String> =
-        std::fs::read_dir(base.join("outside")).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
-    assert_eq!(written, ["b.svg"], "nothing was written outside the roots");
-    assert!(!base.join("in/art.png").exists());
-}
-
-#[test]
 fn a_root_left_out_grants_none_of_its_access() {
     let (mut server, base) = confined("read-only", true, false);
     ok(&mut server, "open_file", json!({"path": s(&base.join("in/a.svg"))}));

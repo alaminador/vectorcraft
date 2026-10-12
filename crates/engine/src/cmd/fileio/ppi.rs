@@ -19,8 +19,6 @@ pub fn resolution(bytes: &[u8]) -> Option<(f64, f64)> {
         webp(bytes)
     } else if bytes.starts_with(b"BM") {
         bmp(bytes)
-    } else if super::psdread::is_psd(bytes) {
-        super::psdread::resolution(bytes)
     } else {
         None
     };

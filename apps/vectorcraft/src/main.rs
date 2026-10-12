@@ -41,7 +41,6 @@ mod mac_window;
 #[cfg(target_os = "macos")]
 mod open_documents;
 mod prefs_dir;
-mod printing;
 #[cfg(all(windows, not(target_vendor = "win7")))]
 mod system_fonts;
 mod window;
@@ -521,7 +520,6 @@ fn services(parent: Parent, ui: egui::Context) -> Services {
         open_file: Some(Box::new(open_file)),
         pick_folder: Some(Box::new(move || pick_now(PickRequest::Folder, &p4).into_iter().next())),
         // File → Print: the system's printers and print queue.
-        print: Some(Box::new(printing::SystemPrint)),
         ..Default::default()
     }
 }
@@ -778,17 +776,9 @@ fn main() -> std::process::ExitCode {
                     #[cfg(windows)]
                     set_taskbar_icon(w);
                 }
-                // User Defined swatch and graphic style libraries live next to the preferences.
+                // User Defined swatch libraries live next to the preferences.
                 let swatches = prefs_path().and_then(|p| Some(p.parent()?.join("Swatches").to_string_lossy().to_string()));
                 app.session.swatch_libraries.set_user_dir(swatches);
-                let styles = prefs_path().and_then(|p| Some(p.parent()?.join("Graphic Styles").to_string_lossy().to_string()));
-                app.session.style_libraries.set_user_dir(styles);
-                // So do the Libraries panel's libraries; runs without preferences (agents' test
-                // runs) keep theirs for the session only, never touching the user's.
-                if prefs_enabled() {
-                    let libraries = prefs_path().and_then(|p| Some(p.parent()?.join("Libraries").to_string_lossy().to_string()));
-                    app.session.libraries.set_dir(libraries);
-                }
                 // Data Recovery copies live next to the preferences too (none for runs without
                 // preferences, such as agents' test runs, unless the recoveryFolder preference is set).
                 if std::env::var_os("VECTORCRAFT_NO_PREFS").is_none() {
@@ -928,35 +918,5 @@ mod tests {
         if super::CUSTOM_TITLEBAR {
             assert_eq!(super::native_options(true).viewport.decorations, Some(false));
         }
-    }
-
-    /// The file extensions the macOS bundle declares: its document types and its own exported type.
-    fn plist_extensions(plist: &str) -> Vec<&str> {
-        ["<key>CFBundleTypeExtensions</key>", "<key>public.filename-extension</key>"]
-            .iter()
-            .flat_map(|key| plist.split(key).skip(1))
-            .filter_map(|rest| rest.split("</array>").next())
-            .flat_map(|array| array.split("<string>").skip(1))
-            .filter_map(|s| s.split("</string>").next())
-            .collect()
-    }
-
-    /// Finder offers the app for every file File › Open reads (#295, #354) but Photoshop documents
-    /// (`UNASSOCIATED_EXTS`), takes over no other app's files, and hands them to the app rather than
-    /// to AppKit's document machinery.
-    #[test]
-    fn the_macos_bundle_opens_every_readable_format() {
-        let plist = include_str!("../../../packaging/macos/Info.plist.in");
-        let declared = plist_extensions(plist);
-        for e in fileio::OPEN_EXTS.iter().filter(|e| !fileio::UNASSOCIATED_EXTS.contains(e)) {
-            assert!(declared.contains(e), "Info.plist.in doesn't declare .{e}");
-        }
-        for e in &declared {
-            assert!(fileio::OPEN_EXTS.contains(e), "Info.plist.in declares .{e}, which the app doesn't open");
-        }
-        assert!(!plist.contains("<key>NSDocumentClass</key>"), "not an NSDocument app: AppKit would refuse the files");
-        let types = plist.matches("<key>CFBundleTypeName</key>").count();
-        assert!(types > 1 && plist.matches("<key>LSHandlerRank</key>").count() == types, "every document type has a rank");
-        assert_eq!(plist.matches("<string>Owner</string>").count(), 2, "only VectorCraft documents and templates are owned");
     }
 }

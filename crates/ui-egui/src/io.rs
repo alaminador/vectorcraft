@@ -26,19 +26,13 @@ pub fn open_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Opti
         app.status(format!("Imported {what}: {}", names.join(", ")));
         return Ok(Value::Null);
     }
-    if opens == Some(OpensAs::Library) {
-        return crate::panels::libraries::import(app, json!({"data": String::from_utf8_lossy(bytes)})).map(|_| Value::Null);
-    }
-    let swatches = opens == Some(OpensAs::SwatchLibrary);
-    if swatches || opens == Some(OpensAs::StyleLibrary) {
+    if opens == Some(OpensAs::SwatchLibrary) {
         let p = match path {
             Some(path) => serde_json::json!({ "path": path }),
             // `.ase` swatch libraries are binary.
-            None if swatches => serde_json::json!({"name": name, "dataBase64": vectorcraft_format::base64_encode(bytes)}),
-            None => serde_json::json!({"name": name, "data": String::from_utf8_lossy(bytes)}),
+            None => serde_json::json!({"name": name, "dataBase64": vectorcraft_format::base64_encode(bytes)}),
         };
-        let load = if swatches { crate::panels::swatches::load_library } else { crate::panels::graphic_styles::load_library };
-        return load(app, p).map(|_| Value::Null);
+        return crate::panels::swatches::load_library(app, p).map(|_| Value::Null);
     }
     // A PDF with several pages or a password asks first (the Import PDF dialog).
     if crate::dialogs::import_pdf::offer(app, name, bytes, path.clone(), None) {
@@ -54,12 +48,8 @@ pub enum OpensAs {
     /// Flattener, PDF, print or perspective grid presets: imported with command `import`, and
     /// `what` names them in the status bar.
     Presets { import: &'static str, what: &'static str },
-    /// A Libraries panel file: added to the Libraries panel as a new library.
-    Library,
     /// A swatch library: opened in the library panel.
     SwatchLibrary,
-    /// A graphic style library: opened in the library panel.
-    StyleLibrary,
 }
 
 /// The kind of file named `name` (by its extension) that File → Open installs, imports or shows in
@@ -70,17 +60,11 @@ pub fn opens_as(name: &str) -> Option<OpensAs> {
     let presets = [
         (vectorcraft_engine::cmd::flatten::PRESET_EXTS, "flattener.presets.import", "flattener presets"),
         (vectorcraft_engine::cmd::pdfcmds::PRESET_EXTS, "pdf.preset.import", "PDF presets"),
-        (vectorcraft_engine::cmd::printpresets::PRESET_EXTS, "print.presets.import", "print presets"),
-        (vectorcraft_engine::cmd::perspgrid::PRESET_EXTS, "perspective.presets.import", "perspective grid presets"),
     ];
     if let Some(&(_, import, what)) = presets.iter().find(|(exts, ..)| exts.contains(&ext.as_str())) {
         Some(OpensAs::Presets { import, what })
-    } else if vectorcraft_engine::cmd::library::LIBRARY_EXTS.contains(&ext.as_str()) {
-        Some(OpensAs::Library)
     } else if vectorcraft_engine::cmd::swatchlib::LIBRARY_EXTS.contains(&ext.as_str()) {
         Some(OpensAs::SwatchLibrary)
-    } else if ext == vectorcraft_doc::style_libs::STYLES_EXT {
-        Some(OpensAs::StyleLibrary)
     } else {
         None
     }

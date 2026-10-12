@@ -398,7 +398,16 @@ fn link_info(ui: &mut Ui, info: Option<&Value>, units: vectorcraft_doc::Unit) {
             _ => String::new(),
         }
     };
-    let row = super::doc_info::row;
+    let row = |ui: &mut egui::Ui, label: &str, value: String| {
+        let t = Tokens::get(ui.ctx());
+        ui.horizontal(|ui| {
+            ui.label(egui::RichText::new(label).size(12.0).color(t.text_dim));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                // Long values (paths) are cut to the panel's width; hovering shows them whole.
+                ui.add(egui::Label::new(egui::RichText::new(value).size(12.0).color(t.text)).truncate());
+            });
+        });
+    };
     row(ui, tl!("Name"), i["fileName"].as_str().or(i["name"].as_str()).unwrap_or_default().into());
     row(ui, tl!("Format"), i["format"].as_str().unwrap_or_default().into());
     row(ui, tl!("Color Space"), i["colorMode"].as_str().unwrap_or_default().into());

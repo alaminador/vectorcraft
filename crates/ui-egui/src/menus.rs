@@ -398,28 +398,22 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{name?} (default: the selected path's brush, else the current brush) open its Brush Options, what double-clicking a brush in the Brushes panel opens (dialog `brushOptions`): Calligraphic (fields name, angle −180..180, roundness 0..100, size 0..1296 pt, angleMode/roundnessMode/sizeMode: fixed|random|pressure, angleVariation/roundnessVariation/sizeVariation), Bristle (fields name, shape, size, length, density, thickness, opacity, stiffness), Scatter (fields sizeMin/sizeMax/sizeMode, spacingMin/spacingMax/spacingMode, scatterMin/scatterMax/scatterMode, rotationMin/rotationMax/rotationMode with modes fixed|random|pressure, rotationRelativeTo: page|path), Art (fields width %, scaleMode: proportional|stretch|betweenGuides, guideStart/guideEnd % of the art length, direction: leftToRight|rightToLeft|topToBottom|bottomToTop, flipAlong, flipAcross) or Pattern (fields scale %, spacing %, fit: stretch|addSpace|approximate, flipAlong, flipAcross); Scatter, Art and Pattern also colorization: none|tints|tintsAndShades|hueShift and keyColor; OK runs brush.options",
     ),
     (
-        "ui.graphicStyleOptions",
-        "Graphic Style Options…",
-        "",
-        "{name?} open Graphic Style Options (dialog `graphicStyleOptions`, field `name`): for style `name` OK renames it (graphicStyle.rename); without, OK makes a new style of that name from the selection (graphicStyle.new)",
-    ),
-    (
         "tool.options",
         "Tool Options…",
         "",
         "{tool: id} what double-clicking a tool button opens: hand → fits the artboard in the window (view.fitArtboard), zoom → 100% (view.actualSize), rotate|scale|reflect|shear → that Object › Transform dialog (dialog `rotate`, `scale`, `reflect` or `shear`; error `nothing selected` without a selection), selection|directSelection|groupSelection → the Move dialog (dialog `move`; the same error), gradient|magicWand → the Gradient or Magic Wand panel (window.panel), artboard → Artboard Options of the active artboard (dialog `artboardOptions`, fields index, name, x, y, width, height; OK runs artboard.setProps), flare → Flare Tool Options (dialog `flareOptions`, fields diameter and pathLength (pt), opacity, brightness, growth, fuzziness, longest, rayFuzziness, largest (%), rays, rings, direction (°), raysOn, ringsOn; OK runs tool.setOption {tool: \"flare\", values}: the next flare dragged out uses them, and a Flare click's dialog, which also has x and y, draws one there with them), columnGraph|stackedColumnGraph|barGraph|stackedBarGraph|lineGraph|areaGraph|scatterGraph|pieGraph|radarGraph → Graph Type for the selected graph (dialog `command` running graph.setType; an error without one), symbolSprayer|symbolShifter|symbolScruncher|symbolSizer|symbolSpinner|symbolStainer|symbolScreener|symbolStyler → Symbolism Tools Options (dialog `symbolismOptions`, fields tool, diameter (pt), intensity and density (1–10), shared by the eight tools; OK runs tool.setOption {tool, values}), blend → Blend Options, perspectiveGrid → Perspective Grid Options, eyedropper → Eyedropper Options (dialog `eyedropperOptions`, fields sampleSize, pickUp, apply; OK runs eyedropper.setOptions), printTiling → resets the print tiling (print.tiling.set {reset: true}), warp|twirl|pucker|bloat|scallop|crystallize|wrinkle → that tool's Tool Options (dialog `liquifyOptions`, fields tool, width, height, angle, intensity %, usePressure, detail, simplify, simplifyOn, rate, complexity, horizontal %, vertical %, affectAnchors, affectIn, affectOut, showBrush; OK runs tool.setOption {tool, values}), pencil|paintbrush|smooth|blobBrush|eraser → that tool's Tool Options (dialog `freehandOptions`, fields tool and the options the tool keeps: fidelity (pt), fill, closeWithin and editWithin (px, 0 is off), size (pt); OK runs tool.setOption {tool, values})",
     ),
     (
-        "ui.colorGuideOptions",
-        "Color Guide Options…",
-        "",
-        "{} open Color Guide Options (dialog `colorGuideOptions`, fields `steps` 1–20 and `amount` 0–100): OK sets the Color Guide panel's variation grid (read back with `ui.inspect`: ui.color_guide; engine: color.harmony)",
-    ),
-    (
         "ui.colorBalanceDialog",
         "Adjust Color Balance…",
         "",
         "{} open Adjust Colors for the selection (dialog `colorBalance`, fields `mode` gray|rgb|cmyk|global, channels r g b / c m y k / gray / tint (global) −100..100, `convert`, `fill`, `stroke`, `preview`): previews live, OK runs edit.colors.adjustBalance as one undo step",
+    ),
+    (
+        "ui.tileEdgeColor",
+        "Tile Edge Color…",
+        "",
+        "{} open Tile Edge Color (dialog `tileEdgeColor`, field `color`: #rrggbb or a preset name such as \"Light Blue\"); OK sets the preference patternTileEdgeColor (prefs.set), the colour of the tile edge and swatch bounds in pattern editing mode",
     ),
     (
         "ui.saturateDialog",
@@ -456,12 +450,6 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     ("window.userSwatchLibrary9", "User Swatch Library 9", "", "{} open the 9. User Defined swatch library"),
     ("window.userSwatchLibrary10", "User Swatch Library 10", "", "{} open the 10. User Defined swatch library"),
     (
-        "ui.mergeGraphicStyles",
-        "Merge Graphic Styles…",
-        "",
-        "{names: [two or more styles]} open Graphic Style Options (dialog `graphicStyleOptions`, field `name`) to name the style OK merges from them (graphicStyle.merge)",
-    ),
-    (
         "ui.layerOptions",
         "Options for Selection…",
         "",
@@ -486,73 +474,10 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{ids?: [id…] (default: every row that holds others), open?: bool (default true)} open or close rows of the Layers panel, as clicking their triangles does → {count}",
     ),
     (
-        "ui.tileEdgeColor",
-        "Tile Edge Color…",
-        "",
-        "{} open Tile Edge Color (dialog `tileEdgeColor`, field `color`: #rrggbb or a preset name such as \"Light Blue\"); OK sets the preference patternTileEdgeColor (prefs.set), the colour of the tile edge and swatch bounds in pattern editing mode",
-    ),
-    (
-        "ui.flattenTransparencyDialog",
-        "Flatten Transparency…",
-        "",
-        "{} open Flatten Transparency for the selection (dialog `flattenTransparency`, fields `preset` (a preset name: setting it loads its options), balance 0..100, lineArtPpi, gradientPpi 1..2400, textToOutlines, strokesToOutlines, clipComplexRegions, antiAlias, preserveAlpha, preserveOverprints, `preview` (off at first)): OK runs object.flattenTransparency with those options as one undo step",
-    ),
-    (
-        "ui.flattenerPresetsDialog",
-        "Transparency Flattener Presets…",
-        "",
-        "{selected?: preset name} open the presets manager (dialog `flattenerPresets`, fields `selected`, then the selected preset's `name` and option keys: setting them on a saved preset saves it, a new `name` renames it; built-in presets don't change). New, Delete, Import… and Export… run flattener.presets.save / delete / import / export",
-    ),
-    (
-        "ui.flattenerPreview",
-        "Flattener Preview",
-        "",
-        "{highlight?: none|rasterizedRegions|transparentObjects|allAffected|expandedPatterns|outlinedStrokes|outlinedText|allRasterized, overprints?: preserve|simulate|discard, preset?: name (loads its options), options?: {option keys, over the preset's}, showOptions?} set the Flattener Preview panel (ui.inspect: ui.flattener_preview), show it and refresh its snapshot → what flattener.preview answers for it",
-    ),
-    (
-        "window.graphicStyleLibrary",
-        "Graphic Style Library",
-        "",
-        "{library: id or name (see graphicStyle.libraries) | null (close)} open the read-only library panel on a graphic style library (UI state `library_panel`, kind graphicStyles); clicking a style there runs graphicStyle.addFromLibrary with apply (Alt: add) → {open, name, count}",
-    ),
-    (
-        "window.graphicStyleLibrary.other",
-        "Other Library…",
-        "",
-        "{path?} (default: pick a file) load a .vcstyles library, or another document's graphic styles (engine: graphicStyle.loadLibrary), and open it in the library panel",
-    ),
-    (
-        "ui.saveGraphicStyleLibrary",
-        "Save Graphic Style Library…",
-        "",
-        "{names?: [the styles selected in the Graphic Styles panel]} open Save Graphic Style Library (dialog `saveGraphicStyleLibrary`: name, user: save to the user library folder, selectedOnly); OK runs graphicStyle.saveLibrary",
-    ),
-    (
-        "window.userGraphicStyleLibrary1",
-        "User Graphic Style Library 1",
-        "",
-        "{} open the 1. User Defined graphic style library (graphicStyle.libraries, category user)",
-    ),
-    ("window.userGraphicStyleLibrary2", "User Graphic Style Library 2", "", "{} open the 2. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary3", "User Graphic Style Library 3", "", "{} open the 3. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary4", "User Graphic Style Library 4", "", "{} open the 4. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary5", "User Graphic Style Library 5", "", "{} open the 5. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary6", "User Graphic Style Library 6", "", "{} open the 6. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary7", "User Graphic Style Library 7", "", "{} open the 7. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary8", "User Graphic Style Library 8", "", "{} open the 8. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary9", "User Graphic Style Library 9", "", "{} open the 9. User Defined graphic style library"),
-    ("window.userGraphicStyleLibrary10", "User Graphic Style Library 10", "", "{} open the 10. User Defined graphic style library"),
-    (
         "ui.expandDialog",
         "Expand…",
         "",
         "{} open Expand for the selection (dialog `expand`, fields object, fill, stroke (all on; one the selection has nothing for is disabled, see object.expand.info), gradient: objects|mesh, steps 1..1000 (255)): OK runs object.expand with them as one undo step",
-    ),
-    (
-        "attributes.openUrl",
-        "Browser",
-        "",
-        "{url?} open url, else the selection's URL (attributes.info), in the web browser (the Attributes panel's Browser button) → {url}",
     ),
     (
         "ui.spotColors",
@@ -577,12 +502,6 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "Corners…",
         "",
         "{id?, corners?: [i…]} open Corners for path `id` (default: the selected one) and its corners (anchor indices of the path with its corners uncut, as object.setLiveShape takes them: a rectangle's 0 top-left, 1 top-right, 2 bottom-right, 3 bottom-left; default: the Direct-Selected corners, else every corner) (dialog `corners`: kind (round|invertedRound|chamfer), radius (pt); double-clicking a corner widget opens it too): OK runs object.setLiveShape",
-    ),
-    (
-        "ui.colorGuideLimit",
-        "Limit Color Guide to Library",
-        "",
-        "{library: swatch library id or name (see swatch.library.list) | \"document\" (the document's swatches) | \"\" or null (no limit)} limit the Color Guide panel's colours to that library: every harmony colour and variation snaps to its nearest colour, as color.harmony {limitTo} answers (ui.inspect: ui.color_guide_limit) → {limitTo, name}",
     ),
     (
         "ui.savePdfDialog",
@@ -654,29 +573,10 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{id?} show the file of linked image `id` (default: the selected linked image) in the system's file manager → {path}",
     ),
     (
-        "ui.placementOptionsDialog",
-        "Placement Options…",
-        "",
-        "{ids?} open Placement Options for images `ids` (default: the selected ones; dialog `placementOptions`: ids, preserve, align, clip, see links.placementOptions); OK runs links.placementOptions",
-    ),
-    (
         "ui.findLinksInFolder",
         "Find Linked Files in Folder…",
         "",
         "{folder?, ids?: [image or placed document ids]} the Links panel's Find in Folder…: asks for a folder (or takes folder), then opens Find Linked Files (dialog `findLinks`) looking in it and its subfolders for the files of linked objects `ids` (default: the selected linked images and placed documents, else every missing file; links.findFiles). An error when there is nothing to look for. Disabled where there is no folder picker (the web)",
-    ),
-    (
-        "ui.packageDialog",
-        "Package…",
-        "Cmd+Alt+Shift+P",
-        "{} open Package for the saved document (dialog `package`: folder, name, copyLinks, linksFolder, relink, copyFonts, report; a document never saved asks to Save As first); OK saves unsaved changes, runs file.package (the web downloads the zip) and offers file.showPackage",
-    ),
-    ("file.showPackage", "Show Package", "", "{folder} show a package folder (file.package's folder) in the file manager → {folder}"),
-    (
-        "docInfo.save",
-        "Save Document Info…",
-        "",
-        "{path?, selectionOnly?} write Document Info's text report (document.info {format: \"text\"}) to path, else a picked file (the web downloads it) → {path}",
     ),
     (
         "ui.epsOptionsDialog",
@@ -685,179 +585,16 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{path?, useArtboards?, range?, …document.exportEps options} open EPS Options (dialog `epsOptions`: fields = these options over the ones used last); OK checks them, remembers them and writes path (else asks). Export As… → EPS opens it too",
     ),
     (
-        "file.saveForWeb",
-        "Save for Web (Legacy)…",
-        "Cmd+Alt+Shift+S",
-        "{} open Save for Web (dialog `saveForWeb`: fields = the webExport.settings settings, `preset` loads a preset, __view: original|optimized|2up|4up, __zoom, __kbps; Save… remembers the settings and writes the files, Done only remembers them); with settings = document.exportForWeb, written to path, else a picked file (the web downloads the files) → {path, files, bytes}",
-    ),
-    (
-        "file.saveForWeb.browser",
-        "Preview in Browser",
-        "",
-        "{…document.exportForWeb settings} write the HTML page and its images to a temporary folder and open the page in the default browser (desktop) → {path}",
-    ),
-    (
         "file.exportSelection",
         "Export Selection…",
         "",
         "{multiple?: true} collect the selected objects as assets (assets.add: one per object; false: one of them all) and open Export for Screens on its Assets tab with them checked → {assets: [asset id…]}; document.exportSelection exports the selection in one go instead",
     ),
     (
-        "css.copy",
-        "Copy Selected Style",
-        "",
-        "{scope?: selection|all (default selection), …css.selection options} copy the CSS of the selection (css.selection; all: css.generate) to the clipboard (CSS Properties panel) → {css, rules: n}",
-    ),
-    (
-        "css.exportFile",
-        "Export CSS…",
-        "",
-        "{path?, scope?: selection|all (default selection), …css.selection options} css.export written to path, else a picked file (the web downloads it), with the pictures of rasterized art next to it (CSS Properties panel: Export Selected CSS…, Export All…) → {path, rules, images: [path…]}",
-    ),
-    (
-        "file.print",
-        "Print…",
-        "Cmd+P",
-        "{} open the Print dialog (dialog `print`: the print.setup settings, preset (setting it loads that print preset; Save Preset… saves them as one), printer, toFile; Print keeps the settings with the document and prints, Done (discard: true) only keeps them); with params {settings? (over the document's), printer? (print.printers name; \"\" the default), toFile?, path?, format?: pdf|postscript, level?, flattenerPreset? (as engine file.print)} print without it: the print-ready PDF (engine file.print) goes to the printer → {pages, printer, printed: true, warnings}; with toFile, a path or no printing here (no print service) it is saved as a PDF at path (else a picked file, the web downloads it) → {path, pages, printed: false, warnings}; a PostScript file (format postscript, or a .ps path) is always saved that way",
-    ),
-    (
-        "print.printers",
-        "Printers",
-        "",
-        "{} → {printers: [{name, default}] (the system's printers), service (printing is available; else Print saves a PDF), setup (print.printerSetup can open the printer settings)}",
-    ),
-    ("print.printerSetup", "Printer Setup…", "", "{printer?} open the system's settings of the printer (the Print dialog's Setup…; desktop)"),
-    (
-        "ui.printPresetsDialog",
-        "Print Presets…",
-        "",
-        "{selected?: preset name} open Edit → Print Presets (dialog `printPresets`, field `selected`): [Default] (protected) and the saved presets, with how the selected one differs from [Default]. New… and Edit… open the preset editor (ui.printPresetDialog); Delete, Import… and Export… run print.presets.delete / import / export",
-    ),
-    (
-        "ui.printPresetDialog",
-        "Print Preset",
-        "",
-        "{name?: a saved preset to edit | preset?: the preset a new one starts from (default [Default])} open the preset editor (dialog `printPreset`: the Print dialog's settings fields plus `name`); OK runs print.presets.save and returns to Print Presets",
-    ),
-    (
-        "ui.perspectiveGridDialog",
-        "Define Perspective Grid…",
-        "",
-        "{} open View › Perspective Grid › Define Grid (dialog `perspectiveGrid`, prefilled from the grid: the fields of perspective.grid.define); OK runs perspective.grid.define",
-    ),
-    (
-        "ui.perspectivePresetsDialog",
-        "Perspective Grid Presets…",
-        "",
-        "{selected?} open Edit › Perspective Grid Presets (dialog `perspectiveGridPresets`, field `selected`): New… and Edit… open the preset editor (dialog `perspectiveGrid` with `__mode` edit), whose OK runs perspective.presets.save and comes back; Delete, Import… and Export… run perspective.presets.*",
-    ),
-    (
-        "ui.savePerspectivePreset",
-        "Save Grid as Preset…",
-        "",
-        "{} open View › Perspective Grid › Save Grid as Preset (dialog `perspectiveGrid` with `__mode` save, `name` a new preset name): OK runs perspective.presets.save with the fields",
-    ),
-    (
-        "ui.perspectiveUserPreset1.1",
-        "One Point Perspective Preset 1",
-        "",
-        "{} apply the 1. saved 1-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset1.2",
-        "One Point Perspective Preset 2",
-        "",
-        "{} apply the 2. saved 1-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset1.3",
-        "One Point Perspective Preset 3",
-        "",
-        "{} apply the 3. saved 1-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset1.4",
-        "One Point Perspective Preset 4",
-        "",
-        "{} apply the 4. saved 1-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset1.5",
-        "One Point Perspective Preset 5",
-        "",
-        "{} apply the 5. saved 1-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset2.1",
-        "Two Point Perspective Preset 1",
-        "",
-        "{} apply the 1. saved 2-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset2.2",
-        "Two Point Perspective Preset 2",
-        "",
-        "{} apply the 2. saved 2-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset2.3",
-        "Two Point Perspective Preset 3",
-        "",
-        "{} apply the 3. saved 2-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset2.4",
-        "Two Point Perspective Preset 4",
-        "",
-        "{} apply the 4. saved 2-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset2.5",
-        "Two Point Perspective Preset 5",
-        "",
-        "{} apply the 5. saved 2-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset3.1",
-        "Three Point Perspective Preset 1",
-        "",
-        "{} apply the 1. saved 3-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset3.2",
-        "Three Point Perspective Preset 2",
-        "",
-        "{} apply the 2. saved 3-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset3.3",
-        "Three Point Perspective Preset 3",
-        "",
-        "{} apply the 3. saved 3-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset3.4",
-        "Three Point Perspective Preset 4",
-        "",
-        "{} apply the 4. saved 3-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
-        "ui.perspectiveUserPreset3.5",
-        "Three Point Perspective Preset 5",
-        "",
-        "{} apply the 5. saved 3-point perspective grid preset (perspective.grid.preset)",
-    ),
-    (
         "ui.blendOptions",
         "Blend Options…",
         "",
         "{} open Blend Options (Object › Blend › Blend Options…, the Blend tool's double-click, Alt-click and toolbar button; dialog `blendOptions`: spacing smooth|steps|distance, steps, distance (pt), orientation page|path, preview) on the selected blend's options, previewed live: OK runs object.blend.options as one undo step; with no blend selected it sets what new blends start with",
-    ),
-    (
-        "ui.perspectivePlane",
-        "Perspective Plane Options…",
-        "",
-        "{plane?: left|right|ground (default: the active plane)} open the plane's options, as double-clicking its plane widget does (dialog `perspectivePlane`: location (pt along the plane's normal), objects: none|move|copy): OK runs perspective.plane.move",
     ),
 ];
 
@@ -1261,13 +998,8 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             crate::dialogs::new_color_group::open(app, names.unwrap_or_default())
         }
         "ui.colorPicker" => crate::dialogs::open_color_picker(app, p),
-        "ui.graphicStyleOptions" => crate::dialogs::graphic_style_options::open(app, s("name").as_deref()),
         "ui.brushOptions" => crate::dialogs::brush_options::open(app, s("name").as_deref()),
         "tool.options" => crate::toolbar::open_options(app, &s("tool").unwrap_or_default()),
-        "ui.colorGuideOptions" => {
-            crate::dialogs::color_guide_options::open(app);
-            Ok(Value::Null)
-        }
         "ui.colorBalanceDialog" => {
             crate::dialogs::color_balance::open(app);
             Ok(Value::Null)
@@ -1286,50 +1018,22 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             Some(l) => crate::panels::swatches::open_library(app, &json!({ "library": l.id })),
             None => Err("no such user library".into()),
         },
-        "ui.mergeGraphicStyles" => {
-            let names = p.get("names").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect());
-            crate::dialogs::graphic_style_options::open_merge(app, names.unwrap_or_default())
-        }
         "ui.tileEdgeColor" => crate::dialogs::tile_edge_color::open(app),
         "ui.layerOptions" => crate::dialogs::layer_options::open(app, p),
         "ui.newLayer" => crate::dialogs::layer_options::open_new(app, p),
         "ui.layersPanelOptions" => crate::dialogs::layers_panel_options::open(app),
         "ui.layersExpand" => crate::panels::layers::expand(app, p),
-        "ui.flattenTransparencyDialog" => {
-            crate::dialogs::flatten::open(app);
-            Ok(Value::Null)
-        }
-        "ui.flattenerPresetsDialog" => {
-            crate::dialogs::flattener_presets::open(app, s("selected").as_deref());
-            Ok(Value::Null)
-        }
-        "ui.flattenerPreview" => crate::panels::flattener_preview::command(app, p),
-        "window.graphicStyleLibrary" => crate::panels::graphic_styles::open_library(app, p),
-        "window.graphicStyleLibrary.other" => crate::panels::graphic_styles::other_library(app, s("path")),
-        "ui.saveGraphicStyleLibrary" => {
-            let names = p.get("names").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect());
-            crate::dialogs::save_style_library::open(app, names.unwrap_or_default())
-        }
-        id if id.starts_with(crate::panels::graphic_styles::USER_SLOT) => match crate::panels::graphic_styles::user_library(app, id) {
-            Some(l) => crate::panels::graphic_styles::open_library(app, &json!({ "library": l.id })),
-            None => Err("no such user library".into()),
-        },
         "ui.expandDialog" => crate::dialogs::expand::open(app),
-        "attributes.openUrl" => crate::panels::attributes::open_url(app, p),
         "ui.spotColors" => crate::dialogs::spot_colors::open(app),
-        "ui.menuDialog" => match s("command").as_deref() {
-            Some(c) if crate::dialogs::envelope::opens(c) => crate::dialogs::envelope::open(app, c),
-            c => match c.and_then(|c| menu_dialog(app, c)) {
-                Some((kind, fields)) => {
-                    app.ui.dialog = Some(crate::state::Dialog::new(kind, fields));
-                    Ok(Value::Null)
-                }
-                None => Err("`command` must be a command whose menu item opens a dialog (see ui.menuDialog)".into()),
-            },
+        "ui.menuDialog" => match s("command").as_deref().and_then(|c| menu_dialog(app, c)) {
+            Some((kind, fields)) => {
+                app.ui.dialog = Some(crate::state::Dialog::new(kind, fields));
+                Ok(Value::Null)
+            }
+            None => Err("`command` must be a command whose menu item opens a dialog (see ui.menuDialog)".into()),
         },
         "ui.widthPointEdit" => crate::dialogs::width_point::open(app, p),
         "ui.corners" => crate::dialogs::corners::open(app, p),
-        "ui.colorGuideLimit" => crate::panels::color_guide::set_limit(app, p),
         "ui.savePdfDialog" => crate::dialogs::open_save_pdf(app, p),
         "file.exportAs" if s("path").is_none() => {
             crate::dialogs::open_export_as(app, s("format").as_deref(), p);
@@ -1343,30 +1047,16 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             Ok(Value::Null)
         }
         "ui.pdfPresetDialog" => crate::dialogs::open_pdf_preset(app, p),
-        // Save for Office Documents…: its dialog; with options, pick the file (or write `path`).
-        "document.exportForOffice" if p.as_object().is_none_or(|o| o.is_empty()) => crate::dialogs::office_export::open(app),
-        "document.exportForOffice" => io::save_command_output(app, id, "png", p.clone()).map(|path| json!({ "path": path })),
         "links.editOriginal" => crate::panels::links::open_file(app, p, false),
         "links.reveal" => crate::panels::links::open_file(app, p, true),
-        "ui.placementOptionsDialog" => crate::dialogs::placement_options::open(app, p),
         "ui.findLinksInFolder" => {
             crate::dialogs::find_links::find_in_folder_command(app, s("folder"), p.get("ids").and_then(Value::as_array).cloned())
         }
-        "ui.packageDialog" => crate::dialogs::package::open(app),
-        "file.showPackage" => crate::dialogs::package::show_package(app, p),
-        "docInfo.save" => crate::panels::doc_info::save_report(app, p),
-        // Slice Options… and Divide Slices…: their dialogs, on the selected slices.
-        "object.slice.options" if p.as_object().is_none_or(|o| o.is_empty()) => crate::dialogs::slices::open_options(app),
-        "object.slice.divide" if p.as_object().is_none_or(|o| o.is_empty()) => crate::dialogs::slices::open_divide(app),
         "ui.epsOptionsDialog" if app.session.active().is_none() => Err("no document".into()),
         "ui.epsOptionsDialog" => {
             crate::dialogs::eps_options::open(app, p);
             Ok(Value::Null)
         }
-        // Save for Web: its dialog; with settings, write the files.
-        "file.saveForWeb" if p.as_object().is_none_or(|o| o.is_empty()) => crate::dialogs::save_for_web::open(app),
-        "file.saveForWeb" => crate::dialogs::save_for_web::save(app, p.clone()),
-        "file.saveForWeb.browser" => crate::dialogs::save_for_web::browser_preview(app, p),
         // File → Export Selection…: the selection becomes assets, shown checked on Export for
         // Screens' Assets tab.
         "file.exportSelection" => app.run("assets.add", json!({ "multiple": p.get("multiple").and_then(Value::as_bool).unwrap_or(true) })).map(|r| {
@@ -1374,36 +1064,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             crate::dialogs::open_export_for_screens_assets(app, Some(&ids));
             json!({ "assets": ids })
         }),
-        "css.copy" => crate::panels::css_properties::copy(app, p),
-        "css.exportFile" => crate::panels::css_properties::export_file(app, p),
-        // File → Print…: its dialog; with params, print (or save the job as a PDF) without it.
-        "file.print" if p.as_object().is_none_or(|o| o.is_empty()) => crate::dialogs::print::open(app),
-        "file.print" => crate::print::run(app, p),
-        "print.printers" => Ok(crate::print::printers(app)),
-        "print.printerSetup" => {
-            let printer = s("printer").filter(|n| !n.is_empty());
-            match app.services.print.as_mut() {
-                Some(service) => service.setup(printer.as_deref()).map(|_| Value::Null),
-                None => Err("printing isn't available here".into()),
-            }
-        }
-        "ui.printPresetsDialog" => {
-            crate::dialogs::print_presets::open(app, s("selected").as_deref());
-            Ok(Value::Null)
-        }
-        "ui.printPresetDialog" => crate::dialogs::print::open_preset(app, p),
-        "ui.perspectiveGridDialog" => crate::dialogs::perspective_grid::open(app),
-        "ui.perspectivePresetsDialog" => {
-            crate::dialogs::perspective_presets::open(app, s("selected").as_deref());
-            Ok(Value::Null)
-        }
-        "ui.savePerspectivePreset" => crate::dialogs::perspective_grid::open_save(app),
-        id if id.starts_with(crate::dialogs::perspective_presets::SLOT) => match crate::dialogs::perspective_presets::slot_preset(app, id) {
-            Some(name) => app.run("perspective.grid.preset", json!({ "name": name })),
-            None => Err("no such perspective grid preset".into()),
-        },
         "ui.blendOptions" => crate::dialogs::blend_options::open(app),
-        "ui.perspectivePlane" => crate::dialogs::perspective_plane::open(app, p),
         _ => return None,
     };
     Some(r)
@@ -1458,9 +1119,6 @@ pub fn checked(app: &VectorcraftApp, id: &str, p: &Value) -> Option<bool> {
         })
     };
     Some(match id {
-        "type.orientation.vertical" | "type.orientation.horizontal" => {
-            selected_text(false).is_some_and(|t| t.vertical == (id == "type.orientation.vertical"))
-        }
         "view.outline" => v.outline,
         "view.pixelPreview" => v.pixel_preview,
         "view.trimView" => v.trim_view,
@@ -1500,13 +1158,8 @@ pub fn checked(app: &VectorcraftApp, id: &str, p: &Value) -> Option<bool> {
         "window.collapseDock" => app.ui.dock_collapsed,
         "window.workspace" => p.get("name").and_then(Value::as_str) == Some(app.ui.workspace.as_str()),
         "window.brightness" => p.get("brightness").and_then(Value::as_str).and_then(Brightness::parse) == Some(app.ui.brightness),
-        "view.slices.lock" => app.session.slices_locked(),
-        "object.slice.clipToArtboard" => app.session.active().is_some_and(|d| d.doc.slices_clip_to_artboard),
         "view.proofColors" => vectorcraft_render::proof::view().proof_colors,
-        "view.overprintPreview" => vectorcraft_render::proof::view().overprint,
         "view.proofSetup" => p.get("target").and_then(Value::as_str) == Some(vectorcraft_render::proof::view().setup.target.id().as_str()),
-        "perspective.grid.snap" => perspective_grid(app).is_some_and(|g| g.snap),
-        "perspective.grid.lockStation" => perspective_grid(app).is_some_and(|g| g.lock_station),
         "file.documentColorMode" | "object.convertDocumentColorMode" => {
             let cmyk = app.session.active().is_some_and(|d| d.doc.color_mode == vectorcraft_engine::doc::ColorMode::Cmyk);
             p.get("mode").and_then(Value::as_str) == Some(if cmyk { "cmyk" } else { "rgb" })
@@ -1517,11 +1170,6 @@ pub fn checked(app: &VectorcraftApp, id: &str, p: &Value) -> Option<bool> {
         }
         _ => return None,
     })
-}
-
-/// The active document's perspective grid (View → Perspective Grid toggles).
-fn perspective_grid(app: &VectorcraftApp) -> Option<vectorcraft_tools::distort::perspective::PerspectiveGrid> {
-    app.session.active().map(|d| vectorcraft_tools::distort::perspective::PerspectiveGrid::current(&d.doc))
 }
 
 /// Label for toggles whose text flips (Outline/Preview, Hide/Show …).
@@ -1557,8 +1205,6 @@ pub fn dynamic_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
         "view.guides" => if v.guides { "Hide Guides" } else { "Show Guides" }.into(),
         "view.grid" => if v.grid { "Hide Grid" } else { "Show Grid" }.into(),
         "view.guides.lock" => if app.session.guides_locked() { "Unlock Guides" } else { "Lock Guides" }.into(),
-        "view.slices.hide" => if app.session.slices_hidden() { "Show Slices" } else { "Hide Slices" }.into(),
-        "view.printTiling" => if app.session.active().is_some_and(|d| d.print_tiling) { "Hide Print Tiling" } else { "Show Print Tiling" }.into(),
         id if id.starts_with("file.openRecent") => recent_slot(app, id)
             .map(|p| std::path::Path::new(p).file_name().map_or(p.clone(), |f| f.to_string_lossy().to_string()))
             .unwrap_or_else(|| "—".into()),
@@ -1578,15 +1224,6 @@ pub fn dynamic_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
         id if id.starts_with(crate::panels::swatches::USER_SLOT) => {
             crate::panels::swatches::user_library(app, id).map_or_else(|| "—".into(), |l| l.name)
         }
-        id if id.starts_with(crate::panels::graphic_styles::USER_SLOT) => {
-            crate::panels::graphic_styles::user_library(app, id).map_or_else(|| "—".into(), |l| l.name)
-        }
-        id if id.starts_with(crate::dialogs::perspective_presets::SLOT) => {
-            crate::dialogs::perspective_presets::slot_preset(app, id).unwrap_or_else(|| "—".into())
-        }
-        "perspective.grid.show" => if perspective_grid(app).is_some_and(|g| g.visible) { "Hide Grid" } else { "Show Grid" }.into(),
-        "perspective.grid.rulers" => if perspective_grid(app).is_some_and(|g| g.rulers) { "Hide Rulers" } else { "Show Rulers" }.into(),
-        "perspective.grid.lock" => if perspective_grid(app).is_some_and(|g| g.locked) { "Unlock Grid" } else { "Lock Grid" }.into(),
         _ => label.into(),
     }
 }
@@ -1596,14 +1233,7 @@ pub fn dynamic_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
 /// plug-in? Such names are shown as they are, never translated (a workspace the user calls
 /// "Layers" stays "Layers").
 fn shows_a_name(id: &str, label: &str) -> bool {
-    const SLOTS: [&str; 6] = [
-        "file.openRecent",
-        "view.goto",
-        "type.recentFont",
-        crate::panels::swatches::USER_SLOT,
-        crate::panels::graphic_styles::USER_SLOT,
-        crate::dialogs::perspective_presets::SLOT,
-    ];
+    const SLOTS: [&str; 4] = ["file.openRecent", "view.goto", "type.recentFont", crate::panels::swatches::USER_SLOT];
     SLOTS.iter().any(|s| id.starts_with(s))
         || saved_selection_slot(id).is_some()
         || matches!(id, "text.setStyle")
@@ -1664,8 +1294,6 @@ fn hidden_when_disabled(id: &str) -> bool {
         || saved_selection_slot(id).is_some()
         || id.starts_with("file.openRecent")
         || id.starts_with(crate::panels::swatches::USER_SLOT)
-        || id.starts_with(crate::panels::graphic_styles::USER_SLOT)
-        || id.starts_with(crate::dialogs::perspective_presets::SLOT)
 }
 
 /// Menu items another item stands in for right now: Envelope Distort's Reset with Warp and Reset
@@ -1798,31 +1426,6 @@ pub fn entry<'a>(app: &VectorcraftApp, it: &'a Item) -> Option<Entry<'a>> {
     })
 }
 
-/// View → Perspective Grid → One/Two/Three Point Perspective: the saved-preset slots of each type.
-const PERSPECTIVE_SLOTS: [[&str; crate::dialogs::perspective_presets::SLOTS]; 3] = [
-    [
-        "ui.perspectiveUserPreset1.1",
-        "ui.perspectiveUserPreset1.2",
-        "ui.perspectiveUserPreset1.3",
-        "ui.perspectiveUserPreset1.4",
-        "ui.perspectiveUserPreset1.5",
-    ],
-    [
-        "ui.perspectiveUserPreset2.1",
-        "ui.perspectiveUserPreset2.2",
-        "ui.perspectiveUserPreset2.3",
-        "ui.perspectiveUserPreset2.4",
-        "ui.perspectiveUserPreset2.5",
-    ],
-    [
-        "ui.perspectiveUserPreset3.1",
-        "ui.perspectiveUserPreset3.2",
-        "ui.perspectiveUserPreset3.3",
-        "ui.perspectiveUserPreset3.4",
-        "ui.perspectiveUserPreset3.5",
-    ],
-];
-
 /// Select → saved selections: the n-th saved selection of the active document.
 const SAVED_SELECTION_IDS: [&str; vectorcraft_engine::doc::SavedSelection::MAX] = [
     "select.recall1",
@@ -1934,31 +1537,17 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         "ui.missingFontsDialog" => !cfg!(target_arch = "wasm32") && app.session.active().is_some(),
         "ui.findFontsInFolder" => crate::picks::can(app, &crate::picks::PickRequest::Folder) && app.session.active().is_some(),
         "ui.swatchOptions" | "ui.newSwatch" | "ui.newColorGroup" => app.session.active().is_some(),
-        "ui.graphicStyleOptions" => app.session.active().is_some(),
         "ui.brushOptions" => crate::dialogs::brush_options::available(app),
         "ui.colorBalanceDialog" | "ui.saturateDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
         "ui.saveSwatchLibrary" => app.session.active().is_some(),
         id if id.starts_with(crate::panels::swatches::USER_SLOT) => crate::panels::swatches::user_library(app, id).is_some(),
-        "ui.flattenTransparencyDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
-        "ui.saveGraphicStyleLibrary" => app.session.active().is_some(),
-        id if id.starts_with(crate::panels::graphic_styles::USER_SLOT) => crate::panels::graphic_styles::user_library(app, id).is_some(),
         "ui.expandDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
         "ui.spotColors" => app.session.active().is_some(),
         "ui.menuDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
         "links.editOriginal" | "links.reveal" => selected_image(app, |im| im.link.is_some()) || selected_placed(app),
-        "ui.placementOptionsDialog" => selected_image(app, |_| true) || selected_placed(app),
         "ui.findLinksInFolder" => crate::picks::can(app, &crate::picks::PickRequest::Folder) && app.session.active().is_some(),
-        "ui.packageDialog" | "docInfo.save" => app.session.active().is_some(),
         "ui.epsOptionsDialog" => app.session.active().is_some(),
-        "file.saveForWeb" | "file.saveForWeb.browser" => app.session.active().is_some(),
         "file.exportSelection" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
-        "css.copy" | "css.exportFile" => app.session.active().is_some(),
-        "print.printerSetup" => app.services.print.as_ref().is_some_and(|s| s.has_setup()),
-        "ui.perspectiveGridDialog" | "ui.savePerspectivePreset" => app.session.active().is_some(),
-        id if id.starts_with(crate::dialogs::perspective_presets::SLOT) => {
-            app.session.active().is_some() && crate::dialogs::perspective_presets::slot_preset(app, id).is_some()
-        }
-        "ui.perspectivePlane" => app.session.active().is_some(),
         _ => true,
     }
 }
@@ -2018,7 +1607,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Save a Copy…", "file.saveCopy"),
                 c("Save as Template…", "file.saveAsTemplate"),
                 c("Save as PDF…", "file.export.pdf"),
-                c("Save for Office Documents…", "document.exportForOffice"),
                 c("Revert", "file.revert"),
                 Sep,
                 c("Place…", "file.place"),
@@ -2030,12 +1618,10 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Export As…", "file.exportAs"),
                         c("Export As SVG…", "file.export.svg"),
                         c("Export As PNG…", "file.export.png"),
-                        c("Save for Web (Legacy)…", "file.saveForWeb"),
                     ],
                 ),
                 c("Export Selection…", "file.exportSelection"),
                 Sep,
-                c("Package…", "ui.packageDialog"),
                 sub("Scripts", vec![todos("Other Script…", "Cmd+F12")]),
                 Sep,
                 c("Document Setup…", "file.documentSetup"),
@@ -2048,7 +1634,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 ),
                 c("File Info…", "file.info"),
                 Sep,
-                c("Print…", "file.print"),
                 Sep,
                 c("Exit", "app.quit"),
             ],
@@ -2104,10 +1689,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 ),
                 c("Edit Original", "links.editOriginal"),
                 Sep,
-                c("Transparency Flattener Presets…", "ui.flattenerPresetsDialog"),
-                c("Print Presets…", "ui.printPresetsDialog"),
                 c("PDF Presets…", "ui.pdfPresetsDialog"),
-                c("Perspective Grid Presets…", "ui.perspectivePresetsDialog"),
                 Sep,
                 c("Color Settings…", "edit.colorSettings"),
                 c("Assign Profile…", "edit.assignProfile"),
@@ -2154,34 +1736,11 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Crop Image", "ui.cropImage"),
                 c("Rasterize…", "object.rasterize"),
                 cp("Create Gradient Mesh…", "object.mesh.create", json!({"rows": 4, "cols": 4, "appearance": "flat", "highlight": 100})),
-                cp(
-                    "Create Object Mosaic…",
-                    "object.createObjectMosaic",
-                    json!({"columns": 10, "rows": 10, "spacingX": 0, "spacingY": 0, "gray": false, "deleteRaster": false}),
-                ),
-                c("Vector Halftone…", "object.vectorHalftone"),
                 c("Create Trim Marks", "object.createTrimMarks"),
-                c("Flatten Transparency…", "ui.flattenTransparencyDialog"),
                 Sep,
                 c("Make Pixel Perfect", "object.makePixelPerfect"),
                 Sep,
-                sub(
-                    "Slice",
-                    vec![
-                        c("Make", "object.slice.make"),
-                        c("Release", "object.slice.release"),
-                        c("Create from Guides", "object.slice.fromGuides"),
-                        c("Create from Selection", "object.slice.fromSelection"),
-                        Sep,
-                        c("Duplicate Slice", "object.slice.duplicate"),
-                        c("Combine Slices", "object.slice.combine"),
-                        c("Divide Slices…", "object.slice.divide"),
-                        Sep,
-                        c("Delete All", "object.slice.deleteAll"),
-                        c("Slice Options…", "object.slice.options"),
-                        c("Clip to Artboard", "object.slice.clipToArtboard"),
-                    ],
-                ),
+                sub("Slice", vec![Sep, Sep]),
                 Sep,
                 sub(
                     "Path",
@@ -2250,27 +1809,8 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Edit Contents", "object.envelope.editContents"),
                     ],
                 ),
-                sub(
-                    "Perspective",
-                    vec![
-                        c("Attach to Active Plane", "perspective.attach"),
-                        c("Release with Perspective", "perspective.release"),
-                        c("Move Plane to Match Object", "perspective.plane.matchObject"),
-                        c("Edit Text", "perspective.editText"),
-                    ],
-                ),
-                sub(
-                    "Live Paint",
-                    vec![
-                        c("Make", "livePaint.make"),
-                        c("Merge", "livePaint.merge"),
-                        c("Release", "livePaint.release"),
-                        Sep,
-                        todo("Gap Options…"),
-                        Sep,
-                        c("Expand", "livePaint.expand"),
-                    ],
-                ),
+                sub("Perspective", vec![]),
+                sub("Live Paint", vec![Sep, todo("Gap Options…"), Sep]),
                 sub(
                     "Image Trace",
                     vec![
@@ -2312,16 +1852,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Fit to Selected Art", "artboard.fitToSelection"),
                     ],
                 ),
-                sub(
-                    "Graph",
-                    vec![
-                        c("Type…", "graph.setType"),
-                        c("Data…", "graph.setData"),
-                        c("Design…", "graph.design"),
-                        todo("Column…"),
-                        c("Marker…", "graph.marker"),
-                    ],
-                ),
+                sub("Graph", vec![todo("Column…")]),
                 sub(
                     "Collect for Export",
                     vec![
@@ -2386,7 +1917,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Insert Inline Symbol", "text.insertInline"),
                 Sep,
                 c("Show Hidden Characters", "type.hiddenCharacters"),
-                sub("Type Orientation", vec![c("Horizontal", "type.orientation.horizontal"), c("Vertical", "type.orientation.vertical")]),
             ],
         ),
         ("Select", {
@@ -2412,7 +1942,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Opacity", "select.same.opacity"),
                         c("Stroke Color", "select.same.strokeColor"),
                         c("Stroke Weight", "select.same.strokeWeight"),
-                        c("Graphic Style", "select.same.graphicStyle"),
                         c("Shape", "select.same.shapeType"),
                         c("Symbol Instance", "select.same.symbolInstance"),
                         Sep,
@@ -2433,7 +1962,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Brush Strokes", "select.object.brushStrokes"),
                         c("Bristle Brush Strokes", "select.object.bristleBrushStrokes"),
                         c("Clipping Masks", "select.object.clippingMasks"),
-                        c("Slices", "select.object.slices"),
                         c("Stray Points", "select.object.strayPoints"),
                         c("Open Paths", "select.object.openPaths"),
                         Sep,
@@ -2493,9 +2021,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 Sep,
                 c("Hide Edges", "view.edges"),
                 c("Hide Artboards", "view.artboards"),
-                c("Show Print Tiling", "view.printTiling"),
-                c("Hide Slices", "view.slices.hide"),
-                c("Lock Slices", "view.slices.lock"),
                 Sep,
                 sub("Rulers", vec![c("Show Rulers", "view.rulers"), todos("Change to Global Rulers", "Cmd+Alt+R"), todo("Show Video Rulers")]),
                 c("Hide Bounding Box", "view.boundingBox"),
@@ -2515,23 +2040,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                     ],
                 ),
                 c("Smart Guides", "view.smartGuides"),
-                sub(
-                    "Perspective Grid",
-                    vec![
-                        c("Show Grid", "perspective.grid.show"),
-                        c("Show Rulers", "perspective.grid.rulers"),
-                        c("Snap to Grid", "perspective.grid.snap"),
-                        c("Lock Grid", "perspective.grid.lock"),
-                        c("Lock Station Point", "perspective.grid.lockStation"),
-                        Sep,
-                        c("Define Grid…", "ui.perspectiveGridDialog"),
-                        sub("One Point Perspective", crate::dialogs::perspective_presets::menu(1, PERSPECTIVE_SLOTS[0])),
-                        sub("Two Point Perspective", crate::dialogs::perspective_presets::menu(2, PERSPECTIVE_SLOTS[1])),
-                        sub("Three Point Perspective", crate::dialogs::perspective_presets::menu(3, PERSPECTIVE_SLOTS[2])),
-                        Sep,
-                        c("Save Grid as Preset…", "ui.savePerspectivePreset"),
-                    ],
-                ),
                 c("Show Grid", "view.grid"),
                 c("Snap to Grid", "view.snapToGrid"),
                 c("Snap to Pixel", "view.snapToPixel"),
@@ -2565,35 +2073,22 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Tools", "window.toolbar"),
                 sub("Toolbars", vec![c("Advanced", "window.toolbarAdvanced"), c("Double Column", "window.toolbarColumns")]),
                 Sep,
-                panel("Actions", "actions"),
                 panel("Align", "align"),
                 panel("Appearance", "appearance"),
                 panel("Artboards", "artboards"),
                 panel("Asset Export", crate::panels::asset_export::ID),
-                panel("Attributes", "attributes"),
                 panel("Brushes", "brushes"),
                 panel("Color", "color"),
-                panel("Color Guide", "colorGuide"),
-                panel("Color Themes", "colorThemes"),
-                panel("CSS Properties", crate::panels::css_properties::ID),
-                panel("Document Info", "docInfo"),
-                panel("Flattener Preview", crate::panels::flattener_preview::ID),
                 panel("Gradient", "gradient"),
-                panel("Graphic Styles", "graphicStyles"),
                 panel("History", "history"),
                 panel("Image Trace", "imageTrace"),
                 panel("Info", "info"),
                 panel("Layers", "layers"),
-                panel("Libraries", "libraries"),
                 panel("Links", crate::panels::links::ID),
-                panel("Magic Wand", "magicWand"),
-                panel("Navigator", "navigator"),
                 panel("Pathfinder", "pathfinder"),
                 panel("Pattern Options", "patternOptions"),
                 panel("Properties", "properties"),
-                panel("Separations Preview", "separations"),
                 panel("Stroke", "stroke"),
-                todo("SVG Interactivity"),
                 panel("Swatches", "swatches"),
                 panel("Symbols", "symbols"),
                 panel("Transform", "transform"),
@@ -2610,10 +2105,8 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         panel("Tabs", "tabs"),
                     ],
                 ),
-                panel("Variables", crate::panels::variables::ID),
                 Sep,
                 sub("Brush Libraries", library_placeholders()),
-                sub("Graphic Style Libraries", crate::panels::graphic_styles::window_menu()),
                 sub("Swatch Libraries", crate::panels::swatches::window_menu()),
                 sub("Symbol Libraries", library_placeholders()),
             ],
@@ -2990,7 +2483,6 @@ fn menu_dialog(app: &VectorcraftApp, id: &str) -> Option<(&'static str, Value)> 
         "object.path.offsetPath" => ("offsetPath", json!({"offset": "10 pt", "joins": "miter", "miterLimit": 4})),
         "object.path.simplify" => ("simplify", json!({"tolerance": "1 pt", "preview": true})),
         "object.path.splitIntoGrid" => ("splitIntoGrid", json!({"rows": 2, "columns": 2, "gutter": "12 pt"})),
-        "object.vectorHalftone" => (crate::dialogs::halftone::KIND, crate::dialogs::halftone::fields()),
         "artboard.rearrange" => (crate::dialogs::rearrange_artboards::KIND, crate::dialogs::rearrange_artboards::fields()),
         _ => return None,
     })
@@ -3030,19 +2522,6 @@ fn to_field(ctx: &egui::Context, field: egui::Id, e: egui::Event) {
     ctx.input_mut(|i| i.events.push(e));
 }
 
-/// Invoke a menu/command id with UI side effects (dialogs for "…" commands that need input).
-/// Object › Graph › Type… or Data… (`id`): its dialog, with the selected graph's current values
-/// (the command's query).
-pub(crate) fn graph_dialog(app: &mut VectorcraftApp, id: &str) -> Result<Value, String> {
-    // Graph Data: the worksheet.
-    if id == "graph.setData" {
-        return crate::dialogs::graph_data::open(app);
-    }
-    let v = app.session.execute(id, &json!({})).map_err(|e| e.to_string())?;
-    let (label, fields) = ("Graph Type", v);
-    app.run("ui.paramDialog", json!({"command": id, "label": label, "params": fields})).map(|_| json!({ "dialog": "command" }))
-}
-
 pub fn invoke(app: &mut VectorcraftApp, id: &str, p: Value) {
     if waits_for_ime(app, id) {
         return;
@@ -3051,18 +2530,6 @@ pub fn invoke(app: &mut VectorcraftApp, id: &str, p: Value) {
         && p.as_object().is_none_or(|o| o.is_empty())
     {
         app.ui.dialog = Some(crate::state::Dialog::new(kind, fields));
-        return;
-    }
-    // Envelope Distort: Warp Options, Envelope Mesh and Envelope Options, from the selection.
-    if crate::dialogs::envelope::opens(id) && p.as_object().is_none_or(|o| o.is_empty()) {
-        if let Err(e) = crate::dialogs::envelope::open(app, id) {
-            app.status(e);
-        }
-        return;
-    }
-    // Variables (data merge): a name and a kind, a name and a row of values.
-    if crate::dialogs::variables::opens(id) && p.as_object().is_none_or(|o| o.is_empty()) {
-        crate::dialogs::variables::open(app, id, None);
         return;
     }
     // Repeat Options: a dialog with the selected repeat's current values.
@@ -3086,21 +2553,6 @@ pub fn invoke(app: &mut VectorcraftApp, id: &str, p: Value) {
                 let _ = app.run("ui.paramDialog", json!({"command": id, "label": label, "params": fields}));
             }
             Err(e) => app.status(e.to_string()),
-        }
-        return;
-    }
-    // Object → Graph → Type… / Data…: dialogs with the selected graph's current values.
-    if matches!(id, "graph.setType" | "graph.setData") && p.as_object().is_none_or(|o| o.is_empty()) {
-        if let Err(e) = graph_dialog(app, id) {
-            app.status(e);
-        }
-        return;
-    }
-    // Object → Graph → Design… / Marker…: the document's graph designs.
-    if matches!(id, "graph.design" | "graph.marker") && p.as_object().is_none_or(|o| o.is_empty()) {
-        let r = if id == "graph.design" { crate::dialogs::graph_design::open_design(app) } else { crate::dialogs::graph_design::open_marker(app) };
-        if let Err(e) = r {
-            app.status(e);
         }
         return;
     }
@@ -3790,8 +3242,9 @@ mod tests {
         assert_eq!(normalize_panel("LAYERS"), Some("layers"));
         assert_eq!(normalize_panel("Swatches"), Some("swatches"));
         assert_eq!(normalize_panel("swatches"), Some("swatches"));
-        assert_eq!(normalize_panel("Color Guide"), Some("colorGuide"));
-        assert_eq!(normalize_panel("colorguide"), Some("colorGuide"));
+        assert_eq!(normalize_panel("Pattern Options"), Some("patternOptions"));
+        assert_eq!(normalize_panel("patternoptions"), Some("patternOptions"));
+        assert_eq!(normalize_panel("Color Guide"), None, "not in LogoCraft");
         assert_eq!(normalize_panel("  Stroke  "), Some("stroke"));
         assert_eq!(normalize_panel("nope"), None);
 

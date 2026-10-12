@@ -376,12 +376,6 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
             });
             super::typecmd::refresh_bounds(t);
         }
-        // Graph labels keep a change made to all of their text through the graph being drawn again.
-        if range.is_none() {
-            let shift = num("baselineShift").map(|v| v.clamp(-1296.0, 1296.0));
-            let scale = num("hScale").map(|v| v.clamp(1.0, 10000.0));
-            super::graph::capture_label_styles(d, &ids, &|st| chars(st, shift, scale));
-        }
         Ok(())
     })?;
     Ok(json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>() }))

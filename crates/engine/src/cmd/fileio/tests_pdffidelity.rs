@@ -89,14 +89,13 @@ fn exports_that_draw_type_in_a_missing_font_say_it_is_the_fallback_font() {
         json!({"format": "pdf", "advanced": {"outlineText": false}}),
         json!({"format": "png"}),
         json!({"format": "eps"}),
-        json!({"format": "emf"}),
         json!({"format": "svg", "outlineText": true}),
         json!({"format": "svg", "embedFonts": true}),
     ] {
         assert!(warned(&mut s, p.clone()), "{p}");
     }
     // Live SVG type and the native file name the font itself.
-    for p in [json!({"format": "svg", "outlineText": false}), json!({"format": "vectorcraft"}), json!({"format": "txt"})] {
+    for p in [json!({"format": "svg", "outlineText": false}), json!({"format": "vectorcraft"})] {
         assert!(!warned(&mut s, p.clone()), "{p}");
     }
     let pdf_export = s.execute("document.exportPdf", &json!({})).unwrap();

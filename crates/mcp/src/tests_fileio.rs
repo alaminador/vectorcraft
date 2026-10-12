@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader, Write};
 
 use serde_json::{Value, json};
 
-use crate::{Backend, Headless, Remote, call_tool, tool_definitions};
+use crate::{Backend, Headless, Remote, call_tool};
 
 fn tmp(name: &str) -> String {
     let dir = std::env::temp_dir().join(format!("vectorcraft-mcp-fileio-{}", std::process::id()));
@@ -48,43 +48,6 @@ fn headless_opens_pdf_ai_and_templates() {
     let r = text(&call_tool(&mut h, "open_file", &json!({"path": tpl})));
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
     assert_eq!(h.session.doc().unwrap().path, None, "Save asks for a new name");
-}
-
-#[test]
-fn export_tool_lists_engine_formats_and_options() {
-    let tools = tool_definitions();
-    let export = tools.iter().find(|t| t["name"] == "export").unwrap();
-    let props = &export["inputSchema"]["properties"];
-    assert_eq!(
-        props["format"]["enum"],
-        json!([
-            "vectorcraft",
-            "svg",
-            "svgz",
-            "pdf",
-            "ai",
-            "png",
-            "jpg",
-            "gif",
-            "webp",
-            "tiff",
-            "bmp",
-            "template",
-            "png8",
-            "txt",
-            "dxf",
-            "eps",
-            "emf",
-            "wmf",
-            "tga",
-            "psd"
-        ])
-    );
-    for k in ["artboard", "range", "options"] {
-        assert!(props.get(k).is_some(), "export takes {k}");
-    }
-    let open = tools.iter().find(|t| t["name"] == "open_file").unwrap();
-    assert!(open["description"].as_str().unwrap().contains(".ait"));
 }
 
 /// A fake app that records `engine.execute` calls and answers each with an empty object.

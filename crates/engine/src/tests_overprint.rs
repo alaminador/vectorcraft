@@ -96,63 +96,6 @@ fn cyan_stroke_overprinting_yellow_previews_green_under_the_stroke_only() {
 }
 
 #[test]
-fn set_overprint_is_one_undo_step_and_reports_through_attributes_info() {
-    let mut s = session();
-    let a = rect(&mut s, [0.0, 0.0, 10.0, 10.0], cyan_ink(), Some(black_ink()), 1.0);
-    let b = rect(&mut s, [20.0, 0.0, 10.0, 10.0], cyan_ink(), Some(black_ink()), 1.0);
-    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
-    let info = s.execute("attributes.info", &json!({})).unwrap();
-    assert_eq!((info["overprintFill"].clone(), info["overprintStroke"].clone()), (json!(false), json!(false)));
-    assert_eq!(info["ids"], json!([a.0, b.0]));
-
-    let before = undo_len(&s);
-    s.execute("object.setOverprint", &json!({"fill": true, "stroke": true, "ids": [a.0]})).unwrap();
-    assert_eq!(undo_len(&s), before + 1, "fill and stroke in one step");
-    let info = s.execute("attributes.info", &json!({})).unwrap();
-    assert_eq!((info["overprintFill"].clone(), info["overprintStroke"].clone()), (Value::Null, Value::Null), "mixed");
-    assert_eq!(s.attributes_info().overprint_fill, None);
-    let info = s.execute("attributes.info", &json!({"ids": [a.0]})).unwrap();
-    assert_eq!((info["overprintFill"].clone(), info["overprintStroke"].clone()), (json!(true), json!(true)));
-
-    let r = s.execute("object.setOverprint", &json!({"fill": true, "ids": [a.0]})).unwrap();
-    assert_eq!((r["changed"].clone(), undo_len(&s)), (json!(0), before + 1), "no change, no undo step");
-    s.execute("edit.undo", &json!({})).unwrap();
-    assert!(!node(&s, a).has_overprint());
-
-    assert!(s.execute("object.setOverprint", &json!({"ids": [a.0]})).is_err(), "needs fill or stroke");
-    assert!(s.execute("object.setOverprint", &json!({"fill": "yes", "ids": [a.0]})).is_err());
-}
-
-#[test]
-fn set_overprint_reaches_groups_items_and_type() {
-    let mut s = session();
-    let a = rect(&mut s, [0.0, 0.0, 10.0, 10.0], cyan_ink(), Some(black_ink()), 1.0);
-    let b = rect(&mut s, [20.0, 0.0, 10.0, 10.0], cyan_ink(), None, 0.0);
-    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
-    let g = NodeId(s.execute("object.group", &json!({})).unwrap()["id"].as_u64().unwrap());
-    s.execute("object.setOverprint", &json!({"fill": true, "ids": [g.0]})).unwrap();
-    assert!(node(&s, a).appearance.fill().unwrap().overprint && node(&s, b).appearance.fill().unwrap().overprint, "a group's contents");
-
-    // An explicit appearance item: only that one.
-    s.execute("appearance.addFill", &json!({"ids": [a.0]})).unwrap();
-    let items = node(&s, a).appearance.items.len();
-    let fills: Vec<usize> = (0..items).filter(|i| node(&s, a).appearance.items[*i].is_fill()).collect();
-    s.execute("object.setOverprint", &json!({"fill": false, "ids": [a.0]})).unwrap();
-    s.execute("object.setOverprint", &json!({"fill": true, "item": fills[0], "ids": [a.0]})).unwrap();
-    let ov: Vec<bool> = fills.iter().map(|i| node(&s, a).appearance.items[*i].overprint()).collect();
-    assert_eq!(ov, [true, false]);
-    let stroke = (0..items).find(|i| !node(&s, a).appearance.items[*i].is_fill()).unwrap();
-    assert!(s.execute("object.setOverprint", &json!({"fill": true, "item": stroke, "ids": [a.0]})).is_err(), "not a fill");
-
-    // Type: its characters.
-    let t = NodeId(s.execute("text.create", &json!({"x": 10, "y": 50, "text": "Hi"})).unwrap()["id"].as_u64().unwrap());
-    s.execute("object.setOverprint", &json!({"fill": true, "ids": [t.0]})).unwrap();
-    let NodeKind::Text(tx) = &node(&s, t).kind else { panic!() };
-    assert!(tx.runs.iter().all(|r| r.style.overprint_fill && !r.style.overprint_stroke));
-    assert_eq!(s.execute("attributes.info", &json!({"ids": [t.0]})).unwrap()["overprintFill"], true);
-}
-
-#[test]
 fn overprinting_type_previews_through() {
     let mut s = session();
     rect(&mut s, [0.0, 0.0, 100.0, 100.0], yellow_ink(), None, 0.0);

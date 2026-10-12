@@ -4,7 +4,6 @@
 use serde_json::{Value, json};
 use vectorcraft_doc::live::{BlendOrientation, BlendSpacing, BlendSpec};
 use vectorcraft_doc::{Node, NodeKind};
-use vectorcraft_tools::{Mods, PointerEvent, PointerKind};
 
 use super::*;
 
@@ -116,28 +115,6 @@ fn a_blend_and_an_object_make_one_blend_with_more_keys() {
     assert_eq!(n.name.as_deref(), Some("Ribbon"));
     assert!(s.doc().unwrap().doc.node(g).is_none());
     assert_eq!(vectorcraft_doc::live::expand_live(&n).len(), 3 + 2 * 3);
-}
-
-#[test]
-fn the_blend_tool_blends_from_clicked_anchors_and_keeps_adding() {
-    let mut s = session();
-    let (a, b, c) = (rect(&mut s, 0.0, 0.0, 40.0), rect(&mut s, 200.0, 0.0, 40.0), rect(&mut s, 400.0, 0.0, 40.0));
-    s.select_tool("blend", ViewInfo::default()).unwrap();
-    let click = |s: &mut Session, x: f64, y: f64| s.pointer(&PointerEvent::new(PointerKind::Down, x, y), ViewInfo::default()).unwrap();
-    // a's top right anchor, then b's interior.
-    click(&mut s, 40.0, 0.0);
-    click(&mut s, 220.0, 20.0);
-    let g = s.doc().unwrap().selection.objects[0];
-    let (keys, sp) = spec(&s, g);
-    assert_eq!(keys, vec![a, b]);
-    assert_eq!(sp.starts, vec![Some(1), None]);
-    // The next object joins the same blend.
-    click(&mut s, 420.0, 20.0);
-    let g2 = s.doc().unwrap().selection.objects[0];
-    assert_eq!(spec(&s, g2).0, vec![a, b, c]);
-    // Alt-click asks for Blend Options.
-    let r = s.pointer(&PointerEvent::new(PointerKind::Down, 600.0, 500.0).with_mods(Mods { alt: true, ..Default::default() }), ViewInfo::default());
-    assert!(matches!(r.unwrap().as_slice(), [UiRequest::Dialog(k, _)] if k == "blendOptions"));
 }
 
 #[test]

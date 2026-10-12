@@ -122,11 +122,10 @@ mod tests {
     use crate::i18n::Lang;
 
     #[test]
-    fn entries_are_built_once_per_language_and_match_english_shown_text_and_ids() {
+    fn entries_are_built_once_and_match_shown_text_and_ids() {
         let ctx = egui::Context::default();
-        let zh = Lang::from_code("zh-hant").unwrap();
-        // Tests running alongside edit shortcuts and install plug-ins, which rebuilds the entries:
-        // look twice until nothing changed in between.
+        // Tests running alongside edit shortcuts, which rebuilds the entries: look twice until
+        // nothing changed in between.
         let (en, again) = (0..100)
             .find_map(|_| {
                 let key = cache_key(Lang::EN);
@@ -134,17 +133,16 @@ mod tests {
                 (cache_key(Lang::EN) == key).then_some(pair)
             })
             .unwrap();
-        assert!(Arc::ptr_eq(&en, &again), "kept while the language stays");
-        let zh_entries = entries(&ctx, zh);
-        assert!(!Arc::ptr_eq(&en, &zh_entries), "rebuilt for another language");
+        assert!(Arc::ptr_eq(&en, &again), "kept while nothing changes");
         // Editing a shortcut rebuilds them, so the palette shows the new one.
         crate::shortcut_editor::GENERATION.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        assert!(!Arc::ptr_eq(&zh_entries, &entries(&ctx, zh)), "rebuilt after a shortcut edit");
-        let group = zh_entries.iter().find(|e| e.id == "object.group").unwrap();
-        assert!(group.shown.ends_with(crate::i18n::tr(zh, "Group")), "{}", group.shown);
-        // A query matches the English label, the shown label or the id.
-        for word in ["group", crate::i18n::tr(zh, "Group"), "object.group"] {
-            assert!(group.haystack.contains(&word.to_lowercase()), "{word}");
+        let rebuilt = entries(&ctx, Lang::EN);
+        assert!(!Arc::ptr_eq(&en, &rebuilt), "rebuilt after a shortcut edit");
+        let group = rebuilt.iter().find(|e| e.id == "object.group").unwrap();
+        assert!(group.shown.ends_with("Group"), "{}", group.shown);
+        // A query matches the label or the id.
+        for word in ["group", "object.group"] {
+            assert!(group.haystack.contains(word), "{word}");
         }
     }
 

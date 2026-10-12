@@ -1512,13 +1512,9 @@ pub enum PanelDrag {
     /// a swatch of a paint dragged from elsewhere.
     Paint { paint: Paint, params: serde_json::Value, rows: Option<SwatchRows> },
     /// The Appearance panel's thumbnail: art it is dropped on takes object `0`'s appearance
-    /// (`appearance.copyFrom`); the Graphic Styles panel makes a style of it.
+    /// (`appearance.copyFrom`).
     Appearance(vectorcraft_doc::NodeId),
-    /// A Graphic Styles panel style: art it is dropped on takes it (`graphicStyle.apply` with its
-    /// `ids`); the panel moves it to where it is dropped.
-    GraphicStyle(String),
-    /// The selected art, dragged off the canvas with the Selection tool: the Graphic Styles panel
-    /// makes a style of the first object (`graphicStyle.new`), the Symbols panel a symbol of it all
+    /// The selected art, dragged off the canvas with the Selection tool: the Symbols panel a symbol of it all
     /// (`symbol.new`), the Swatches panel a pattern swatch of a copy (`object.pattern.make`) and the
     /// Brushes panel an Art brush (`brush.new`).
     Art(Vec<vectorcraft_doc::NodeId>),
@@ -1528,9 +1524,6 @@ pub enum PanelDrag {
     /// A Brushes panel brush (`def`: its definition, for the chip at the pointer): the path it is
     /// dropped on takes it (`brush.apply`).
     Brush { name: String, def: serde_json::Value },
-    /// A Libraries panel graphic (`item`: its id in `library`): the canvas places a copy centred
-    /// where it is dropped (`library.use`).
-    LibraryGraphic { library: String, item: String },
 }
 
 /// A panel list `zone` that takes art dragged off the canvas: outlined while art is held over it;

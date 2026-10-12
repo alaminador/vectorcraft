@@ -30,37 +30,13 @@ const STRIP_BUTTON: egui::Vec2 = vec2(32.0, PITCH);
 
 /// The Basic toolbar: (category, slots); each slot is a flyout group (first = default).
 pub const BASIC: &[(&str, &[&[&str]])] = &[
-    ("Select", &[&["selection"], &["directSelection", "groupSelection"], &["lasso", "magicWand"]]),
-    (
-        "Shapes",
-        &[
-            &["rectangle", "roundedRectangle", "star", "lineSegment", "arc", "spiral", "rectangularGrid", "polarGrid", "flare"],
-            &["ellipse"],
-            &["polygon"],
-            &["shaper"],
-        ],
-    ),
-    (
-        "Draw",
-        &[
-            &["pencil", "smooth", "pathEraser", "join"],
-            &["eraser", "scissors", "knife", "mirrorCut", "lineCut", "rectCut"],
-            &["paintbrush", "blobBrush"],
-            &["pen", "addAnchor", "deleteAnchor", "anchorPoint"],
-            &["curvature"],
-        ],
-    ),
-    (
-        "Modify",
-        &[
-            &["width", "warp", "twirl", "pucker", "bloat", "scallop", "crystallize", "wrinkle"],
-            &["rotate", "reflect", "scale", "shear", "reshape", "freeTransform", "puppetWarp"],
-            &["shapeBuilder", "livePaintBucket", "livePaintSelection", "blend"],
-        ],
-    ),
-    ("Type", &[&["areaType", "typeOnPath", "verticalAreaType", "verticalTypeOnPath"], &["type", "verticalType", "touchType"]]),
-    ("Navigate", &[&["zoom"], &["hand", "printTiling"], &["rotateView"]]),
-    ("Color", &[&["gradient", "mesh"], &["eyedropper", "measure"]]),
+    ("Select", &[&["selection"], &["directSelection", "groupSelection"], &["lasso"]]),
+    ("Shapes", &[&["rectangle", "roundedRectangle", "star", "lineSegment", "arc"], &["ellipse"], &["polygon"]]),
+    ("Draw", &[&["pencil", "smooth", "join"], &["scissors", "knife"], &["pen", "addAnchor", "deleteAnchor", "anchorPoint"], &["curvature"]]),
+    ("Modify", &[&["width"], &["rotate", "reflect", "scale", "shear", "freeTransform"], &["shapeBuilder"]]),
+    ("Type", &[&["areaType", "typeOnPath"], &["type"]]),
+    ("Navigate", &[&["zoom"], &["hand"]]),
+    ("Color", &[&["gradient"], &["eyedropper"]]),
 ];
 
 pub(crate) fn tip(t: &ToolInfo) -> String {
@@ -343,22 +319,8 @@ pub fn open_options(app: &mut VectorcraftApp, tool: &str) -> Result<serde_json::
             crate::dialogs::blend_options::open(app)?;
             Ok(json!({ "dialog": crate::dialogs::blend_options::KIND }))
         }
-        "perspectiveGrid" => {
-            crate::dialogs::perspective_options::open(app);
-            Ok(json!({ "dialog": crate::dialogs::perspective_options::KIND }))
-        }
-        // The Flare tool: its options, which draw the next flare (OK draws none).
-        "flare" => Ok(crate::dialogs::flare_options::open(app, None)),
-        // A double click on the Print Tiling tool puts the pages back where the placement puts them.
-        "printTiling" => app.run("print.tiling.set", json!({ "reset": true })),
-        // The Liquify tools: their Tool Options (the Global Brush Dimensions and the tool's own).
-        _ if vectorcraft_tools::settings::LIQUIFY.contains(&tool) => crate::dialogs::liquify::open(app, tool),
         // The freehand tools: their Tool Options (Fidelity, fill, the tolerances, the brush size).
         _ if crate::dialogs::freehand::TOOLS.contains(&tool) => crate::dialogs::freehand::open(app, tool),
-        // The Symbolism tools: the brush they share.
-        _ if vectorcraft_tools::settings::SYMBOLISM.contains(&tool) => Ok(crate::dialogs::symbolism_options::open(app, tool)),
-        // The graph tools: Graph Type for the selected graph.
-        _ if vectorcraft_tools::extra::is_graph_tool(tool) => crate::menus::graph_dialog(app, "graph.setType"),
         _ if vectorcraft_tools::tool_info(tool).is_none() => Err(format!("unknown tool `{tool}`")),
         _ => Err(format!("the {tool} tool has no options")),
     }
@@ -893,38 +855,6 @@ pub(crate) mod tests {
         }
     }
 
-    /// #812: double-clicking the Artboard tool opens Artboard Options of the active artboard, a
-    /// graph tool Graph Type for the selected graph, and the Magic Wand tool its panel.
-    #[test]
-    fn more_tools_open_their_options() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
-        // Without the Artboard tool, the window's artboard.
-        assert_eq!(open_options(&mut app, "artboard").unwrap()["dialog"], "artboardOptions");
-        let d = app.ui.dialog.take().unwrap();
-        assert_eq!((d.f64("index", 9.0), d.f64("width", 0.0), d.str("name")), (0.0, 300.0, "Artboard 1".to_string()));
-        // With it, its active artboard.
-        app.run("artboard.new", json!({"x": 400, "y": 0, "width": 100, "height": 50})).unwrap();
-        app.run("tool.select", json!({"tool": "artboard"})).unwrap();
-        app.run("tool.setOption", json!({"key": "active", "value": 1})).unwrap();
-        open_options(&mut app, "artboard").unwrap();
-        let d = app.ui.dialog.take().unwrap();
-        assert_eq!((d.f64("index", 9.0), d.f64("x", 0.0), d.f64("width", 0.0)), (1.0, 400.0, 100.0));
-        // Graph Type needs a selected graph.
-        app.run("select.set", json!({"ids": []})).unwrap();
-        assert!(open_options(&mut app, "pieGraph").is_err());
-        assert!(app.ui.dialog.is_none());
-        app.run("graph.create", json!({"type": "column", "x": 0, "y": 0, "width": 200, "height": 150})).unwrap();
-        assert_eq!(open_options(&mut app, "pieGraph").unwrap()["dialog"], "command");
-        let d = app.ui.dialog.take().unwrap();
-        assert_eq!((d.str("__command"), d.str("type")), ("graph.setType".to_string(), "column".to_string()));
-        // The Magic Wand panel opens, and stays open on a second double-click.
-        open_options(&mut app, "magicWand").unwrap();
-        assert_eq!(app.ui.open_panel.as_deref(), Some("magicWand"));
-        assert_eq!(open_options(&mut app, "magicWand").unwrap()["open"], "magicWand");
-        assert_eq!(app.ui.open_panel.as_deref(), Some("magicWand"));
-    }
-
     /// A double-click at `at`, `time` seconds in (a second apart from the last).
     fn double_click(app: &mut VectorcraftApp, ctx: &egui::Context, time: f64, at: Pos2) {
         let b = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
@@ -1120,36 +1050,6 @@ pub(crate) mod tests {
         assert_eq!(app.session.tool_id(), "rectangle");
     }
 
-    #[test]
-    fn type_button_long_press_selects_vertical_type_in_both_layouts() {
-        for advanced in [false, true] {
-            let mut app = VectorcraftApp::new(Session::new(), Default::default());
-            app.ui.toolbar_advanced = advanced;
-            let all = slots(&app);
-            let index = all.iter().position(|(_, tools)| tools.contains(&"type")).unwrap();
-            assert!(all[index].1.contains(&"verticalType"));
-            for id in ["type", "verticalType", "areaType", "verticalAreaType", "typeOnPath", "verticalTypeOnPath"] {
-                assert_eq!(all.iter().filter(|(_, tools)| tools.contains(&id)).count(), 1);
-            }
-            let ctx = egui::Context::default();
-            let at = frame_in(&mut app, &ctx, 0.0, vec![], 2000.0)[index].center();
-            let pointer = |pos, pressed| Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Default::default() };
-            frame_in(&mut app, &ctx, 1.0, vec![Event::PointerMoved(at), pointer(at, true)], 2000.0);
-            frame_in(&mut app, &ctx, 1.36, vec![], 2000.0);
-            frame_in(&mut app, &ctx, 1.4, vec![pointer(at, false)], 2000.0);
-            frame_in(&mut app, &ctx, 1.45, vec![], 2000.0);
-            assert_eq!(app.session.tool_id(), "selection");
-            let tools: Vec<String> = ctx.data(|d| d.get_temp(egui::Id::new("flyout-tools"))).unwrap();
-            let row_index = tools.iter().position(|id| id == "verticalType").unwrap();
-            let menu = ctx.memory(|m| m.area_rect(egui::Id::new("tool-flyout"))).unwrap();
-            let row = egui::pos2(menu.left() + 60.0, menu.top() + 15.0 + row_index as f32 * 30.0);
-            frame_in(&mut app, &ctx, 2.0, vec![Event::PointerMoved(row), pointer(row, true)], 2000.0);
-            frame_in(&mut app, &ctx, 2.05, vec![pointer(row, false)], 2000.0);
-            assert_eq!(app.session.tool_id(), "verticalType");
-            assert_eq!(app.ui.flyout, None);
-        }
-    }
-
     /// A press at `from`, dragged through `to` (one frame each), then released.
     fn drag(app: &mut VectorcraftApp, ctx: &egui::Context, time: f64, from: Pos2, to: &[Pos2]) {
         let b = |pos, pressed| Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Default::default() };
@@ -1245,9 +1145,9 @@ pub(crate) mod tests {
         let [f] = app.ui.floating_flyouts.as_slice() else { panic!("one floating flyout: {:?}", app.ui.floating_flyouts) };
         assert_eq!(f.tools.first().map(String::as_str), Some("rectangle"));
         let float = ctx.memory(|m| m.area_rect(floating_area("rectangle"))).expect("the floating flyout is shown");
-        // A strip of its nine tools' buttons, its bar under the pointer.
+        // A strip of its five tools' buttons, its bar under the pointer.
         let drop = bar + vec2(60.0, 40.0);
-        assert!(float.height() < 40.0 && float.width() > 9.0 * STRIP_BUTTON.x, "a one-row strip: {float:?}");
+        assert!(float.height() < 40.0 && float.width() > 5.0 * STRIP_BUTTON.x, "a one-row strip: {float:?}");
         assert!(
             (float.right() - 1.0 - BAR / 2.0 - drop.x).abs() < 1.0 && float.y_range().contains(drop.y),
             "its bar is under the pointer: {float:?}"

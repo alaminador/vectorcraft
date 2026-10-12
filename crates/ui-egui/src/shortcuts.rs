@@ -616,34 +616,6 @@ mod tests {
         assert_eq!(app.session.doc().unwrap().doc.layers[0].children().unwrap().len(), 8);
     }
 
-    /// While a grid is dragged out, ↑/↓ change its rows and ←/→ its columns.
-    #[test]
-    fn arrows_while_dragging_a_grid_change_its_rows_and_columns() {
-        use vectorcraft_tools::{PointerEvent, PointerKind};
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
-        app.select_tool("rectangularGrid");
-        let view = app.view_info();
-        // Drag a grid out, pressing `keys` on the way: its (horizontal, vertical) dividers.
-        let grid = |app: &mut VectorcraftApp, keys: &[Key]| {
-            app.session.pointer(&PointerEvent::new(PointerKind::Down, 100.0, 80.0), view).unwrap();
-            app.session.pointer(&PointerEvent::new(PointerKind::Drag, 300.0, 220.0), view).unwrap();
-            for &key in keys {
-                let press = egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE };
-                frame(app, vec![press]);
-            }
-            app.session.pointer(&PointerEvent::new(PointerKind::Up, 300.0, 220.0), view).unwrap();
-            let d = &app.session.doc().unwrap().doc;
-            let g = d.layers[0].children().unwrap().last().unwrap().clone();
-            let vectorcraft_doc::NodeKind::Group { children, .. } = &g.kind else { panic!("not a grid: {:?}", g.kind) };
-            let bounds: Vec<_> = children.iter().filter_map(|c| c.geometric_bounds()).collect();
-            (bounds.iter().filter(|b| b.height() < 0.5).count(), bounds.iter().filter(|b| b.width() < 0.5).count())
-        };
-        let (rows, columns) = grid(&mut app, &[]);
-        assert_eq!(grid(&mut app, &[Key::ArrowRight, Key::ArrowRight, Key::ArrowUp]), (rows + 1, columns + 2));
-        assert_eq!(grid(&mut app, &[Key::ArrowLeft, Key::ArrowDown]), (rows, columns + 1));
-    }
-
     /// Enter opens the tool's dialog: the Move dialog for the selection tools, the tool's own for
     /// Rotate, Scale, Reflect and Shear. The Enter that opens it isn't also its OK.
     #[test]
@@ -778,29 +750,6 @@ mod tests {
         let before = zoom(&mut app);
         frame(&mut app, vec![press(Key::Minus, Modifiers::COMMAND)]);
         assert!(zoom(&mut app) < before, "Cmd+- zooms out");
-    }
-
-    #[test]
-    fn digit_keys_reach_a_dragging_tool_once_per_press() {
-        use vectorcraft_tools::{PointerEvent, PointerKind};
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
-        app.session.execute("perspective.grid.preset", &json!({"kind": 2})).unwrap();
-        let id = app.session.execute("shape.rectangle", &json!({"x": 450, "y": 380, "width": 60, "height": 60})).unwrap()["id"].clone();
-        app.session.execute("perspective.attach", &json!({"ids": [id], "plane": "right"})).unwrap();
-        app.select_tool("perspectiveSelection");
-        let v = app.view_info();
-        let c =
-            app.session.doc().unwrap().doc.node(vectorcraft_engine::doc::NodeId(id.as_u64().unwrap())).unwrap().geometric_bounds().unwrap().center();
-        app.session.pointer(&PointerEvent::new(PointerKind::Down, c.x, c.y), v).unwrap();
-        app.session.pointer(&PointerEvent::new(PointerKind::Drag, c.x + 30.0, c.y), v).unwrap();
-        let key = |repeat| egui::Event::Key { key: Key::Num5, physical_key: None, pressed: true, repeat, modifiers: Modifiers::NONE };
-        // A held key repeats: only its first press toggles.
-        frame(&mut app, vec![key(false), key(true)]);
-        let preview = app.session.doc().unwrap().interaction.as_ref().unwrap().preview.clone().unwrap();
-        assert_eq!((preview.0.as_str(), &preview.1["perpendicular"]), ("perspective.move", &json!(true)));
-        assert_eq!(digit_of(Key::Num0), Some(0));
-        assert_eq!(digit_of(Key::A), None);
     }
 
     /// Cmd+, opens Settings on a Mac only, and never takes a chord a command already has.

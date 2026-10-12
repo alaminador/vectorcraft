@@ -336,11 +336,9 @@ fn heading(id: &str) -> &'static str {
         return cat;
     }
     match id {
-        _ if id.starts_with("symbol") => "Symbols",
-        _ if id.ends_with("Graph") => "Graph",
-        _ if id.starts_with("perspective") => "Perspective",
+        // With the Eyedropper, as in the Advanced toolbar.
+        "measure" => "Color",
         "artboard" => "Artboards",
-        "slice" | "sliceSelection" => "Slices",
         _ => "More",
     }
 }
@@ -581,76 +579,8 @@ mod tests {
         assert!(all.iter().all(|id| listed.contains(id)));
         let heads: Vec<&str> = s.iter().map(|(c, _)| *c).collect();
         assert_eq!(&heads[..3], ["Select", "Shapes", "Draw"]);
-        assert!(heads.contains(&"Symbols") && heads.contains(&"Graph"), "{heads:?}");
+        assert!(heads.contains(&"Color") && heads.contains(&"Artboards"), "{heads:?}");
         assert!(!heads.contains(&"More"), "every tool has a named heading: {heads:?}");
-    }
-
-    #[test]
-    fn the_commands_add_move_remove_and_reset_tools() {
-        let mut app = app();
-        let shipped = slots(&app);
-        // At the end; the toolbar's slots come back.
-        let r = app.run("toolbar.addTool", json!({"tool": "artboard"})).unwrap();
-        assert_eq!(r, json!(slots(&app)));
-        assert_eq!(slots(&app).last().unwrap(), &["artboard"]);
-        // Before the first slot, moved out of its group.
-        app.run("toolbar.addTool", json!({"tool": "magicWand", "slot": 0})).unwrap();
-        assert_eq!(&slots(&app)[..3], [&["magicWand"][..], &["selection"], &["directSelection", "groupSelection"]]);
-        assert_eq!(slots(&app)[3], ["lasso"]);
-        // After a slot, and into a group (last), moved out of the Rectangle group.
-        app.run("toolbar.addTool", json!({"tool": "slice", "slot": 1, "place": "after"})).unwrap();
-        assert_eq!(slots(&app)[2], ["slice"]);
-        let ellipse = slot_of(&app, "ellipse").unwrap();
-        app.run("toolbar.addTool", json!({"tool": "star", "slot": ellipse, "place": "group"})).unwrap();
-        assert_eq!(slots(&app)[ellipse], ["ellipse", "star"]);
-        assert!(!slots(&app)[slot_of(&app, "rectangle").unwrap()].contains(&"star"));
-        // Onto its own group: nothing changes.
-        let before = slots(&app);
-        app.run("toolbar.addTool", json!({"tool": "ellipse", "slot": ellipse, "place": "group"})).unwrap();
-        assert_eq!(slots(&app), before);
-        // The category label still names the first slot of its category.
-        assert_eq!(crate::toolbar::slots(&app)[0].0, Some("Select"));
-        // Out: one tool, or its whole group; an emptied slot goes.
-        app.run("toolbar.removeTool", json!({"tool": "ellipse"})).unwrap();
-        assert_eq!(slots(&app)[ellipse], ["star"]);
-        app.run("toolbar.removeTool", json!({"tool": "addAnchor", "group": true})).unwrap();
-        assert!(slot_of(&app, "pen").is_none() && slot_of(&app, "addAnchor").is_none());
-        // Bad params change nothing.
-        let before = slots(&app);
-        for p in [
-            json!({}),
-            json!({"tool": "nope"}),
-            json!({"tool": "pen", "slot": 999}),
-            json!({"tool": "pen", "slot": -1}),
-            json!({"tool": "pen", "place": "inside"}),
-        ] {
-            assert!(app.run("toolbar.addTool", p.clone()).is_err(), "{p}");
-        }
-        assert_eq!(app.run("toolbar.removeTool", json!({"tool": "pen"})).unwrap(), json!(before), "not in the toolbar: stays out");
-        assert!(app.run("toolbar.addTool", json!({"tool": "pen", "slot": "first"})).unwrap_err().contains("between 0 and"));
-        assert!(app.run("toolbar.removeTool", json!({"tool": "star", "group": "yes"})).is_err());
-        assert_eq!(slots(&app), before);
-        // The Advanced toolbar keeps its own edits.
-        app.run("window.toolbarAdvanced", json!({})).unwrap();
-        assert_eq!(slots(&app).len(), TOOL_GROUPS.len());
-        app.run("toolbar.removeTool", json!({"tool": "selection"})).unwrap();
-        assert!(app.ui.toolbar_edits.advanced.is_some() && slot_of(&app, "selection").is_none());
-        app.run("window.toolbarAdvanced", json!({})).unwrap();
-        assert_eq!(slots(&app)[0], ["magicWand"]);
-        // Reset puts the current one back as it ships.
-        assert_eq!(app.run("toolbar.reset", json!({})).unwrap(), json!(shipped));
-        assert!(app.ui.toolbar_edits.basic.is_none() && app.ui.toolbar_edits.advanced.is_some());
-        // An edit that gives back the shipped toolbar forgets the edits.
-        app.run("toolbar.addTool", json!({"tool": "artboard"})).unwrap();
-        app.run("toolbar.removeTool", json!({"tool": "artboard"})).unwrap();
-        assert!(app.ui.toolbar_edits.basic.is_none());
-        // Everything out, then a tool back: it starts its own category.
-        for tool in shipped.iter().flatten() {
-            app.run("toolbar.removeTool", json!({"tool": tool})).unwrap();
-        }
-        assert!(slots(&app).is_empty());
-        app.run("toolbar.addTool", json!({"tool": "pen"})).unwrap();
-        assert_eq!(crate::toolbar::slots(&app), [(Some("Draw"), vec!["pen"])]);
     }
 
     #[test]
@@ -768,9 +698,12 @@ mod tests {
         // Onto the middle of the Ellipse tool: into its group.
         let tools = crate::toolbar::tests::widget_rects(&ctx, BUTTON);
         let ellipse = slot_of(&app, "ellipse").unwrap();
-        let (slice, _) = cell_at(&shown, drawer, "Slice");
-        drag(&mut app, &ctx, 2.0, slice, tools[ellipse].center());
-        assert_eq!(slots(&app)[ellipse], ["ellipse", "slice"]);
+        // The toolbar grew a slot: the drawer, beside its ••• button, moved down with it.
+        let shown = frame(&mut app, &ctx, 1.5, vec![]);
+        let drawer = drawer_rect(&ctx).unwrap();
+        let (measure, _) = cell_at(&shown, drawer, "Measure");
+        drag(&mut app, &ctx, 2.0, measure, tools[ellipse].center());
+        assert_eq!(slots(&app)[ellipse], ["ellipse", "measure"]);
         // A dimmed tool (in the toolbar already) doesn't drag.
         let before = slots(&app);
         let (rectangle, _) = cell_at(&shown, drawer, "Rectangle");
@@ -783,7 +716,7 @@ mod tests {
         // Within the toolbar: Selection onto the divider over the Lasso.
         let tools = crate::toolbar::tests::widget_rects(&ctx, BUTTON);
         drag(&mut app, &ctx, 5.0, tools[0].center(), tools[2].center_top() + vec2(0.0, 3.0));
-        assert_eq!(&slots(&app)[..3], [&["directSelection", "groupSelection"][..], &["selection"], &["lasso", "magicWand"]]);
+        assert_eq!(&slots(&app)[..3], [&["directSelection", "groupSelection"][..], &["selection"], &["lasso"]]);
         // The drawer closed, the toolbar is locked: the same drag moves nothing.
         app.run("window.editToolbar", json!({"open": false})).unwrap();
         frame(&mut app, &ctx, 6.0, vec![]);

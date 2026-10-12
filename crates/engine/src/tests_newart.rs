@@ -101,33 +101,6 @@ fn with_basic_appearance_off_new_art_takes_the_last_selections_whole_appearance(
 }
 
 #[test]
-fn a_graphic_style_clicked_with_nothing_selected_styles_the_next_object() {
-    let mut s = session();
-    fancy(&mut s);
-    // A placed gradient on the top fill: the style keeps it relative to the object's bounds.
-    let stops = json!([{"offset": 0, "color": "#ffffff"}, {"offset": 1, "color": "#000000"}]);
-    run(&mut s, "paint.setFill", json!({"gradient": {"stops": stops, "start": [20, 40], "end": [50, 40]}}));
-    let name = run(&mut s, "graphicStyle.new", json!({"name": "Fancy"}))["name"].as_str().unwrap().to_string();
-    run(&mut s, "select.none", json!({}));
-    let undo = undo_len(&s);
-    assert_eq!(run(&mut s, "graphicStyle.apply", json!({"name": name})), json!({"newArt": true}));
-    assert_eq!(undo_len(&s), undo);
-    assert_eq!(run(&mut s, "appearance.newArt", json!({}))["graphicStyle"], json!("Fancy"));
-    let id = NodeId(run(&mut s, "shape.ellipse", json!({"x": 200, "y": 100, "width": 100, "height": 50}))["id"].as_u64().unwrap());
-    let n = node(&s, id);
-    assert_eq!((n.appearance.items.len(), n.appearance.effects.len(), n.opacity), (3, 1, 0.5));
-    // Linked to the style (its look, gradient placed on the ellipse's own bounds).
-    let (g, linked) = s.selection_graphic_style().unwrap();
-    assert_eq!((g.name.as_str(), linked), ("Fancy", true));
-    // Alt-click (add) with nothing selected stacks a style on the template, unlinked.
-    run(&mut s, "select.none", json!({}));
-    run(&mut s, "graphicStyle.apply", json!({"name": name, "add": true}));
-    let q = run(&mut s, "appearance.newArt", json!({}));
-    assert_eq!((q["appearance"]["items"].as_array().unwrap().len(), q["graphicStyle"].clone()), (6, Value::Null));
-    assert!(s.execute("graphicStyle.apply", &json!({"name": name, "ids": []})).is_err(), "explicit ids that match nothing");
-}
-
-#[test]
 fn the_option_round_trips_with_the_preferences() {
     let mut s = session();
     run(&mut s, "prefs.set", json!({"key": "newArtBasic", "value": false}));

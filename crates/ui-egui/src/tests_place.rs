@@ -133,10 +133,10 @@ fn a_drop_without_a_position_opens_documents_and_places_pictures() {
     laid_out(&mut app, &ctx);
     let center = app.view().unwrap().center;
     let uid = app.session.active().unwrap().uid;
-    for name in ["a.svg", "a.svgz", "a.pdf", "a.ai", "a.eps", "a.vectorcraft", "a.drawcraft", "a.vctemplate", "a.dxf", "a.emf"] {
+    for name in ["a.svg", "a.svgz", "a.pdf", "a.ai", "a.eps", "a.vectorcraft", "a.drawcraft", "a.vctemplate"] {
         assert_eq!(app.drop_target(name, None, false), DropTarget::Open, "{name}");
     }
-    for name in ["a.png", "a.jpg", "a.tiff", "a.webp", "a.txt"] {
+    for name in ["a.png", "a.jpg", "a.webp"] {
         assert_eq!(app.drop_target(name, None, false), DropTarget::Place(DropAt { doc: uid, at: center, embed: false }), "{name}");
     }
 }
@@ -149,8 +149,8 @@ fn libraries_presets_and_plugins_open_wherever_they_are_dropped() {
     let ctx = egui::Context::default();
     let rect = laid_out(&mut app, &ctx);
     let on_canvas = rect.center() + vec2(60.0, -40.0);
-    let libraries = ["a.vcswatches", "a.gpl", "a.ase", "a.acb", "a.vcstyles", "a.vclibrary"];
-    let presets_and_plugins = ["a.vcflattener", "a.vcpdfpresets", "a.vcprintpresets", "a.vcperspective", "a.wasm"];
+    let libraries = ["a.vcswatches", "a.gpl", "a.ase", "a.acb"];
+    let presets_and_plugins = ["a.vcflattener", "a.vcpdfpresets"];
     for name in libraries.into_iter().chain(presets_and_plugins) {
         assert_eq!(app.drop_target(name, None, false), DropTarget::Open, "{name}");
         assert_eq!(app.drop_target(name, Some(on_canvas), true), DropTarget::Open, "{name} on the canvas");
@@ -173,23 +173,6 @@ fn a_dropped_swatch_library_opens_in_the_library_panel() {
     assert_eq!((lib["name"].as_str(), names), (Some("Dropped"), vec!["Red", "Sky"]));
     assert_eq!((app.session.documents().len(), images(&app, 0)), (1, 0), "neither opened as a document nor placed");
     assert_eq!(app.ui.recent_files.first(), Some(&gpl), "added to Open Recent Files as File → Open adds it");
-}
-
-/// A Libraries panel file dropped on the window while a document is open is added to the
-/// Libraries panel as a new library, as File → Open adds it.
-#[test]
-fn a_dropped_libraries_panel_file_is_added_as_a_new_library() {
-    let mut app = app();
-    let ctx = egui::Context::default();
-    laid_out(&mut app, &ctx);
-    let file = json!({"name": "Dropped", "colors": [{"name": "Red", "color": {"model": "rgb", "r": 1, "g": 0, "b": 0}}]});
-    let path = temp_file("dropped.vclibrary", file.to_string().as_bytes());
-    frame(&mut app, &ctx, vec![], &[&path], false);
-    assert_eq!(app.ui.status, "Imported library Dropped");
-    let lib = app.session.execute("library.get", &json!({})).unwrap();
-    let colors: Vec<&str> = lib["colors"].as_array().unwrap().iter().filter_map(|c| c["name"].as_str()).collect();
-    assert_eq!((lib["name"].as_str(), colors), (Some("Dropped"), vec!["Red"]));
-    assert_eq!((app.session.documents().len(), images(&app, 0)), (1, 0), "neither opened as a document nor placed");
 }
 
 #[test]
@@ -372,7 +355,7 @@ fn the_place_dialog_lists_the_files_and_loads_the_cursor_with_several() {
     app.run("file.place", json!({"paths": [a, b]})).unwrap();
     let d = app.ui.dialog.as_ref().expect("the Place dialog");
     assert_eq!(d.kind, crate::dialogs::place::KIND);
-    assert!(d.bool("link") && !d.bool("__replace"), "Link on; Replace needs one file and one selected object");
+    assert!(!d.bool("link") && !d.bool("__replace"), "Link off (embed) by default; Replace needs one file and one selected object");
     assert_eq!(d.fields["__info"][0], "300 × 150 px, 300 ppi, RGB (72 pt × 36 pt)");
     let text = crate::tests_labels::painted_text(&mut app, |app, ui| crate::dialogs::show(app, ui.ctx()));
     for label in ["Place", "a.png", "b.png", "Link", "Template", "Replace", "Cancel"] {
@@ -411,7 +394,7 @@ fn one_file_places_centred_in_the_view_and_replace_swaps_the_selection() {
     place_picked(&mut app, &temp_file("one.png", &png(300, 150, 300.0)));
     let d = app.ui.dialog.as_ref().expect("the Place dialog");
     assert_eq!(d.kind, crate::dialogs::place::KIND);
-    assert!(d.bool("link") && !d.bool("__replace"), "Link on; Replace needs one selected object");
+    assert!(!d.bool("link") && !d.bool("__replace"), "Link off (embed) by default; Replace needs one selected object");
     assert_eq!(d.fields["__info"][0], "300 × 150 px, 300 ppi, RGB (72 pt × 36 pt)");
     let text = crate::tests_labels::painted_text(&mut app, |app, ui| crate::dialogs::show(app, ui.ctx()));
     for label in ["Place", "one.png", "Link", "Template", "Replace", "Cancel"] {
@@ -531,7 +514,9 @@ fn a_vectorcraft_document_places_linked_and_edit_original_opens_it() {
     let path = temp_file("badge.vectorcraft", &bytes);
     place_picked(&mut app, &path);
     let d = app.ui.dialog.as_ref().expect("the Place dialog");
-    assert!(d.bool("link") && d.bool("__documents") && !d.bool("__others"), "Link on, for a document");
+    assert!(!d.bool("link") && d.bool("__documents") && !d.bool("__others"), "Link off by default, for a document");
+    app.ui.dialog.as_mut().unwrap().fields.insert("link".into(), json!(true));
+    let d = app.ui.dialog.as_ref().unwrap();
     // Link's tooltip says what it does for a document.
     assert!(crate::dialogs::place::link_tip(d).contains("editable copy"));
     crate::dialogs::confirm(&mut app).unwrap();

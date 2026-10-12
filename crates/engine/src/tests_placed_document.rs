@@ -151,12 +151,10 @@ fn a_placed_document_is_vectors_in_every_output() {
     let png = decode(&s.execute("document.serialize", &json!({"format": "png"})).unwrap());
     let [r, g, b, _] = image::load_from_memory(&png).unwrap().to_rgba8().get_pixel(200, 150).0;
     assert!(near([r, g, b], RED), "{:?}", [r, g, b]);
-    for format in ["eps", "emf", "dxf"] {
+    for format in ["eps", "ai"] {
         let out = s.execute("document.serialize", &json!({"format": format})).unwrap();
         assert!(out.to_string().len() > 200, "{format}: {out}");
     }
-    let info = s.execute("document.info", &json!({})).unwrap();
-    assert!(info.to_string().contains("\"placedDocuments\""), "{info}");
 }
 
 #[test]

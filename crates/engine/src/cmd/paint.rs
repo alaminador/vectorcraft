@@ -408,7 +408,7 @@ fn apply_paint(s: &mut Session, p: &Value, paint: Paint, fill: bool) -> Result<V
     // Resolve the requested targets before mutating defaults or the active proxy.
     let item = item_target(s, p, cmd)?.of_kind(s, fill);
     let selected = item.targets(s, p)?;
-    let ids = super::graph::paint_targets(&s.doc()?.doc, &selected);
+    let ids = selected.clone();
     // The gradient mesh point last clicked with the Mesh tool or Direct Selection: a solid fill
     // recolours just that point of its mesh.
     let mesh_point = if fill && matches!(paint, Paint::Solid { .. }) { focused_mesh_point(s) } else { None };
@@ -455,20 +455,7 @@ fn apply_paint(s: &mut Session, p: &Value, paint: Paint, fill: bool) -> Result<V
             n.appearance.set_paint_at(index, fill, placed);
             Ok(())
         },
-        |d, changed| {
-            let series = super::graph::capture_series_paints(d, changed, fill);
-            let labels = super::graph::capture_label_styles(d, changed, &|st| {
-                if fill {
-                    st.fill = paint.clone();
-                } else {
-                    if !paint.is_none() {
-                        run_stroke_weight(st);
-                    }
-                    st.stroke = paint.clone();
-                }
-            });
-            Ok(series || labels)
-        },
+        |_, _| Ok(false),
     )?;
     // Rejected edits leave the next shape's appearance and active proxy untouched.
     // New art takes an unplaced gradient so that it fits the new object's own bounds.

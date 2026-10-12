@@ -147,29 +147,6 @@ fn png8_decodes_at_every_bit_depth_and_interlaced() {
 }
 
 #[test]
-fn gif_decodes() {
-    let px: Vec<u8> = ramps(21, 17).chunks(4).enumerate().flat_map(|(i, p)| [p[0], p[1], p[2], if i % 5 == 0 { 0 } else { 255 }]).collect();
-    let ix = quantize(&px, 21, 17, &PaletteOptions { colors: 32, ..Default::default() });
-    for interlaced in [false, true] {
-        let file = gif::encode(&ix, interlaced).unwrap();
-        assert_eq!(&file[..6], b"GIF89a");
-        let back = image::load_from_memory_with_format(&file, image::ImageFormat::Gif).unwrap().to_rgba8();
-        assert_eq!(back.dimensions(), (21, 17));
-        for (i, p) in back.pixels().enumerate() {
-            match ix.indices[i] {
-                0 => assert_eq!(p[3], 0, "transparent at {i}"),
-                v => {
-                    let [r, g, b] = ix.palette[v as usize];
-                    assert_eq!(p.0, [r, g, b, 255], "{i} interlaced {interlaced}");
-                }
-            }
-        }
-    }
-    let wide = Indexed { width: 70_000, height: 1, palette: vec![[0; 3]], transparent: None, indices: vec![0; 70_000] };
-    assert!(gif::encode(&wide, false).is_err());
-}
-
-#[test]
 fn ids_round_trip() {
     for r in Reduction::ALL {
         assert_eq!(Reduction::from_id(r.id()), Some(r));

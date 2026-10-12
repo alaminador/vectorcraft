@@ -166,15 +166,6 @@ pub fn specs() -> Vec<CommandSpec> {
             .path_data()
             .is_some_and(|p| !p.is_closed()))),
         cmd!(
-            "select.same.graphicStyle",
-            "Graphic Style",
-            ["Select", "Same"],
-            None,
-            "{} the objects linked to the graphic style the first selected object is linked to",
-            has_selection,
-            same_graphic_style
-        ),
-        cmd!(
             "select.same.appearanceAttribute",
             "Appearance Attribute",
             ["Select", "Same"],
@@ -536,19 +527,6 @@ fn select_where(s: &mut Session, cmd: &str, p: &Value, f: impl Fn(&Document, &No
     s.select(|_, sel| sel.set(ids.iter().copied()))?;
     s.doc_mut()?.last_selection_cmd = Some((cmd.to_string(), p.clone(), from));
     Ok(json!({ "count": ids.len() }))
-}
-
-fn same_graphic_style(s: &mut Session, _: &Value) -> Result<Value> {
-    let cmd = "select.same.graphicStyle";
-    let st = s.doc()?;
-    let id = st
-        .selection
-        .objects
-        .first()
-        .and_then(|id| super::style::linked_style(&st.doc, st.doc.node(*id)?))
-        .map(|g| g.id)
-        .ok_or_else(|| bad(cmd, "the selection has no graphic style"))?;
-    select_where(s, cmd, &json!({}), |d, n| n.extras().graphic_style == Some(id) && super::style::linked_style(d, n).is_some())
 }
 
 /// An appearance attribute Select > Same > Appearance Attribute matches.

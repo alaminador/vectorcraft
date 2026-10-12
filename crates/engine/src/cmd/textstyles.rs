@@ -271,17 +271,6 @@ fn selection_attrs(s: &Session, p: &Value, kind: Kind) -> Result<Option<Map<Stri
     }))
 }
 
-/// The selected text's character (`para`: paragraph) attributes, every one of them: what a
-/// library keeps of a text style. `None` without text selected.
-pub(crate) fn selected_style_attrs(s: &Session, para: bool) -> Result<Option<Map<String, Value>>> {
-    selection_attrs(s, &json!({}), if para { Kind::Para } else { Kind::Char })
-}
-
-/// Whether the document has a character (`para`: paragraph) style `name`, and its attributes.
-pub(crate) fn style_attrs(d: &Document, para: bool, name: &str) -> Option<Map<String, Value>> {
-    if para { Kind::Para } else { Kind::Char }.attrs(d, name)
-}
-
 fn name_param<'a>(p: &'a Value, kind: Kind, verb: &str) -> Result<&'a str> {
     str_param(p, "name").ok_or_else(|| bad(&kind.cmd(verb), "missing `name`"))
 }
@@ -603,44 +592,6 @@ mod tests {
         s.execute("charStyle.apply", &json!({"name": "Pink"})).unwrap();
         let fill = serde_json::to_value(&runs(&s, id)[0].style.fill).unwrap();
         assert_eq!(s.doc().unwrap().doc.char_styles.iter().find(|d| d.name == "Pink").unwrap().attrs["fill"], fill);
-    }
-
-    /// #1001: attributes their JSON leaves out at the defaults (Auto leading and kerning, no
-    /// mojikumi) are still attributes a style can set, and a style captured with one applies to
-    /// text at the default, is duplicated and comes back out of a library.
-    #[test]
-    fn styles_take_attributes_left_out_at_their_defaults() {
-        let (mut s, id) = session_with_text("A");
-        s.execute("charStyle.new", &json!({"name": "Kerned", "attrs": {"kerning": 40, "leading": 30}})).unwrap();
-        s.execute("charStyle.setAttrs", &json!({"name": "Kerned", "attrs": {"kerning": 20, "small_caps": 70}})).unwrap();
-        s.execute("paraStyle.new", &json!({"name": "Punctuation", "attrs": {"mojikumi": "lineEndHalf"}})).unwrap();
-        s.execute("paraStyle.setAttrs", &json!({"name": "Punctuation", "attrs": {"direction": "rightToLeft"}})).unwrap();
-        for bad in [json!({"nope": 1}), json!({"justify_auto": true})] {
-            assert!(s.execute("paraStyle.new", &json!({"name": "Bad", "attrs": bad})).is_err(), "{bad}");
-        }
-        // Captured from text with explicit leading, applied to fresh Auto-leading text.
-        s.execute("text.setStyle", &json!({"leading": 30})).unwrap();
-        s.execute("charStyle.new", &json!({"name": "Spaced"})).unwrap();
-        let fresh = s.execute("text.create", &json!({"x": 10, "y": 90, "text": "B"})).unwrap()["id"].as_u64().unwrap();
-        assert_eq!(runs(&s, fresh)[0].style.leading, None);
-        for clear in [false, true] {
-            s.execute("charStyle.apply", &json!({"name": "Spaced", "id": fresh, "clearOverrides": clear})).unwrap();
-            assert_eq!(runs(&s, fresh)[0].style.leading, Some(30.0));
-        }
-        let copy = s.execute("charStyle.duplicate", &json!({"name": "Spaced"})).unwrap()["name"].as_str().unwrap().to_string();
-        assert_eq!(s.doc().unwrap().doc.char_styles.iter().find(|d| d.name == copy).unwrap().attrs["leading"], 30.0);
-        s.execute("charStyle.apply", &json!({"name": "Kerned", "id": fresh})).unwrap();
-        let st = runs(&s, fresh)[0].style.clone();
-        assert_eq!((st.kerning, st.small_caps), (Some(20.0), Some(70.0)));
-        s.execute("paraStyle.apply", &json!({"name": "Punctuation", "id": id})).unwrap();
-        let NodeKind::Text(t) = &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind else { panic!() };
-        assert_eq!((t.para.mojikumi, t.para.direction), (vectorcraft_doc::Mojikumi::LineEndHalf, Some(vectorcraft_doc::ParaDirection::RightToLeft)));
-        // A library keeps the captured attributes and makes the style again where it's used.
-        s.execute("select.set", &json!({"ids": [id]})).unwrap();
-        let lib = s.execute("library.add", &json!({"kind": "charStyle", "name": "Lib Spaced"})).unwrap();
-        let other = s.execute("text.create", &json!({"x": 10, "y": 150, "text": "C"})).unwrap()["id"].as_u64().unwrap();
-        s.execute("library.use", &json!({"library": lib["library"], "kind": "charStyle", "item": lib["name"]})).unwrap();
-        assert_eq!(runs(&s, other)[0].style.leading, Some(30.0));
     }
 
     #[test]

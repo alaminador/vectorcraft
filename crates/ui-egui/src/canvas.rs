@@ -408,21 +408,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
     }
 
-    if !app.session.slices_hidden() {
-        slice_overlay(app, &painter, &xf);
-    }
-    if app.session.active().is_some_and(|d| d.print_tiling) || app.session.tool_id() == "printTiling" {
-        print_tiling_overlay(app, &painter, &xf);
-    }
-
     // Selection visuals and tool overlays.
     let view_info = app.view_info();
     // View → Hide Gradient Annotator hides the Gradient tool's annotator.
-    let overlays = if app.session.tool_id() != "gradient" || app.ui.view.gradient_annotator {
-        app.session.overlays(view_info)
-    } else {
-        vec![]
-    };
+    let overlays = if app.session.tool_id() != "gradient" || app.ui.view.gradient_annotator { app.session.overlays(view_info) } else { vec![] };
     if app.ui.view.edges {
         hover_highlight(app, &painter, &xf);
         selection_overlay(app, &painter, &xf, overlays.iter().any(|o| matches!(o, Overlay::CurvePoint { .. })));
@@ -1390,14 +1379,6 @@ fn panel_drop(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, xf: &Xf)
         return;
     }
     let Some(d) = resp.dnd_release_payload::<widgets::PanelDrag>() else { return };
-    // A Libraries panel graphic: a copy centred where it is dropped.
-    if let widgets::PanelDrag::LibraryGraphic { library, item } = &*d {
-        let at = xf.to_doc(pos);
-        if let Err(e) = app.run("library.use", json!({"library": library, "kind": "graphic", "item": item, "center": [at.x, at.y]})) {
-            app.status(e);
-        }
-        return;
-    }
     // A symbol from the Symbols panel: an instance centred where it is dropped, on art or not.
     if let widgets::PanelDrag::Symbol(name) = &*d {
         let at = xf.to_doc(pos);
@@ -1426,17 +1407,13 @@ fn panel_drop(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, xf: &Xf)
             }
             ("appearance.copyFrom", json!({"source": source.0, "ids": [target.0]}))
         }
-        widgets::PanelDrag::GraphicStyle(name) => {
-            let add = ui.input(|i| i.modifiers.alt);
-            ("graphicStyle.apply", json!({"name": name, "ids": [hit.top_object(st.isolation).0], "add": add}))
-        }
         // A brush from the Brushes panel: the path it lands on takes it (a compound path as a whole).
         widgets::PanelDrag::Brush { name, .. } => {
             ("brush.apply", json!({"name": name, "ids": [vectorcraft_tools::xform::paint_owner(&st.doc, hit.leaf).0]}))
         }
         // Art dragged back onto the canvas: its move was already dropped. (A symbol was placed
         // above.)
-        widgets::PanelDrag::Art(_) | widgets::PanelDrag::Symbol(_) | widgets::PanelDrag::LibraryGraphic { .. } => return,
+        widgets::PanelDrag::Art(_) | widgets::PanelDrag::Symbol(_) => return,
     };
     if let Err(e) = app.run(cmd, params) {
         app.status(e);
@@ -1568,84 +1545,6 @@ fn thread_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
         }
     }
 }
-
-/// The slices (unless View → Hide Slices): user and object slices outlined in the Slices
-/// preferences' line colour, auto slices dashed and dimmer, each numbered at its top left (Show
-/// Slice Numbers); selected slices have a bolder outline. The layout is cached per revision.
-fn slice_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf) {
-    let Some(st) = app.session.active() else { return };
-    let key = (st.uid, st.revision);
-    let slices = match &app.canvas.slices {
-        Some((k, s)) if *k == key => s.clone(),
-        _ => {
-            let s = std::sync::Arc::new(st.doc.slice_layout());
-            app.canvas.slices = Some((key, s.clone()));
-            s
-        }
-    };
-    if slices.is_empty() {
-        return;
-    }
-    let prefs = &app.session.prefs;
-    let line = pref_color(&prefs.slice_line_color, Color32::from_rgb(0xff, 0x3f, 0x3f));
-    let dim = line.gamma_multiply(0.55);
-    let selected = &st.selection.slices;
-    let objects = &st.selection.objects;
-    for a in slices.iter() {
-        let auto = a.source == vectorcraft_doc::SliceSource::Auto;
-        let on = a.id.is_some_and(|id| selected.contains(&id) || objects.contains(&id));
-        let q = xf.quad(a.rect);
-        let ring: Vec<Pos2> = q.iter().chain(q.first()).copied().collect();
-        if auto {
-            p.extend(Shape::dashed_line(&ring, Stroke::new(1.0, dim), 3.0, 3.0));
-        } else {
-            p.add(Shape::line(ring, Stroke::new(if on { 2.0 } else { 1.0 }, line)));
-        }
-        if prefs.show_slice_numbers
-            && let Some(tl) = q.first()
-        {
-            let font = egui::FontId::proportional(9.0);
-            let galley = p.layout_no_wrap(format!("{:02}", a.number), font, Color32::WHITE);
-            let badge = egui::Rect::from_min_size(*tl + vec2(1.0, 1.0), galley.size() + vec2(6.0, 2.0));
-            p.rect_filled(badge, CornerRadius::ZERO, if auto { dim } else { line });
-            p.galley(badge.min + vec2(3.0, 1.0), galley, Color32::WHITE);
-        }
-    }
-}
-
-/// The print tiling (View → Show Print Tiling, or the Print Tiling tool): each page of the
-/// document's print settings as `print.preview` lays it out, its paper edge and its imageable
-/// area dashed, numbered at its top left; tiles outside the tile range dimmer. Cached per revision.
-fn print_tiling_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf) {
-    let Some(st) = app.session.active() else { return };
-    let key = (st.uid, st.revision);
-    let pages = match &app.canvas.print_tiling {
-        Some((k, pages)) if *k == key => pages.clone(),
-        _ => {
-            // Settings that can't print have no pages to show.
-            let pages = std::sync::Arc::new(vectorcraft_engine::cmd::printtiling::pages(&st.doc).unwrap_or_default());
-            app.canvas.print_tiling = Some((key, pages.clone()));
-            pages
-        }
-    };
-    let font = egui::FontId::proportional(10.0);
-    let ring = |r: [f64; 4]| {
-        let q = xf.quad(Rect::new(r[0], r[1], r[2], r[3]));
-        q.iter().chain(q.first()).copied().collect::<Vec<Pos2>>()
-    };
-    for page in pages.iter() {
-        let color = if page.printed { PRINT_TILING } else { PRINT_TILING.gamma_multiply(0.45) };
-        p.add(Shape::line(ring(page.page), Stroke::new(0.75, color)));
-        let inner = ring(page.imageable);
-        p.extend(Shape::dashed_line(&inner, Stroke::new(1.0, color), 4.0, 3.0));
-        if let Some(corner) = inner.iter().copied().reduce(|a, b| pos2(a.x.min(b.x), a.y.min(b.y))) {
-            p.text(corner + vec2(3.0, 2.0), egui::Align2::LEFT_TOP, page.number.to_string(), font.clone(), color);
-        }
-    }
-}
-
-/// The print tiling's lines: a neutral grey that reads on the paper and on the pasteboard.
-const PRINT_TILING: Color32 = Color32::from_gray(96);
 
 fn selection_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf, curve_points_from_tool: bool) {
     // The Selection tool's bounding box (rotated with the objects after a rotation). It hides while
@@ -2199,7 +2098,6 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
 mod tests {
     use super::*;
     use vectorcraft_engine::Session;
-    use vectorcraft_geom::Shape as _;
 
     /// #826: in a turned view each ruler still has ticks along its whole length; at 0° the top one
     /// reads x where the canvas has it.
@@ -2276,23 +2174,6 @@ mod tests {
                 }
             }
         }
-    }
-
-    #[test]
-    fn shaper_selection_highlights_only_the_visible_result() {
-        let mut s = Session::new();
-        s.execute("file.new", &json!({})).unwrap();
-        s.execute("shape.ellipse", &json!({"x":100,"y":100,"width":100,"height":100})).unwrap();
-        let line = vectorcraft_doc::NodeId(s.execute("shape.line", &json!({"x1":50,"y1":150,"x2":250,"y2":150})).unwrap()["id"].as_u64().unwrap());
-        for x in [0.0, 150.0] {
-            s.execute("shaper.scribble", &json!({"points":[[60.0+x,140],[70.0+x,160],[80.0+x,140],[90.0+x,160]]})).unwrap();
-        }
-        let st = s.active().unwrap();
-        let g = st.doc.node(st.selection.objects[0]).unwrap();
-        assert!(g.extras().shaper.is_some());
-        let bounds = node_outline(g).bounding_box();
-        assert!((bounds.x0 - 100.0).abs() < 0.01 && (bounds.x1 - 200.0).abs() < 0.01, "{bounds:?}");
-        assert_eq!(node_outline(st.doc.node(line).unwrap()).bounding_box().x0, 50.0, "an isolated original still shows its full outline");
     }
 
     /// One headless canvas frame on an 800 × 600 window.
@@ -3839,33 +3720,6 @@ mod tests {
     }
 
     #[test]
-    fn a_graphic_style_dropped_on_art_applies_to_the_object_hit() {
-        use vectorcraft_doc::NodeId;
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
-        run(&mut app, "file.new", json!({"width": 400, "height": 300}));
-        let a = NodeId(run(&mut app, "shape.rectangle", json!({"x": 20, "y": 20, "width": 100, "height": 100}))["id"].as_u64().unwrap());
-        let b = NodeId(run(&mut app, "shape.rectangle", json!({"x": 200, "y": 20, "width": 100, "height": 100}))["id"].as_u64().unwrap());
-        run(&mut app, "select.set", json!({ "ids": [a.0] }));
-        let name = app.session.active().unwrap().doc.graphic_styles[2].name.clone();
-        let ctx = egui::Context::default();
-        frame(&mut app, &ctx, vec![]);
-        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
-        let at = xf.to_screen(Point::new(250.0, 70.0));
-        egui::DragAndDrop::set_payload(&ctx, widgets::PanelDrag::GraphicStyle(name.clone()));
-        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at)]);
-        let up = egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() };
-        frame(&mut app, &ctx, vec![up]);
-        let st = app.session.active().unwrap();
-        let g = st.doc.graphic_style(&name).unwrap();
-        // `graphicStyle.apply` with the hit object's id: linked, the selection left alone.
-        assert_eq!(st.doc.node(b).unwrap().extras().graphic_style, Some(g.id));
-        assert_eq!(st.doc.node(b).unwrap().appearance, g.appearance);
-        assert_eq!(st.doc.node(a).unwrap().extras().graphic_style, None);
-        assert_eq!(st.selection.objects, [a]);
-    }
-
-    #[test]
     fn art_moved_off_the_canvas_becomes_a_panel_drag_and_stays_put() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
@@ -4072,17 +3926,6 @@ mod tests {
         pen_stroke(&mut app, &ctx, &[(100.0, 100.0, 0.5), (140.0, 120.0, 0.6), (180.0, 150.0, 0.7), (220.0, 200.0, 0.4)]);
         let b = app.session.active().unwrap().doc.art_bounds().expect("the pen drew a path");
         assert!(b.x0 > 90.0 && b.y0 > 90.0 && b.x1 < 230.0 && b.y1 < 210.0 && b.x1 > 200.0, "the stroke stays where the pen went: {b:?}");
-
-        // Bloat with Use Pressure Pen: each sample carries the pen's pressure.
-        app.session.execute("shape.rectangle", &json!({"x": 300, "y": 300, "width": 200, "height": 200})).unwrap();
-        app.select_tool("bloat");
-        app.session.set_tool_option("usePressure", &json!(true));
-        pen_stroke(&mut app, &ctx, &[(500.0, 350.0, 0.2), (500.0, 400.0, 0.5), (500.0, 420.0, 0.8)]);
-        let (cmd, p) = app.session.journal.last().unwrap().clone();
-        assert_eq!(cmd, "object.liquify");
-        let pressures: Vec<f64> = p["points"].as_array().unwrap().iter().map(|s| (s[2].as_f64().unwrap() * 100.0).round() / 100.0).collect();
-        assert_eq!(pressures.first(), Some(&0.2), "the press's own pressure: {pressures:?}");
-        assert!(pressures.contains(&0.5) && pressures.contains(&0.8), "{pressures:?}");
     }
 
     /// #491: a pen tap whose press and lift come in one frame selects what it tapped, and the

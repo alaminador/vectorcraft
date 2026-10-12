@@ -3,38 +3,26 @@
 //!
 //! Every icon panel has a body (`show_icon_panel`) and a panel (≡) menu (`panel_menu`).
 
-pub mod actions;
 pub mod align;
 pub mod appearance;
 pub mod artboards;
 pub mod asset_export;
-pub mod attributes;
 pub mod brushes;
 pub mod character;
 pub mod color;
-pub mod color_guide;
-pub mod color_themes;
-pub mod css_properties;
-pub mod doc_info;
-pub mod flattener_preview;
 pub mod glyphs;
 pub mod gradient;
-pub mod graphic_styles;
 pub mod history;
 pub mod image_trace;
 pub mod info;
 pub mod layers;
-pub mod libraries;
 pub mod library_panel;
 pub mod links;
-pub mod magic_wand;
-pub mod navigator;
 pub mod opentype;
 pub mod paragraph;
 pub mod pathfinder;
 pub mod pattern_options;
 pub mod properties;
-pub mod separations;
 pub mod stroke;
 pub mod swatches;
 pub mod symbols;
@@ -42,7 +30,6 @@ pub mod tabs;
 pub mod text_styles;
 pub mod transform;
 pub mod transparency;
-pub mod variables;
 
 use egui::{Rect, Sense, Ui, vec2};
 use serde_json::{Value, json};
@@ -107,43 +94,31 @@ pub fn show_icon_panel(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) {
     match id {
         "swatches" => swatches::show(app, ui),
         "color" => color::show(app, ui),
-        "colorGuide" => color_guide::show(app, ui),
         "stroke" => stroke::show(app, ui),
         "transparency" => transparency::show(app, ui),
         "appearance" => appearance::show(app, ui),
-        "graphicStyles" => graphic_styles::show(app, ui),
         "align" => align::show(app, ui),
         "pathfinder" => pathfinder::show(app, ui),
         "transform" => transform::show(app, ui),
         "history" => history::show(app, ui),
-        "actions" => actions::show(app, ui),
         "info" => info::show(app, ui),
-        "separations" => separations::show(app, ui),
         "artboards" => artboards::show(app, ui),
         "gradient" => gradient::show(app, ui),
         "character" => character::show(app, ui),
         "paragraph" => paragraph::show(app, ui),
         "glyphs" => glyphs::show(app, ui),
-        "navigator" => navigator::show(app, ui),
         "brushes" => brushes::show(app, ui),
-        "symbols" => symbols::show(app, ui),
         "patternOptions" => pattern_options::show(app, ui),
+        "symbols" => symbols::show(app, ui),
         "imageTrace" => image_trace::show(app, ui),
         "openType" => opentype::show(app, ui),
-        "docInfo" => doc_info::show(app, ui),
         "charStyles" => text_styles::show(app, ui, text_styles::Kind::Char),
         "paraStyles" => text_styles::show(app, ui, text_styles::Kind::Para),
-        "magicWand" => magic_wand::show(app, ui),
         "tabs" => tabs::show(app, ui),
-        flattener_preview::ID => flattener_preview::show(app, ui),
-        "attributes" => attributes::show(app, ui),
-        variables::ID => variables::show(app, ui),
-        "colorThemes" => color_themes::show(app, ui),
         links::ID => links::show(app, ui),
         asset_export::ID => asset_export::show(app, ui),
-        css_properties::ID => css_properties::show(app, ui),
         _ => {
-            dim_label(ui, tl!("This panel is on the roadmap (see the parity plan)."));
+            dim_label(ui, tl!("This panel isn't part of LogoCraft."));
         }
     }
 }
@@ -154,42 +129,30 @@ pub fn panel_menu_items(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) -> bool
     match id {
         "swatches" => swatches::menu(app, ui),
         "color" => color::menu(app, ui),
-        "colorGuide" => color_guide::menu(app, ui),
         "stroke" => stroke::menu(app, ui),
         "transparency" => transparency::menu(app, ui),
         "appearance" => appearance::menu(app, ui),
-        "graphicStyles" => graphic_styles::menu(app, ui),
         "align" => align::menu(app, ui),
         "pathfinder" => pathfinder::menu(app, ui),
         "transform" => transform::menu(app, ui),
         "history" => history::menu(app, ui),
         "info" => info::menu(app, ui),
-        "separations" => separations::menu(app, ui),
         "artboards" => artboards::menu(app, ui),
         "gradient" => gradient::menu(app, ui),
         "character" => character::menu(app, ui),
         "paragraph" => paragraph::menu(app, ui),
         "glyphs" => glyphs::menu(app, ui),
-        "navigator" => navigator::menu(app, ui),
         "brushes" => brushes::menu(app, ui),
-        "symbols" => symbols::menu(app, ui),
         "patternOptions" => pattern_options::menu(app, ui),
+        "symbols" => symbols::menu(app, ui),
         "imageTrace" => image_trace::menu(app, ui),
         "openType" => opentype::menu(app, ui),
-        "docInfo" => doc_info::menu(app, ui),
         "charStyles" => text_styles::menu(app, ui, text_styles::Kind::Char),
         "paraStyles" => text_styles::menu(app, ui, text_styles::Kind::Para),
-        "magicWand" => magic_wand::menu(app, ui),
         "tabs" => tabs::menu(app, ui),
-        "libraries" => libraries::menu(app, ui),
-        flattener_preview::ID => flattener_preview::menu(app, ui),
-        "attributes" => attributes::menu(app, ui),
-        "colorThemes" => color_themes::menu(app, ui),
         "layers" => layers::menu(app, ui),
         links::ID => links::menu(app, ui),
         asset_export::ID => asset_export::menu(app, ui),
-        css_properties::ID => css_properties::menu(app, ui),
-        variables::ID => variables::menu(app, ui),
         _ => return false,
     }
     true
@@ -221,10 +184,6 @@ pub fn panel_menu(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, rect: Rect) {
             }
         });
     });
-}
-
-pub fn libraries(app: &mut VectorcraftApp, ui: &mut Ui) {
-    libraries::show(app, ui);
 }
 
 // ---------- shared helpers ----------
@@ -507,8 +466,6 @@ mod tests_asset_export;
 #[cfg(test)]
 mod tests_constrain;
 #[cfg(test)]
-mod tests_css_properties;
-#[cfg(test)]
 mod tests_effectedit;
 #[cfg(test)]
 mod tests_fontsize;
@@ -524,7 +481,5 @@ mod tests_stroke;
 mod tests_strokedepth;
 #[cfg(test)]
 mod tests_strokeux;
-#[cfg(test)]
-mod tests_style_libraries;
 #[cfg(test)]
 mod tests_units;

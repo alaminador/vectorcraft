@@ -57,14 +57,8 @@ pub(crate) enum Entry {
 
 /// Commands that ask for a file but act on no document: their answer goes on even when the
 /// document active at the time has closed meanwhile.
-const DOCUMENT_FREE: &[&str] = &[
-    "file.open",
-    "file.newFromTemplate",
-    "window.swatchLibrary.other",
-    "window.graphicStyleLibrary.other",
-    "shortcuts.import",
-    "shortcuts.export",
-];
+const DOCUMENT_FREE: &[&str] =
+    &["file.open", "file.newFromTemplate", "window.swatchLibrary.other", "window.graphicStyleLibrary.other", "shortcuts.import", "shortcuts.export"];
 
 impl Entry {
     /// The document it acts on when it runs again: the active one, unless it acts on none.

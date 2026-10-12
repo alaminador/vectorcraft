@@ -163,3 +163,26 @@ fn serialize_all_formats_on_rich_doc() {
     invariants::check_document(&back).unwrap();
     assert!(back.node_count() >= 5);
 }
+
+/// Found by `random_command_sequences`: a compound path copied from inside a compound path and
+/// pasted in front of one of its paths went into it (a compound path holds only paths).
+#[test]
+fn paste_in_front_of_a_compound_paths_member_keeps_it_flat() {
+    let ops = vec![
+        Op::SelectSet(vec![0]),
+        Op::Rect(0.0, 0.0, 1.0, 1.0),
+        Op::Move(0.0, 0.0, false),
+        Op::Clear,
+        Op::SelectSet(vec![0]),
+        Op::Rect(0.0, 0.0, 1.0, 1.0),
+        Op::Rotate(0.0, false),
+        Op::Batch(vec![Op::Compound, Op::SelectSet(vec![0])]),
+        Op::ExpandShape,
+        Op::Ungroup,
+        Op::Fill(0),
+        Op::ExpandShape,
+        Op::Copy,
+        Op::Paste(1),
+    ];
+    run_sequence(&ops, 1).unwrap();
+}

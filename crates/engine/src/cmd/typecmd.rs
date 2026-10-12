@@ -13,18 +13,6 @@ use super::*;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("type.orientation.vertical", "Vertical", ["Type", "Orientation"], None, "{ids?|id?} set vertical writing", has_selection, |s, p| {
-            orientation(s, p, true)
-        }),
-        cmd!(
-            "type.orientation.horizontal",
-            "Horizontal",
-            ["Type", "Orientation"],
-            None,
-            "{ids?|id?} set horizontal writing",
-            has_selection,
-            |s, p| orientation(s, p, false)
-        ),
         cmd!(
             "type.createOutlines",
             "Create Outlines",
@@ -80,21 +68,6 @@ pub fn specs() -> Vec<CommandSpec> {
             set_style
         ),
     ]
-}
-
-fn orientation(s: &mut Session, p: &Value, vertical: bool) -> Result<Value> {
-    let ids = text_targets(s, p, "Text Orientation")?;
-    s.edit("Text Orientation", |d, _| {
-        for id in &ids {
-            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
-                return Err(EngineError::NoNode(*id));
-            };
-            t.vertical = vertical;
-            refresh_bounds(t);
-        }
-        Ok(())
-    })?;
-    Ok(json!({"vertical": vertical, "ids": ids.iter().map(|id| id.0).collect::<Vec<_>>()}))
 }
 
 /// Recompute the layout caches (bounds and baselines) after a text edit. Every engine text edit ends here (typing
@@ -469,35 +442,6 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
                 t.edit_paras(span, |pa| pa.justify = j);
             }
             refresh_bounds(t);
-        }
-        // Graph labels keep a change made to all of their text through the graph being drawn again (sizes as given,
-        // not in a scaled label's own units).
-        if range.is_none() {
-            super::graph::capture_label_styles(d, &ids, &|st| {
-                if let Some(f) = &font {
-                    st.font_family = f.clone();
-                    st.font_version = None;
-                }
-                if let Some(f) = &style {
-                    st.font_style = f.clone();
-                    st.font_version = None;
-                }
-                if let Some(v) = size {
-                    st.size = v.clamp(0.1, 1296.0);
-                }
-                if let Some(l) = leading {
-                    st.leading = l;
-                }
-                if let Some(v) = tracking {
-                    st.tracking = v.clamp(-1000.0, 10000.0);
-                }
-                if let Some(f) = &fill {
-                    st.fill = f.clone();
-                }
-                if let Some(f) = &features {
-                    st.features = f.clone();
-                }
-            });
         }
         Ok(())
     })?;
@@ -973,23 +917,6 @@ mod area_tests {
         let old: vectorcraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left"})).unwrap();
         assert_eq!(old.mojikumi, Mojikumi::None);
         assert!(serde_json::to_value(&old).unwrap().get("mojikumi").is_none());
-    }
-
-    #[test]
-    fn vertical_point_type_keeps_its_anchor_on_the_column_centre_line() {
-        let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
-        let id = s.execute("text.create", &json!({"x": 100, "y": 50, "text": "§§§§ abc"})).unwrap()["id"].as_u64().unwrap();
-        let bounds = |s: &Session| s.doc().unwrap().doc.node(NodeId(id)).unwrap().geometric_bounds().unwrap();
-        let wide = bounds(&s);
-        assert!(wide.width() > wide.height());
-        s.execute("select.set", &json!({"ids": [id]})).unwrap();
-        s.execute("type.orientation.vertical", &json!({})).unwrap();
-        let tall = bounds(&s);
-        assert!(tall.height() > tall.width(), "{tall:?}");
-        assert!((tall.center().x - 100.0).abs() < 6.0, "the anchor stays on the column's centre line: {tall:?}");
-        s.execute("edit.undo", &json!({})).unwrap();
-        assert_eq!(bounds(&s), wide);
     }
 
     #[test]

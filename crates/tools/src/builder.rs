@@ -768,8 +768,6 @@ impl Tool for LivePaintSelectionTool {
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
     Some(match id {
         "shapeBuilder" => Box::new(ShapeBuilderTool::default()),
-        "livePaintBucket" => Box::new(LivePaintBucketTool::default()),
-        "livePaintSelection" => Box::new(LivePaintSelectionTool::default()),
         _ => return None,
     })
 }
@@ -1016,9 +1014,7 @@ mod tests {
 
     #[test]
     fn create_builds_the_three_tools() {
-        for id in ["shapeBuilder", "livePaintBucket", "livePaintSelection"] {
-            assert_eq!(create(id).unwrap().id(), id);
-        }
+        assert_eq!(create("shapeBuilder").unwrap().id(), "shapeBuilder");
         assert!(create("pen").is_none());
     }
 }

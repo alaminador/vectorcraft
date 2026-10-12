@@ -12,25 +12,19 @@ pub mod builder;
 pub mod catalog;
 pub mod corners;
 pub mod cropimage;
-pub mod cut;
 pub mod direct;
 pub mod distort;
 pub mod draw2;
-pub mod extra;
 pub mod guides;
-pub mod meshblend;
 pub mod meshedit;
 pub mod params;
 pub mod pathtype;
 pub mod pen;
 pub mod place;
-pub mod printtiling;
 pub mod rulerguide;
 pub mod select;
 pub mod settings;
 pub mod shape;
-pub mod slice;
-pub mod symbolism;
 pub mod text;
 pub mod typewidget;
 pub mod xform;
@@ -265,10 +259,6 @@ pub struct ToolContext<'a> {
     /// Clipboard Handling → When pasting text: Keep Plain Text. Text pasted while typing takes
     /// the style at the caret, even the text the Type tool copied with its formatting.
     pub paste_plain_text: bool,
-    /// View → Hide Slices: the Slice Selection tool can't pick hidden slices.
-    pub slices_hidden: bool,
-    /// View → Lock Slices: the Slice Selection tool leaves locked slices alone.
-    pub slices_locked: bool,
     /// General → Disable Auto Add/Delete is off: the Pen adds an anchor on a selected path's
     /// segment and deletes one of its anchors.
     pub auto_add_delete: bool,
@@ -336,8 +326,6 @@ pub struct ToolContext<'a> {
     pub construction_angles: &'static [f64],
     /// The document window (none headless): screen-fixed widgets sit in it.
     pub screen: Option<ScreenFrame>,
-    /// Where the Plane Switching Widget sits (Perspective Grid Options); None while it's hidden.
-    pub plane_widget: Option<distort::perspective::widget::WidgetCorner>,
 }
 
 impl ToolContext<'_> {
@@ -601,21 +589,15 @@ pub fn create(id: &str) -> Box<dyn Tool> {
         "directSelection" => Box::new(direct::DirectSelectionTool::new(false)),
         "groupSelection" => Box::new(direct::DirectSelectionTool::new(true)),
         "pen" => Box::new(pen::PenTool::default()),
-        "type" | "areaType" | "typeOnPath" | "verticalType" | "verticalAreaType" | "verticalTypeOnPath" => Box::new(text::TypeTool::new(id)),
+        "type" | "areaType" | "typeOnPath" => Box::new(text::TypeTool::new(id)),
         "rectangle" | "roundedRectangle" | "ellipse" | "polygon" | "star" | "lineSegment" => Box::new(shape::ShapeTool::new(id)),
         // Not in the toolbar: `file.place.queue` loads it.
         "place" => Box::new(place::PlaceTool::default()),
-        other => symbolism::create(other)
-            .or_else(|| builder::create(other))
+        other => builder::create(other)
             .or_else(|| draw2::create(other))
             .or_else(|| xform::create(other))
-            .or_else(|| meshblend::create(other))
             .or_else(|| distort::create(other))
-            .or_else(|| extra::create(other))
-            .or_else(|| slice::create(other))
-            .or_else(|| printtiling::create(other))
             .or_else(|| cropimage::create(other))
-            .or_else(|| cut::create(other))
             .unwrap_or_else(|| Box::new(NoopTool(tool_info(other).map(|t| t.id).unwrap_or("selection")))),
     }
 }
@@ -706,8 +688,6 @@ pub(crate) mod testutil {
             unit: Unit::Points,
             stroke_unit: Unit::Points,
             paste_plain_text: false,
-            slices_hidden: false,
-            slices_locked: false,
             auto_add_delete: true,
             selection_tolerance: 3.0,
             anchor_size: 3,
@@ -732,7 +712,6 @@ pub(crate) mod testutil {
             snapping_tolerance: 4.0,
             construction_angles: guides::construction_angles(guides::DEFAULT_CONSTRUCTION_ANGLES),
             screen: None,
-            plane_widget: Some(Default::default()),
         }
     }
 }

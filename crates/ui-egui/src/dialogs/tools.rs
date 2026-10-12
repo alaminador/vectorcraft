@@ -24,23 +24,6 @@ pub fn open_tool_dialog(app: &mut VectorcraftApp, kind: &str, p: Value) {
             }
             Dialog::new(kind, fields)
         }
-        // Graph tool click: the graph's size.
-        "graph" => Dialog::new(
-            "command",
-            json!({"__command": "graph.create", "__label": "Graph", "type": p.get("type").cloned().unwrap_or(json!("column")), "x": x, "y": y, "width": 200, "height": 150}),
-        ),
-        "graphData" => {
-            // After drawing a graph: Graph Data, its worksheet.
-            if let Err(e) = super::graph_data::open(app) {
-                app.status(e);
-            }
-            return;
-        }
-        // A Flare tool click: the Flare Tool Options, with the tool's values; OK draws a flare there.
-        "flare" => {
-            super::flare_options::open(app, Some(vectorcraft_geom::Point::new(x, y)));
-            return;
-        }
         "rotate" | "reflect" | "scale" | "shear" | "artboardOptions" => {
             let mut base = match kind {
                 "rotate" => json!({"angle": 0}),
@@ -72,23 +55,9 @@ pub fn open_tool_dialog(app: &mut VectorcraftApp, kind: &str, p: Value) {
             }
             return;
         }
-        // Double-clicking a plane widget of the perspective grid: that plane's options.
-        super::perspective_plane::KIND => {
-            if let Err(e) = super::perspective_plane::open(app, &p) {
-                app.status(e);
-            }
-            return;
-        }
         // Double-clicking a Live Corners widget: Corners.
         super::corners::KIND => {
             if let Err(e) = super::corners::open(app, &p) {
-                app.status(e);
-            }
-            return;
-        }
-        // Double-clicking a slice with the Slice Selection tool: Slice Options.
-        super::slices::OPTIONS => {
-            if let Err(e) = super::slices::open_options(app) {
                 app.status(e);
             }
             return;

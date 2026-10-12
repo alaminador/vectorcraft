@@ -65,15 +65,6 @@ fn repaint(ap: &mut Appearance, fill: bool, p: Paint) {
     }
 }
 
-/// `ap` with every gradient fitted to the art it lands on.
-fn unplace_all(mut ap: Appearance) -> Appearance {
-    for it in &mut ap.items {
-        let p = it.paint_mut();
-        *p = unplaced(p);
-    }
-    ap
-}
-
 /// How a new object looks ([`Session::new_art_look`]): its appearance and transparency and the
 /// graphic style it is linked to.
 pub(crate) struct NewArt {
@@ -174,20 +165,6 @@ impl Session {
     /// gives it one).
     pub(crate) fn new_art_stroke_mut(&mut self) -> Option<&mut StrokeLayer> {
         self.new_art_template_mut().stroke_mut()
-    }
-
-    /// A graphic style clicked with nothing selected: new art takes it (`add`: its fills, strokes
-    /// and effects on top of the template's, unlinked).
-    pub(crate) fn new_art_style(&mut self, g: &GraphicStyle, add: bool) {
-        let ap = if g.unit_box { g.appearance.clone() } else { unplace_all(g.appearance.clone()) };
-        if add {
-            let t = self.new_art_template_mut();
-            t.items.extend(ap.items);
-            t.effects.extend(ap.effects);
-            self.paint.style = None;
-            return;
-        }
-        self.take_new_art(ap, g.opacity, g.blend, Some(g.name.clone()), false);
     }
 
     /// Make `ap` (placed gradients relative to the unit box) and this transparency the template,

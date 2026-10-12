@@ -5,45 +5,23 @@
 use std::collections::BTreeSet;
 
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, ImageMap, Node, NodeKind, ObjectAttributes};
+use vectorcraft_doc::{Document, Node, NodeKind};
 use vectorcraft_geom::FillRule;
 
-use super::overprint::{AttributesInfo, apply_overprint, edit_counted, overprint_jobs};
+use super::overprint::{AttributesInfo, edit_counted};
 use super::path::paths_in;
 use super::*;
 
-/// How many URLs the Attributes panel's recent list keeps.
-const RECENT_URLS: usize = 10;
-
 pub fn specs() -> Vec<CommandSpec> {
-    vec![
-        cmd!(
-            "attributes.set",
-            "Attributes",
-            [],
-            None,
-            "{overprintFill?: bool, overprintStroke?: bool (aimed as object.setOverprint's fill and stroke, item? too), showCenter?: bool (the canvas shows the selected object's centre point), imageMap?: \"none\"|\"rectangle\"|\"polygon\", url?: string (\"\" removes it; SVG export links the object), note?: string, ids?} set the Attributes panel's values on ids or the selection, as one undo step; a URL given joins the recent URLs (attributes.info) → {changed: objects}",
-            has_doc,
-            set
-        ),
-        cmd!(
-            "path.setFillRule",
-            "Fill Rule",
-            [],
-            None,
-            "{rule: \"nonZero\"|\"evenOdd\", ids?} the fill rule of the paths and compound paths in ids or the selection (groups: those inside), as one undo step → {changed}",
-            has_doc,
-            set_fill_rule
-        ),
-    ]
-}
-
-/// A fill rule as the commands name it.
-pub(super) fn rule_name(r: FillRule) -> &'static str {
-    match r {
-        FillRule::NonZero => "nonZero",
-        FillRule::EvenOdd => "evenOdd",
-    }
+    vec![cmd!(
+        "path.setFillRule",
+        "Fill Rule",
+        [],
+        None,
+        "{rule: \"nonZero\"|\"evenOdd\", ids?} the fill rule of the paths and compound paths in ids or the selection (groups: those inside), as one undo step → {changed}",
+        has_doc,
+        set_fill_rule
+    )]
 }
 
 fn parse_rule(s: &str) -> Option<FillRule> {
@@ -93,87 +71,6 @@ pub(super) fn fill_info(d: &Document, info: &mut AttributesInfo) {
     let paths = paths_in(d, &info.ids);
     let subpaths = paths.iter().filter_map(|id| d.node(*id)?.path_data()).flat_map(|p| &p.subpaths);
     info.reversed = same(subpaths.map(|sp| sp.signed_area() < 0.0));
-}
-
-/// The attribute edits `p` asks for, applied to `a`.
-#[derive(Default)]
-struct Edits {
-    show_center: Option<bool>,
-    image_map: Option<ImageMap>,
-    url: Option<String>,
-    note: Option<String>,
-}
-
-impl Edits {
-    fn parse(p: &Value) -> Result<Self> {
-        const C: &str = "attributes.set";
-        let text = |k: &str| -> Result<Option<String>> {
-            p.get(k).map(|v| v.as_str().map(|s| s.trim().to_string()).ok_or_else(|| bad(C, format!("`{k}` must be a string")))).transpose()
-        };
-        Ok(Self {
-            show_center: p.get("showCenter").map(|v| v.as_bool().ok_or_else(|| bad(C, "`showCenter` must be true or false"))).transpose()?,
-            image_map: text("imageMap")?
-                .map(|s| ImageMap::parse(&s).ok_or_else(|| bad(C, "`imageMap` must be none, rectangle or polygon")))
-                .transpose()?,
-            url: text("url")?,
-            note: text("note")?,
-        })
-    }
-
-    fn is_empty(&self) -> bool {
-        self.show_center.is_none() && self.image_map.is_none() && self.url.is_none() && self.note.is_none()
-    }
-
-    /// `n`'s attributes with the edits applied (Show Center kept only where it isn't the default).
-    fn apply(&self, n: &Node) -> ObjectAttributes {
-        let mut a = n.extras().attrs.as_deref().cloned().unwrap_or_default();
-        if let Some(v) = self.show_center {
-            a.show_center = (v != n.shows_center_by_default()).then_some(v);
-        }
-        if let Some(v) = self.image_map {
-            a.image_map = v;
-        }
-        if let Some(v) = &self.url {
-            a.url.clone_from(v);
-        }
-        if let Some(v) = &self.note {
-            a.note.clone_from(v);
-        }
-        a
-    }
-}
-
-fn set(s: &mut Session, p: &Value) -> Result<Value> {
-    const C: &str = "attributes.set";
-    let jobs = overprint_jobs(s, p, C, ["overprintFill", "overprintStroke"])?;
-    let edits = Edits::parse(p)?;
-    if jobs.is_empty() && edits.is_empty() {
-        return Err(bad(C, "give overprintFill, overprintStroke, showCenter, imageMap, url or note"));
-    }
-    let ids = targets(s, p)?;
-    let changed = edit_counted(s, "Attributes", |d| {
-        let mut changed = BTreeSet::new();
-        apply_overprint(d, &jobs, C, &mut changed)?;
-        if !edits.is_empty() {
-            for id in &ids {
-                let Some(n) = d.node(*id) else { continue };
-                let new = edits.apply(n);
-                if new != n.extras().attrs.as_deref().cloned().unwrap_or_default()
-                    && let Some(n) = d.node_mut(*id)
-                {
-                    n.edit_attrs(|a| *a = new);
-                    changed.insert(*id);
-                }
-            }
-        }
-        Ok(changed.len())
-    })?;
-    if let Some(url) = edits.url.filter(|u| !u.is_empty() && !ids.is_empty()) {
-        s.recent_urls.retain(|u| *u != url);
-        s.recent_urls.insert(0, url);
-        s.recent_urls.truncate(RECENT_URLS);
-    }
-    Ok(json!({ "changed": changed }))
 }
 
 fn set_fill_rule(s: &mut Session, p: &Value) -> Result<Value> {

@@ -1,4 +1,4 @@
-//! The right dock: Properties | Layers | Libraries tabs, plus the collapsed icon-panel column
+//! The right dock: Properties | Layers tabs, plus the collapsed icon-panel column
 //! whose panels pop out to the left, and left of it the floating sets docked as columns
 //! ([`floating::docked_columns`]). The double arrow at the top of the dock collapses the tabbed
 //! group to icons at the top of the icon column (`window.collapseDock`); the arrow above the column
@@ -104,7 +104,6 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                         egui::ScrollArea::vertical().id_salt("props").auto_shrink([false, false]).show(ui, |ui| panels::properties::show(app, ui));
                     }
                     DockTab::Layers => panels::layers::show(app, ui),
-                    DockTab::Libraries => panels::libraries(app, ui),
                 });
             })
             .response
@@ -411,7 +410,6 @@ pub(crate) fn panel_body(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, width:
                 ui.set_max_height(tall);
                 panels::layers::show(app, ui);
             }
-            Some(DockTab::Libraries) => panels::libraries(app, ui),
             None => panels::show_icon_panel(app, ui, id),
         }
     });
@@ -648,7 +646,7 @@ mod tests {
         assert!(h.app.ui.dock_collapsed, "the » collapses the dock");
         assert!(h.column_left() > SCREEN.x - ICON_COL - 2.0, "collapsed: only the icon column is left: {}", h.column_left());
         let icons = h.icons();
-        assert_eq!(icons.len(), icon_panel_count() + 3, "Properties, Layers and Libraries became icons");
+        assert_eq!(icons.len(), icon_panel_count() + 2, "Properties and Layers became icons");
         assert!(icons[0].top() > HEADER, "the icons sit under the « strip");
         h.click(h.arrow());
         assert!(!h.app.ui.dock_collapsed, "the « expands the dock again");
@@ -661,7 +659,7 @@ mod tests {
         let mut h = Harness::new();
         h.app.run("window.collapseDock", json!({"collapsed": true})).unwrap();
         h.settle();
-        // Properties, Layers, Libraries head the column.
+        // Properties and Layers head the column.
         let layers = h.icons()[1];
         h.click(layers.center());
         assert_eq!(h.app.ui.open_panel.as_deref(), Some("layers"));

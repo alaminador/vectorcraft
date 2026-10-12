@@ -71,9 +71,10 @@ pub fn zoom_label(z: f64) -> String {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DockTab {
     #[default]
+    // Preferences saved with the removed Libraries tab chosen open on Properties.
+    #[serde(alias = "Libraries")]
     Properties,
     Layers,
-    Libraries,
 }
 
 impl DockTab {
@@ -82,11 +83,10 @@ impl DockTab {
         match self {
             DockTab::Properties => ("properties", "Properties", "dc-options"),
             DockTab::Layers => ("layers", "Layers", "layers"),
-            DockTab::Libraries => ("libraries", "Libraries", "library"),
         }
     }
 
-    pub const ALL: [DockTab; 3] = [DockTab::Properties, DockTab::Layers, DockTab::Libraries];
+    pub const ALL: [DockTab; 2] = [DockTab::Properties, DockTab::Layers];
 
     /// The tab whose panel id is `id`.
     pub fn from_id(id: &str) -> Option<DockTab> {
@@ -103,7 +103,6 @@ pub fn all_panels() -> impl Iterator<Item = (&'static str, &'static str)> {
 /// Panels that live as collapsed icons in the dock (Essentials Classic).
 pub const ICON_PANELS: &[(&str, &str, &str)] = &[
     ("color", "Color", "palette"),
-    ("colorGuide", "Color Guide", "dc-color-guide"),
     ("swatches", "Swatches", "swatch-book"),
     ("brushes", "Brushes", "paintbrush"),
     ("symbols", "Symbols", "spray-can"),
@@ -112,7 +111,6 @@ pub const ICON_PANELS: &[(&str, &str, &str)] = &[
     ("gradient", "Gradient", "dc-gradient"),
     ("transparency", "Transparency", "dc-transparency"),
     ("appearance", "Appearance", "dc-appearance"),
-    ("graphicStyles", "Graphic Styles", "dc-graphic-styles"),
     ("artboards", "Artboards", "dc-artboards"),
     ("transform", "Transform", "dc-transform-panel"),
     ("align", "Align", "dc-align"),
@@ -125,20 +123,10 @@ pub const ICON_PANELS: &[(&str, &str, &str)] = &[
     ("paraStyles", "Paragraph Styles", "pilcrow"),
     ("tabs", "Tabs", "align-horizontal-justify-start"),
     ("history", "History", "history"),
-    ("actions", "Actions", "dc-actions"),
     ("info", "Info", "info"),
-    ("docInfo", "Document Info", "dc-list-view"),
-    ("navigator", "Navigator", "map"),
-    ("separations", "Separations Preview", "printer"),
     ("imageTrace", "Image Trace", "image"),
-    ("magicWand", "Magic Wand", "wand-sparkles"),
-    (crate::panels::flattener_preview::ID, "Flattener Preview", "eye"),
-    ("attributes", "Attributes", "settings"),
-    ("colorThemes", "Color Themes", "sun"),
     (crate::panels::links::ID, "Links", "link"),
     (crate::panels::asset_export::ID, "Asset Export", "share-2"),
-    (crate::panels::css_properties::ID, "CSS Properties", "globe"),
-    (crate::panels::variables::ID, "Variables", "chart-column"),
 ];
 
 /// Groups of icon panels separated by dividers in the collapsed column.
@@ -147,15 +135,14 @@ pub const ICON_PANELS: &[(&str, &str, &str)] = &[
 /// no group can be opened from the Window menu and `window.panel`, but never appears as an
 /// icon. A panel that belongs in the column needs a row here as well as its entry above.
 pub const ICON_PANEL_GROUPS: &[&[&str]] = &[
-    &["color", "colorGuide"],
+    &["color"],
     &["swatches", "brushes", "symbols", "patternOptions"],
     &["stroke", "gradient", "transparency"],
-    &["appearance", "graphicStyles"],
+    &["appearance"],
     &["artboards"],
     &["transform", "align", "pathfinder"],
     &["character", "paragraph", "glyphs"],
-    &["history", "actions", "info", "navigator"],
-    &["variables"],
+    &["history", "info"],
 ];
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -249,7 +236,7 @@ pub struct UiState {
     pub legacy_language: Option<String>,
     pub brightness: Brightness,
     pub dock_tab: DockTab,
-    /// The dock's tabbed group (Properties | Layers | Libraries) is collapsed to icons at the top of
+    /// The dock's tabbed group (Properties | Layers) is collapsed to icons at the top of
     /// the icon column (the dock's double arrow, `window.collapseDock`).
     #[serde(default)]
     pub dock_collapsed: bool,
@@ -317,12 +304,6 @@ pub struct UiState {
     /// Draw Normal / Behind / Inside.
     pub draw_mode: u8,
     pub about: bool,
-    /// Recorded actions (Actions panel), persisted with the UI preferences.
-    #[serde(default = "crate::panels::actions::default_sets")]
-    pub action_sets: Vec<crate::panels::actions::ActionSet>,
-    /// Recording in progress: (set index, action name, journal length when recording started).
-    #[serde(skip)]
-    pub recording: Option<(usize, String, usize)>,
     /// Keyboard shortcut overrides: command id or `tool:<id>` → chord ("" = none).
     #[serde(default)]
     pub shortcut_overrides: std::collections::BTreeMap<String, String>,
@@ -347,19 +328,9 @@ pub struct UiState {
     /// Engine preferences (Edit → Preferences), persisted alongside the UI state.
     #[serde(default)]
     pub engine_prefs: Value,
-    /// Color Guide panel: variation kind, steps and amount (Color Guide Options).
-    #[serde(default)]
-    pub color_guide: vectorcraft_color::harmony::GuideOptions,
     /// The library open in the library panel (Window → Swatch Libraries).
     #[serde(default)]
     pub library_panel: Option<crate::panels::library_panel::OpenLibrary>,
-    /// Flattener Preview panel: highlight, overprints, preset and options (`ui.flattenerPreview`).
-    #[serde(default)]
-    pub flattener_preview: crate::panels::flattener_preview::Settings,
-    /// Color Guide panel: Limit to Library, a swatch library id, "document" (the document's
-    /// swatches) or "" (none) (`ui.colorGuideLimit`).
-    #[serde(default)]
-    pub color_guide_limit: String,
     /// Align panel: the Align To choice, Selection or Artboard, which Object → Align and the align
     /// buttons follow ([`crate::panels::align::with_align_to`]).
     #[serde(default, deserialize_with = "crate::panels::align::deserialize_align_to")]
@@ -367,8 +338,9 @@ pub struct UiState {
     /// The SVG Options chosen last (`svg` object of the export/save commands; null: never used).
     #[serde(default)]
     pub svg_options: Value,
-    /// File → Place: Link is on (the Place dialog remembers it).
-    #[serde(default = "yes")]
+    /// File → Place: Link is on (the Place dialog remembers it). Off at first: placed images are
+    /// embedded, so a logo file carries its pictures.
+    #[serde(default)]
     pub place_link: bool,
     /// The file the open dialog reads, kept out of its JSON fields (Import PDF); dropped when no
     /// dialog is open.
@@ -629,8 +601,6 @@ impl Default for UiState {
             screen_mode: 0,
             draw_mode: 0,
             about: false,
-            action_sets: crate::panels::actions::default_sets(),
-            recording: None,
             shortcut_overrides: Default::default(),
             shortcut_set: default_shortcut_set(),
             workspace: default_workspace(),
@@ -639,13 +609,10 @@ impl Default for UiState {
             recent_fonts: vec![],
             favorite_fonts: vec![],
             engine_prefs: Value::Null,
-            color_guide: Default::default(),
             library_panel: None,
-            flattener_preview: Default::default(),
-            color_guide_limit: String::new(),
             align_to: Default::default(),
             svg_options: Value::Null,
-            place_link: true,
+            place_link: false,
             dialog_file: None,
             pending_fonts: vec![],
             fonts_dialog: None,

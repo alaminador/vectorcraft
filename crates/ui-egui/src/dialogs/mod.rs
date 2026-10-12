@@ -12,7 +12,6 @@ pub mod blend_options;
 mod brush_art_options;
 pub mod brush_options;
 pub mod color_balance;
-pub mod color_guide_options;
 mod color_picker;
 mod command;
 pub mod confirm;
@@ -20,7 +19,6 @@ pub mod corners;
 mod document_setup;
 pub mod edit_selection;
 mod effect;
-pub mod envelope;
 pub mod eps_options;
 pub mod expand;
 mod export_as;
@@ -28,66 +26,42 @@ mod export_for_screens;
 pub mod eyedropper;
 pub mod file_info;
 pub mod find_links;
-pub mod flare_options;
-pub mod flatten;
-pub mod flattener_presets;
 mod form;
 pub mod freehand;
 mod gradient_stop;
-pub mod graph_data;
-pub mod graph_design;
-pub mod graphic_style_options;
-pub mod halftone;
 pub mod import_pdf;
 pub mod layer_options;
 pub mod layers_panel_options;
-pub mod liquify;
 pub mod missing_fonts;
 pub mod missing_links;
 pub(crate) mod modal;
 pub mod new_color_group;
 mod new_document;
 pub mod new_swatch;
-pub mod office_export;
-pub mod package;
 mod path_ops;
 pub mod pdf_presets;
-pub mod perspective_grid;
-pub mod perspective_options;
-pub mod perspective_plane;
-pub mod perspective_presets;
 pub mod place;
 pub mod placement_options;
 mod png_options;
-pub mod print;
-pub mod print_presets;
-mod psd_options;
 pub mod raster_effects;
 pub mod rearrange_artboards;
 pub mod recolor;
 mod recovery;
 pub mod saturate;
 mod save_changes;
-pub mod save_for_web;
 pub(crate) mod save_options;
 mod save_pdf;
-pub mod save_style_library;
 pub mod save_swatch_library;
 mod shapes;
-pub mod slices;
 pub mod spot_colors;
 pub(crate) mod svg_options;
 pub mod swatch_conflict;
 pub mod swatch_options;
 pub mod symbolism_options;
-mod text_export;
-pub mod text_import;
-mod tiff_bmp_tga;
 pub mod tile_edge_color;
 mod tools;
 mod transform;
 pub mod transform_each;
-pub mod variables;
 pub mod width_point;
 
 use serde_json::{Value, json};
@@ -204,7 +178,7 @@ macro_rules! registry {
 
 registry! {
     NewDocument: [new_document::KIND] => new_document::SPEC,
-    Shape: ["rectangle", "roundedRectangle", "ellipse", "polygon", "star", "lineSegment", "rectangularGrid", "polarGrid"] => shapes::SPEC,
+    Shape: ["rectangle", "roundedRectangle", "ellipse", "polygon", "star", "lineSegment"] => shapes::SPEC,
     Transform: ["move", "rotate", "scale", "reflect", "shear"] => transform::SPEC,
     PathOp: ["average", "offsetPath", "simplify", "splitIntoGrid"] => path_ops::SPEC,
     DocumentSetup: ["documentSetup"] => document_setup::SPEC,
@@ -212,7 +186,6 @@ registry! {
     ExportForScreens: ["exportForScreens"] => export_for_screens::SPEC,
     Recolor: [recolor::KIND] => recolor::SPEC,
     Command: ["command"] => command::SPEC,
-    Variables: [variables::KIND] => variables::SPEC,
     Effect: ["effect"] => effect::SPEC,
     SaveChanges: [crate::unsaved::KIND] => save_changes::SPEC,
     Preferences: ["preferences"] => DialogSpec::window(crate::prefs_dialog::show, |app, _| crate::prefs_dialog::confirm(app)),
@@ -224,22 +197,14 @@ registry! {
     Message: [confirm::MESSAGE] => confirm::MESSAGE_SPEC,
     NewSwatch: [new_swatch::KIND] => new_swatch::SPEC,
     NewColorGroup: [new_color_group::KIND] => new_color_group::SPEC,
-    GraphData: [graph_data::KIND] => graph_data::SPEC,
-    GraphDesign: [graph_design::DESIGN] => graph_design::DESIGN_SPEC,
-    GraphMarker: [graph_design::MARKER] => graph_design::MARKER_SPEC,
     GradientStop: ["gradientStop"] => gradient_stop::SPEC,
     ColorPicker: [color_picker::KIND] => color_picker::SPEC,
-    GraphicStyleOptions: [graphic_style_options::KIND] => graphic_style_options::SPEC,
     EffectExists: [effect::EXISTS] => effect::EXISTS_SPEC,
-    ColorGuideOptions: [color_guide_options::KIND] => color_guide_options::SPEC,
     ColorBalance: [color_balance::KIND] => color_balance::SPEC,
     Saturate: [saturate::KIND] => saturate::SPEC,
     SaveSwatchLibrary: [save_swatch_library::KIND] => save_swatch_library::SPEC,
     TileEdgeColor: [tile_edge_color::KIND] => tile_edge_color::SPEC,
     EyedropperOptions: [eyedropper::KIND] => eyedropper::SPEC,
-    FlattenTransparency: [flatten::KIND] => flatten::SPEC,
-    FlattenerPresets: [flattener_presets::KIND] => flattener_presets::SPEC,
-    SaveStyleLibrary: [save_style_library::KIND] => save_style_library::SPEC,
     Expand: [expand::KIND] => expand::SPEC,
     SpotColors: [spot_colors::KIND] => spot_colors::SPEC,
     TransformEach: [transform_each::KIND] => transform_each::SPEC,
@@ -249,7 +214,7 @@ registry! {
     SvgOptions: [svg_options::KIND] => svg_options::SPEC,
     NewDocumentMore: [new_document::MORE] => new_document::MORE_SPEC,
     Place: [place::KIND] => place::SPEC,
-    RasterOptions: ["pngOptions", "jpgOptions", "webpOptions", "gifOptions", "png8Options"] => png_options::SPEC,
+    RasterOptions: ["pngOptions", "jpgOptions", "webpOptions", "png8Options"] => png_options::SPEC,
     ExportAs: ["exportAs"] => export_as::SPEC,
     ImportPdf: [import_pdf::KIND] => import_pdf::SPEC,
     SwatchConflict: [swatch_conflict::KIND] => swatch_conflict::SPEC,
@@ -258,37 +223,17 @@ registry! {
     MissingLinks: [missing_links::KIND] => missing_links::SPEC,
     MissingFonts: [missing_fonts::KIND] => missing_fonts::SPEC,
     FindLinks: [find_links::KIND] => find_links::SPEC,
-    TextImport: [text_import::KIND] => text_import::SPEC,
     PdfPresets: [pdf_presets::KIND] => pdf_presets::SPEC,
     PdfPreset: [save_pdf::PRESET_KIND] => save_pdf::PRESET_SPEC,
     SaveOptions: [save_options::KIND] => save_options::SPEC,
-    TextExport: [text_export::KIND] => text_export::SPEC,
-    OfficeExport: [office_export::KIND] => office_export::SPEC,
     PlacementOptions: [placement_options::KIND] => placement_options::SPEC,
-    Package: [package::KIND] => package::SPEC,
-    SliceOptions: [slices::OPTIONS] => slices::OPTIONS_SPEC,
-    DivideSlices: [slices::DIVIDE] => slices::DIVIDE_SPEC,
     EpsOptions: [eps_options::KIND] => eps_options::SPEC,
     Recovery: [crate::recovery::KIND] => recovery::SPEC,
-    RasterFormatOptions: ["tiffOptions", "bmpOptions", "tgaOptions"] => png_options::SPEC,
-    SaveForWeb: [save_for_web::KIND] => save_for_web::SPEC,
-    PsdOptions: ["psdOptions"] => png_options::SPEC,
-    Print: [print::KIND] => print::SPEC,
-    PrintPreset: [print::PRESET_KIND] => print::PRESET_SPEC,
-    PrintPresets: [print_presets::KIND] => print_presets::SPEC,
-    VectorHalftone: [halftone::KIND] => halftone::SPEC,
-    PerspectiveGrid: [perspective_grid::KIND] => perspective_grid::SPEC,
-    Envelope: [envelope::WARP, envelope::MESH, envelope::OPTIONS] => envelope::SPEC,
-    LiquifyOptions: [liquify::KIND] => liquify::SPEC,
     FreehandOptions: [freehand::KIND] => freehand::SPEC,
-    FlareOptions: [flare_options::KIND] => flare_options::SPEC,
     SymbolismOptions: [symbolism_options::KIND] => symbolism_options::SPEC,
-    PerspectiveGridPresets: [perspective_presets::KIND] => perspective_presets::SPEC,
-    PerspectiveGridOptions: [perspective_options::KIND] => perspective_options::SPEC,
     BlendOptions: [blend_options::KIND] => blend_options::SPEC,
     BrushOptions: [brush_options::KIND] => brush_options::SPEC,
     EditSelection: [edit_selection::KIND] => edit_selection::SPEC,
-    PerspectivePlane: [perspective_plane::KIND] => perspective_plane::SPEC,
     LayerOptions: [layer_options::KIND] => layer_options::SPEC,
     LayersPanelOptions: [layers_panel_options::KIND] => layers_panel_options::SPEC,
     RearrangeArtboards: [rearrange_artboards::KIND] => rearrange_artboards::SPEC,
@@ -470,8 +415,6 @@ mod tests_export;
 #[cfg(test)]
 mod tests_import_pdf;
 #[cfg(test)]
-mod tests_package;
-#[cfg(test)]
 mod tests_raster_formats;
 #[cfg(test)]
 mod tests_svg_options_range;
@@ -484,33 +427,8 @@ mod tests_screens;
 #[cfg(test)]
 mod tests_eps;
 
-
-#[cfg(test)]
-mod tests_tiff_bmp_tga;
-
-#[cfg(test)]
-mod tests_save_for_web;
-
-#[cfg(test)]
-mod tests_psd;
-
-#[cfg(test)]
-mod tests_print;
-
-#[cfg(test)]
-mod tests_print_presets;
-
-#[cfg(test)]
-mod tests_print_advanced;
-
 #[cfg(test)]
 mod tests_scale;
 
 #[cfg(test)]
-mod tests_perspective;
-
-#[cfg(test)]
 mod tests_modal;
-
-#[cfg(test)]
-mod tests_rectangular_grid;

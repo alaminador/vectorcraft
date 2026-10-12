@@ -24,7 +24,6 @@
 
 pub(crate) mod adopt;
 pub(crate) mod document;
-mod text;
 
 use std::sync::Arc;
 
@@ -44,8 +43,6 @@ const QUEUE: &str = "file.place.queue";
 const MAX_QUEUE: usize = 100;
 /// The longest thumbnail side `thumbnail` may ask for (px).
 const MAX_THUMBNAIL: f64 = 512.0;
-/// A text file's natural box (`file.place.info`, the place cursor): a letter page less 1 in margins.
-const TEXT_FRAME: Rect = Rect::new(0.0, 0.0, 468.0, 648.0);
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
@@ -93,8 +90,6 @@ pub fn specs() -> Vec<CommandSpec> {
 /// A file's art at its natural size, before it joins a document.
 enum Art {
     Image(RasterImage),
-    /// A text file's text, placed as area type filling the natural box.
-    Text(String),
     /// A VectorCraft document placed linked: the file read, the link, and whether the art's
     /// bounds (not the artboard) are shown.
     Document(document::Source, LinkInfo, bool),
@@ -129,14 +124,6 @@ pub(crate) fn pt_per_px(ppi: Option<(f64, f64)>) -> (f64, f64) {
 fn load(p: &Value, cmd: &str) -> Result<Loaded> {
     let src = fileio::source(p, cmd)?;
     let name = fileio::file_name(src.name);
-    // An Affinity file is recognised by its signature, whatever its name says.
-    if fileio::TEXT_EXTS.contains(&fileio::extension(src.name).as_str()) && !vectorcraft_affinity::is_affinity(&src.bytes) {
-        let text = text::import(&src.bytes, text::TextOptions::parse(p, cmd)?, cmd)?;
-        if text.trim().is_empty() {
-            return Err(bad(cmd, format!("`{name}` has no text to place")));
-        }
-        return Ok(Loaded { name, format: &text::FORMAT, art: Art::Text(text), natural: TEXT_FRAME, warnings: vec![], link: None });
-    }
     let format = fileio::detect(src.name, &src.bytes)
         .ok_or_else(|| bad(cmd, format!("can't place `{name}`: not a format VectorCraft reads (see document.formats)")))?;
     let page = match p.get("page") {
@@ -272,7 +259,6 @@ fn build(d: &mut Document, l: Loaded, link: Option<LinkInfo>) -> Node {
             };
             Node::new(d.alloc_id(), NodeKind::Image(Box::new(im)))
         }
-        Art::Text(t) => Node::new(d.alloc_id(), NodeKind::Text(Box::new(text::area_text(t, l.natural)))),
         Art::Document(s, link, bounding) => document::node(d, &s, link, bounding),
         Art::Vector { src, mut nodes, clip } => {
             adopt::adopt(d, &src, &mut nodes);
@@ -358,19 +344,9 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let mut loaded = load(p, PLACE)?;
     let old_node = old.and_then(|id| st.doc.node(id));
-    // Type reflows rather than scales: its frame takes the size it is placed at.
-    let is_text = matches!(loaded.art, Art::Text(_));
-    if is_text {
-        let size = match (old_node.and_then(Node::geometric_bounds), rect) {
-            (Some(b), _) => b.size(),
-            (None, Some(r)) => r.size(),
-            (None, None) => text_frame(&st.doc, at).size(),
-        };
-        loaded.natural = Rect::from_origin_size(Point::ORIGIN, size);
-    }
     let natural = loaded.natural;
     let m = match (old_node, rect) {
-        (Some(o), _) => replace_xf(&st.doc, o, natural, !is_text),
+        (Some(o), _) => replace_xf(&st.doc, o, natural, true),
         (None, Some(r)) => fit(natural, r),
         (None, None) => {
             let c = at.or_else(|| st.doc.artboards.first().map(|a| a.rect.center())).unwrap_or_default();
@@ -406,18 +382,6 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(
         json!({ "ids": [id.0], "name": name, "format": format, "linked": linked, "width": size.width(), "height": size.height(), "warnings": warnings }),
     )
-}
-
-/// The artboard under `at`, else the first.
-fn board_at(d: &Document, at: Option<Point>) -> Option<Rect> {
-    at.and_then(|c| d.artboards.iter().find(|a| a.rect.contains(c))).or(d.artboards.first()).map(|a| a.rect)
-}
-
-/// Placed type's frame without `rect` or Replace: the artboard under `at` (else the first) less a
-/// 36 pt margin.
-fn text_frame(d: &Document, at: Option<Point>) -> Rect {
-    let board = board_at(d, at).unwrap_or(TEXT_FRAME);
-    Rect::from_center_size(board.center(), ((board.width() - 72.0).max(72.0), (board.height() - 72.0).max(72.0)))
 }
 
 /// A new locked template layer named after the file, right below the layer `below` (else at the

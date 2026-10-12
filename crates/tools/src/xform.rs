@@ -9,9 +9,9 @@ mod eyedropper;
 mod free;
 mod freeform;
 mod gradient;
+mod lasso;
 mod measure;
 mod transform;
-mod wand;
 
 use vectorcraft_doc::{Document, NodeId, NodeKind};
 use vectorcraft_geom::{BezPath, Point, Rect, Shape};
@@ -22,9 +22,9 @@ pub use artboard::ArtboardTool;
 pub use eyedropper::EyedropperTool;
 pub use free::{DistortMode, FreeTransformTool};
 pub use gradient::GradientTool;
+pub use lasso::LassoTool;
 pub use measure::MeasureTool;
 pub use transform::{TransformKind, TransformTool};
-pub use wand::{LassoTool, MagicWandTool};
 
 /// Create a transform/utility tool by id (None = not one of ours).
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
@@ -37,7 +37,6 @@ pub fn create(id: &str) -> Option<Box<dyn Tool>> {
         "eyedropper" => Box::new(EyedropperTool::default()),
         "gradient" => Box::new(GradientTool::default()),
         "artboard" => Box::new(ArtboardTool::default()),
-        "magicWand" => Box::new(MagicWandTool),
         "lasso" => Box::new(LassoTool::default()),
         "measure" => Box::new(MeasureTool::default()),
         _ => return None,

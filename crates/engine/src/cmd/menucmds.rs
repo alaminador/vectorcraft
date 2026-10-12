@@ -23,12 +23,6 @@ pub struct MenuState {
     pub new_masks_unclipped: bool,
     /// Transparency panel menu: "New Opacity Masks Are Inverted".
     pub new_masks_inverted: bool,
-    /// Magic Wand panel settings.
-    pub wand: super::wand::WandSettings,
-    /// View → Hide Slices.
-    pub slices_hidden: bool,
-    /// View → Lock Slices.
-    pub slices_locked: bool,
 }
 
 pub fn specs() -> Vec<CommandSpec> {

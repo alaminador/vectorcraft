@@ -288,39 +288,6 @@ fn registration_is_never_copied_as_a_swatch() {
 }
 
 #[test]
-fn graphic_style_links_follow_the_style_into_the_document() {
-    let mut s = session();
-    let a = rect(&mut s, 0.0, 0.0, 30.0, 30.0);
-    s.execute("paint.setFill", &json!({"ids": [a.0], "color": "#ffcc00"})).unwrap();
-    sel(&mut s, &[a]);
-    s.execute("graphicStyle.new", &json!({"name": "Sun"})).unwrap();
-    let src_id = node(&s, a).extras().graphic_style.unwrap();
-    copy(&mut s, &[a]);
-    assert_eq!(s.clipboard.graphic_styles.iter().map(|g| g.name.as_str()).collect::<Vec<_>>(), ["Sun"]);
-
-    // A document with another "Sun" and styles taking up the source id.
-    new_doc(&mut s);
-    let b = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
-    s.execute("paint.setFill", &json!({"ids": [b.0], "color": "#0000ff"})).unwrap();
-    sel(&mut s, &[b]);
-    s.execute("graphicStyle.new", &json!({"name": "Sun"})).unwrap();
-    let v = s.execute("edit.paste", &json!({})).unwrap();
-    assert_eq!(renamed(&v), [("graphicStyle".to_string(), "Sun".to_string(), "Sun 2".to_string())]);
-    let d = doc(&s);
-    let linked_to = d.graphic_style_by_id(node(&s, ids_of(&v)[0]).extras().graphic_style.unwrap()).unwrap().clone();
-    assert_eq!(linked_to.name, "Sun 2");
-    assert_eq!(linked_to.appearance.fill_paint(), Paint::solid(hex("#ffcc00")));
-    assert!(d.graphic_styles.iter().filter(|g| g.id == linked_to.id).count() == 1, "a fresh id");
-    // Pasting again finds the same style.
-    let v = s.execute("edit.paste", &json!({})).unwrap();
-    assert_eq!((v["added"].as_u64(), node(&s, ids_of(&v)[0]).extras().graphic_style), (Some(0), Some(linked_to.id)));
-    // Back in the source document the link is kept as it was.
-    s.execute("document.activate", &json!({"index": 0})).unwrap();
-    let v = s.execute("edit.paste", &json!({})).unwrap();
-    assert_eq!(node(&s, ids_of(&v)[0]).extras().graphic_style, Some(src_id));
-}
-
-#[test]
 fn undo_removes_everything_the_paste_added() {
     let mut s = session();
     let r = swatched_rect(&mut s, "Brand", "#ff0000");

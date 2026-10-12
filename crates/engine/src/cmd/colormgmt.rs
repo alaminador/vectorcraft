@@ -91,6 +91,7 @@ pub fn specs() -> Vec<CommandSpec> {
         cmd!(query "view.proofColors", "Proof Colors", ["View"], None, "{on?: bool (default: toggle)} → proof state", always, |s, p| {
             toggle_view(s, p, |v, on| v.proof_colors = on.unwrap_or(!v.proof_colors))
         }),
+        cmd!(query "color.plates", "Plates", [], None, "{} → {on, plates: [{name, spot, visible, rgb}]}", always, |s, _| Ok(plates_json(s))),
         cmd!(
             query "view.overprintPreview",
             "Overprint Preview",
@@ -100,16 +101,6 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             |s, p| toggle_view(s, p, |v, on| v.overprint = on.unwrap_or(!v.overprint))
         ),
-        cmd!(
-            query "view.separationsPreview",
-            "Separations Preview",
-            [],
-            None,
-            "{on?: bool, plates?: [names], toggle?: plate, only?: plate} Separations Preview: show the chosen plates (one plate = greyscale ink coverage) → {on, plates: [{name, spot, visible, rgb}]}",
-            always,
-            separations
-        ),
-        cmd!(query "color.plates", "Plates", [], None, "{} → {on, plates: [{name, spot, visible, rgb}]}", always, |s, _| Ok(plates_json(s))),
         cmd!(
             "edit.colors.overprintBlack",
             "Overprint Black…",
@@ -467,37 +458,6 @@ fn plates_json(s: &Session) -> Value {
             "rgb": pl.rgb,
         })).collect::<Vec<_>>(),
     })
-}
-
-fn separations(s: &mut Session, p: &Value) -> Result<Value> {
-    const C: &str = "view.separationsPreview";
-    let mut v = proof::view();
-    let all: Vec<String> = s
-        .active()
-        .map(|d| proof::plates(&d.doc).into_iter().map(|p| p.name).collect())
-        .unwrap_or_else(|| cms::PROCESS_PLATES.iter().map(|s| s.to_string()).collect());
-    let check = |n: &str| if all.iter().any(|a| a == n) { Ok(n.to_string()) } else { Err(bad(C, format!("unknown plate `{n}`"))) };
-    if let Some(on) = p.get("on").and_then(Value::as_bool) {
-        v.separations = if on { Some(v.separations.take().unwrap_or_else(|| all.clone())) } else { None };
-    }
-    if let Some(a) = p.get("plates").and_then(Value::as_array) {
-        v.separations = Some(a.iter().filter_map(Value::as_str).map(check).collect::<Result<Vec<_>>>()?);
-    }
-    if let Some(n) = str_param(p, "only") {
-        v.separations = Some(vec![check(n)?]);
-    }
-    if let Some(n) = str_param(p, "toggle") {
-        let n = check(n)?;
-        let vis = v.separations.get_or_insert_with(|| all.clone());
-        if let Some(i) = vis.iter().position(|x| *x == n) {
-            vis.remove(i);
-        } else {
-            vis.push(n);
-        }
-    }
-    proof::set_view(v);
-    touch_all(s);
-    Ok(plates_json(s))
 }
 
 fn set_spot(s: &mut Session, p: &Value) -> Result<Value> {

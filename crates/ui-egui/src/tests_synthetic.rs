@@ -77,9 +77,9 @@ fn shift_arrow_nudges_ten_points_and_alt_arrow_copies() {
 fn a_typed_key_holds_its_modifiers_for_its_text() {
     let (mut app, _) = one_square();
     let ctx = egui::Context::default();
-    control(&mut app, &ctx, "ui.key", json!({"key": "B", "shift": true, "text": "B"}));
+    control(&mut app, &ctx, "ui.key", json!({"key": "M", "shift": true, "text": "M"}));
     run_synthetic(&mut app, &ctx, keys);
-    assert_eq!(app.session.tool_id(), "blobBrush", "Shift+B, not B");
+    assert_eq!(app.session.tool_id(), "shapeBuilder", "Shift+M, not M");
 }
 
 #[test]

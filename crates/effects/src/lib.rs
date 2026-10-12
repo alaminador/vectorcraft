@@ -625,11 +625,7 @@ pub fn is_raster(id: &str) -> bool {
 /// Does `id` change geometry? (Crop Marks adds art of its own instead, [`crop_marks_art`]; colour
 /// adjustments recolour, [`adjust`].)
 pub fn is_geometry(id: &str) -> bool {
-    !is_raster(id)
-        && !is_pathfinder(id)
-        && !is_adjustment(id)
-        && id != CROP_MARKS
-        && catalog_index().contains_key(id)
+    !is_raster(id) && !is_pathfinder(id) && !is_adjustment(id) && id != CROP_MARKS && catalog_index().contains_key(id)
 }
 
 /// Any visible geometry effect in the list?

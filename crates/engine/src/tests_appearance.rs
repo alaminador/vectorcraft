@@ -421,19 +421,6 @@ fn appearance_commands_that_change_nothing_record_no_undo_step() {
 }
 
 #[test]
-fn graphic_style_apply_replaces_the_stack() {
-    let mut s = session();
-    let a = rect(&mut s, 100.0);
-    run(&mut s, "appearance.addFill", json!({}));
-    run(&mut s, "effect.apply", json!({"effect": "distort.roughen"}));
-    let name = run(&mut s, "graphicStyle.new", json!({"name": "Rough"}))["name"].clone();
-    let b = rect(&mut s, 250.0);
-    run(&mut s, "graphicStyle.apply", json!({ "name": name }));
-    assert_eq!(node(&s, b).appearance, node(&s, a).appearance);
-    assert!(s.execute("graphicStyle.apply", &json!({"name": "nope"})).is_err());
-}
-
-#[test]
 fn an_active_row_of_the_other_kind_leaves_edits_on_the_painted_leaves() {
     let mut s = session();
     let a = rect(&mut s, 100.0);

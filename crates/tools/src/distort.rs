@@ -1,20 +1,9 @@
-//! Distortion tools: Width (Shift+W), the Liquify family (Warp Shift+R, Twirl, Pucker, Bloat,
-//! Scallop, Crystallize, Wrinkle), Puppet Warp, Perspective Grid (Shift+P) and Perspective
-//! Selection (Shift+V).
+//! The Width tool (Shift+W).
 //!
-//! Like every tool they only emit actions. The geometry kernels the engine commands run live here
-//! too (so tools, engine and tests share one implementation):
-//! - [`liquify`]: deterministic brush deformation of anchors and handles with adaptive subdivision;
-//! - [`arap`]: As-Rigid-As-Possible mesh deformation (Igarashi, Moscovich & Hughes 2005) with a
-//!   small banded Cholesky solver;
-//! - [`perspective`]: the perspective grid model (one/two/three-point) and plane homographies;
-//! - [`pathutil`]: arc-length helpers for width points.
+//! Like every tool it only emits actions. [`pathutil`] holds the arc-length helpers for width
+//! points that the engine commands share.
 
-pub mod arap;
-pub mod liquify;
 pub mod pathutil;
-pub mod perspective;
-mod puppet;
 mod width;
 
 use std::sync::Arc;
@@ -24,19 +13,12 @@ use vectorcraft_geom::{Homography, Point};
 
 use crate::Tool;
 
-pub use liquify::LiquifyTool;
-pub use perspective::{PerspectiveGridTool, PerspectiveSelectionTool};
-pub use puppet::{PinSet, PuppetWarpTool, mesh_for, mesh_input, rest_and_pins, warp_from_rest};
 pub use width::{WidthTool, stroke_owner};
 
 /// Create a distortion tool by id (None = not one of ours).
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
     Some(match id {
         "width" => Box::new(WidthTool::default()),
-        "warp" | "twirl" | "pucker" | "bloat" | "scallop" | "crystallize" | "wrinkle" => Box::new(LiquifyTool::new(id)),
-        "puppetWarp" => Box::new(PuppetWarpTool::default()),
-        "perspectiveGrid" => Box::new(PerspectiveGridTool::default()),
-        "perspectiveSelection" => Box::new(PerspectiveSelectionTool::default()),
         _ => return None,
     })
 }
@@ -127,13 +109,6 @@ pub(crate) fn diamond(p: Point, r: f64) -> vectorcraft_geom::BezPath {
     crate::xform::polygon(&[Point::new(p.x, p.y - r), Point::new(p.x + r, p.y), Point::new(p.x, p.y + r), Point::new(p.x - r, p.y)], true)
 }
 
-/// A circle / ellipse outline for brush feedback.
-pub(crate) fn ellipse_path(c: Point, rx: f64, ry: f64, angle_deg: f64) -> vectorcraft_geom::BezPath {
-    use vectorcraft_geom::Shape;
-    let e = vectorcraft_geom::kurbo::Ellipse::new(c, (rx.max(0.01), ry.max(0.01)), angle_deg.to_radians());
-    e.to_path(0.05)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,21 +118,7 @@ mod tests {
 
     #[test]
     fn create_covers_all_distort_tools() {
-        for id in [
-            "width",
-            "warp",
-            "twirl",
-            "pucker",
-            "bloat",
-            "scallop",
-            "crystallize",
-            "wrinkle",
-            "puppetWarp",
-            "perspectiveGrid",
-            "perspectiveSelection",
-        ] {
-            assert_eq!(create(id).map(|t| t.id()), Some(id));
-        }
+        assert_eq!(create("width").map(|t| t.id()), Some("width"));
         assert!(create("pen").is_none());
     }
 

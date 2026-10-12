@@ -49,24 +49,6 @@ fn delete_and_backspace_reach_the_width_tool() {
 }
 
 #[test]
-fn delete_and_backspace_reach_the_puppet_warp_tool() {
-    for key in ["Delete", "Backspace"] {
-        let mut h = session();
-        let id = run(&mut h, "shape.rectangle", json!({"x": 100, "y": 100, "width": 200, "height": 100}))["id"].as_u64().unwrap();
-        ok(&mut h, "select_tool", json!({"tool": "puppetWarp"}));
-        let pins = |h: &Headless| h.session.tool_options()["pins"].as_array().map_or(0, Vec::len);
-        click(&mut h, "puppetWarp", 112.0, 188.0);
-        let n = pins(&h);
-        let r = ok(&mut h, "press_key", json!({"key": key}));
-        assert_eq!(r["handledBy"], "tool", "{key}: {r}");
-        assert!(exists(&h, id), "{key} kept the art");
-        assert_eq!(pins(&h), n - 1, "{key} removed the pin");
-        ok(&mut h, "press_key", json!({"key": key}));
-        assert!(!exists(&h, id), "{key} cleared the art");
-    }
-}
-
-#[test]
 fn cmd_a_while_the_type_tool_edits_selects_the_text() {
     let mut h = session();
     run(&mut h, "shape.rectangle", json!({"x": 300, "y": 300, "width": 20, "height": 20}));

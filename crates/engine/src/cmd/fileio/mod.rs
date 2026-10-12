@@ -29,21 +29,17 @@ pub mod pdf;
 mod pdfimport;
 pub mod pngtext;
 pub mod ppi;
-pub mod psdread;
 mod save;
 mod screens;
 mod svg;
-mod text;
 mod unsupported;
 mod zip;
 
 use serde_json::{Value, json};
 
-pub use unsupported::{UNSUPPORTED, Unsupported, unsupported};
 pub use encode::{ARTBOARD_PARAMS, ArtboardPick, Encoded, encode, encode_all, encode_with_warnings};
 pub(crate) use encode::{anti_alias, background, with_single_artboard};
 pub use export::export_source;
-pub(crate) use export::isolated;
 pub(crate) use load::check_not_lossy_overwrite;
 use load::err;
 pub(crate) use load::import_svg;
@@ -54,7 +50,6 @@ pub use load::{
     read_for_open,
 };
 pub use load::{losses_summary, overwrite_losses};
-pub(crate) use native::preview_png;
 pub use native::with_compression_pref;
 pub use pdfimport::{LoadOptions, page_document};
 pub(crate) use save::job_for;
@@ -67,6 +62,7 @@ pub(crate) use screens::{
     SHARED_KEYS as SCREEN_SETTINGS_KEYS, check_settings as check_screen_settings, export as export_screens, store_settings as store_screen_settings,
 };
 pub use svg::options_map as svg_options;
+pub use unsupported::{UNSUPPORTED, Unsupported, unsupported};
 /// Atomic file writes (a temporary file renamed over the target: a failed write never damages the
 /// file it replaces), for the apps' own writers too.
 #[cfg(not(target_arch = "wasm32"))]
@@ -157,15 +153,6 @@ pub fn specs() -> Vec<CommandSpec> {
             "{path} or {name?, dataBase64}, password?, thumbnail?: page (1-based), thumbnailSize?: 160 (px, longest side), cropTo?: crop (the thumbnail's box) → {pages, needsPassword, wrongPassword?, pageInfo: [{width, height (pt, as shown), rotation, boxes: {media, crop, bleed, trim, art: [x0, y0, x1, y1] (PDF space, pt)}}], thumbnail?: PNG dataBase64}; an encrypted PDF without its password → {pages: 0, needsPassword: true}",
             always,
             pdfimport::pdf_info
-        ),
-        cmd!(
-            "document.exportForOffice",
-            "Save for Office Documents…",
-            ["File"],
-            None,
-            "{path?, ppi?: 150 (72, 150, 300… pixels per inch), transparent?: false (else on white), artboard?: 0} the artboard as a PNG for office documents and slides → {path, bytes, width, height} (pixels); no path → {dataBase64, bytes, width, height}",
-            has_doc,
-            export::export_for_office
         ),
         cmd!(
             query "document.exportSettings",
@@ -361,96 +348,6 @@ const PALETTE_OPTIONS: &[FormatOption] = &[
     MATTE,
 ];
 
-const LZW: FormatOption = FormatOption { name: "lzw", ty: "boolean", default: "true", description: "LZW compression (lossless, smaller files)" };
-const BYTE_ORDER: FormatOption = FormatOption {
-    name: "byteOrder",
-    ty: "string",
-    default: "\"little\"",
-    description: "the order of the bytes in the file's numbers: little (II, as on PCs) or big (MM)",
-};
-const TIFF_OPTIONS: &[FormatOption] =
-    &[ARTBOARD, ARTBOARDS, RANGE, USE_ARTBOARDS, PPI, SCALE, BACKGROUND, ANTI_ALIAS, COLOR_MODEL, LZW, BYTE_ORDER, EMBED_ICC];
-const BMP_COLOR_MODEL: FormatOption =
-    FormatOption { name: "colorModel", ty: "string", default: "\"rgb\"", description: "rgb or gray (greys at every depth)" };
-const BMP_DEPTH: FormatOption = FormatOption {
-    name: "depth",
-    ty: "integer",
-    default: "24",
-    description: "bits per pixel: 1 (black and white), 4 or 8 (a palette by reduction and dither), 16, 24, or 32 (keeps transparency); the others are flattened on white",
-};
-const FILE_FORMAT: FormatOption = FormatOption {
-    name: "fileFormat",
-    ty: "string",
-    default: "\"windows\"",
-    description: "windows, or os2 (1, 4, 8 or 24 bits, uncompressed, rows bottom-up)",
-};
-const RLE: FormatOption =
-    FormatOption { name: "rle", ty: "boolean", default: "false", description: "run-length encode a 4- or 8-bit windows bitmap (RLE4, RLE8)" };
-const FLIP_ROWS: FormatOption = FormatOption {
-    name: "flipRows",
-    ty: "boolean",
-    default: "false",
-    description: "rows top-down (a negative height) instead of bottom-up; not with rle or os2",
-};
-const BMP_OPTIONS: &[FormatOption] = &[
-    ARTBOARD,
-    ARTBOARDS,
-    RANGE,
-    USE_ARTBOARDS,
-    PPI,
-    SCALE,
-    BACKGROUND,
-    ANTI_ALIAS,
-    BMP_COLOR_MODEL,
-    BMP_DEPTH,
-    FILE_FORMAT,
-    RLE,
-    FLIP_ROWS,
-    REDUCTION,
-    DITHER,
-    DITHER_AMOUNT,
-];
-const TGA_DEPTH: FormatOption = FormatOption {
-    name: "depth",
-    ty: "integer",
-    default: "24",
-    description: "bits per pixel: 16 (one-bit alpha), 24 (flattened on white) or 32 (keeps transparency)",
-};
-const TGA_OPTIONS: &[FormatOption] = &[ARTBOARD, ARTBOARDS, RANGE, USE_ARTBOARDS, PPI, SCALE, BACKGROUND, ANTI_ALIAS, TGA_DEPTH];
-const PSD_LAYERS: FormatOption = FormatOption {
-    name: "layers",
-    ty: "boolean",
-    default: "true",
-    description: "write layers: each top-level layer a pixel layer with its opacity and blend mode (a background colour is a Background layer); false: one flat image, on white where transparent",
-};
-const MAX_EDITABILITY: FormatOption = FormatOption {
-    name: "maxEditability",
-    ty: "boolean",
-    default: "false",
-    description: "with layers: layers and sublayers become groups and every object a layer of its own, named as the Layers panel names it (text by its text); clipping, masked or knockout layers stay one layer",
-};
-const PSD_HIDDEN_LAYERS: FormatOption = FormatOption {
-    name: "hiddenLayers",
-    ty: "boolean",
-    default: "false",
-    description: "with layers: hidden layers (and hidden objects) are written as hidden layers instead of left out",
-};
-const PSD_OPTIONS: &[FormatOption] = &[
-    ARTBOARD,
-    ARTBOARDS,
-    RANGE,
-    USE_ARTBOARDS,
-    PPI,
-    SCALE,
-    BACKGROUND,
-    ANTI_ALIAS,
-    COLOR_MODEL,
-    PSD_LAYERS,
-    MAX_EDITABILITY,
-    PSD_HIDDEN_LAYERS,
-    EMBED_ICC,
-];
-
 /// A format `document.open` reads but nothing writes yet.
 const fn reader(id: &'static str, label: &'static str, extensions: &'static [&'static str], mime: &'static str, raster: bool) -> Format {
     Format { id, label, extensions, mime, read: true, write: false, raster, options: &[] }
@@ -527,7 +424,6 @@ pub const FORMATS: &[Format] = &[
             IMAGE_MAP,
         ],
     },
-    Format { id: "gif", label: "GIF", extensions: &["gif"], mime: "image/gif", read: true, write: true, raster: true, options: PALETTE_OPTIONS },
     Format {
         id: "webp",
         label: "WebP",
@@ -539,17 +435,6 @@ pub const FORMATS: &[Format] = &[
         options: &[ARTBOARD, ARTBOARDS, RANGE, USE_ARTBOARDS, PPI, SCALE, BACKGROUND, ANTI_ALIAS, LOSSLESS, WEBP_QUALITY],
     },
     Format {
-        id: "tiff",
-        label: "TIFF",
-        extensions: &["tif", "tiff"],
-        mime: "image/tiff",
-        read: true,
-        write: true,
-        raster: true,
-        options: TIFF_OPTIONS,
-    },
-    Format { id: "bmp", label: "BMP", extensions: &["bmp"], mime: "image/bmp", read: true, write: true, raster: true, options: BMP_OPTIONS },
-    Format {
         id: "template",
         label: "VectorCraft Template",
         extensions: &["vctemplate"],
@@ -560,7 +445,6 @@ pub const FORMATS: &[Format] = &[
         options: native::OPTIONS,
     },
     Format { id: "png8", label: "PNG-8", extensions: &["png"], mime: "image/png", read: false, write: true, raster: true, options: PALETTE_OPTIONS },
-    Format { id: "txt", label: "Text", extensions: TEXT_EXTS, mime: "text/plain", read: false, write: true, raster: false, options: text::OPTIONS },
     Format {
         id: "eps",
         label: "EPS",
@@ -571,45 +455,20 @@ pub const FORMATS: &[Format] = &[
         raster: false,
         options: eps::OPTIONS,
     },
-    Format { id: "tga", label: "Targa", extensions: &["tga"], mime: "image/x-tga", read: false, write: true, raster: true, options: TGA_OPTIONS },
-    Format { id: "psd", label: "PSD", extensions: &["psd"], mime: "image/x-psd", read: true, write: true, raster: true, options: PSD_OPTIONS },
     // Photoshop's large document format: read like a PSD (its merged image), never written.
     // Affinity Photo's `.afphoto` opens by its content but isn't listed: Finder shouldn't offer a
     // vector app for a raster editor's documents.
     reader("affinity", "Affinity", &["af", "afdesign", "afpub"], "application/vnd.affinity", false),
-    reader("psb", "PSB", &["psb"], "image/x-psb", true),
 ];
 
 /// Every extension `document.open` reads (the "All readable files" filter of open dialogs).
-pub const OPEN_EXTS: &[&str] = &[
-    "vectorcraft",
-    "drawcraft",
-    "svg",
-    "svgz",
-    "pdf",
-    "ai",
-    "ait",
-    "png",
-    "jpg",
-    "jpeg",
-    "gif",
-    "webp",
-    "tif",
-    "tiff",
-    "bmp",
-    "psd",
-    "psb",
-    "vctemplate",
-    "eps",
-    "af",
-    "afdesign",
-    "afpub",
-];
+pub const OPEN_EXTS: &[&str] =
+    &["vectorcraft", "drawcraft", "svg", "svgz", "pdf", "ai", "ait", "png", "jpg", "jpeg", "webp", "vctemplate", "eps", "af", "afdesign", "afpub"];
 
 /// Extensions in [`OPEN_EXTS`] the desktop packaging doesn't associate with VectorCraft: Photoshop
 /// documents belong to raster editors, so Finder and file managers don't offer a vector app for
 /// them (File › Open and Place still read them).
-pub const UNASSOCIATED_EXTS: &[&str] = &["psd", "psb"];
+pub const UNASSOCIATED_EXTS: &[&str] = &[];
 
 /// The extension that picks each writable format when exporting (the format's first; PNG-8 shares
 /// `.png` with PNG, so `.png` comes once), in [`FORMATS`] order.
@@ -623,35 +482,9 @@ pub fn export_extensions() -> Vec<&'static str> {
     v
 }
 
-/// Text files: File → Place sets them as area type (Text Import Options).
-pub const TEXT_EXTS: &[&str] = &["txt"];
-
-/// Every extension File → Place reads: [`OPEN_EXTS`] and [`TEXT_EXTS`].
-pub const PLACE_EXTS: &[&str] = &[
-    "vectorcraft",
-    "drawcraft",
-    "svg",
-    "svgz",
-    "pdf",
-    "ai",
-    "ait",
-    "png",
-    "jpg",
-    "jpeg",
-    "gif",
-    "webp",
-    "tif",
-    "tiff",
-    "bmp",
-    "psd",
-    "psb",
-    "vctemplate",
-    "eps",
-    "af",
-    "afdesign",
-    "afpub",
-    "txt",
-];
+/// Every extension File → Place reads.
+pub const PLACE_EXTS: &[&str] =
+    &["vectorcraft", "drawcraft", "svg", "svgz", "pdf", "ai", "ait", "png", "jpg", "jpeg", "webp", "vctemplate", "eps", "af", "afdesign", "afpub"];
 
 /// One dialog filter per readable format.
 fn format_filters() -> impl Iterator<Item = (&'static str, &'static [&'static str])> {
@@ -659,23 +492,18 @@ fn format_filters() -> impl Iterator<Item = (&'static str, &'static [&'static st
 }
 
 /// Open-dialog filters: "All readable files" first, then one per readable format, then swatch
-/// libraries (which open in the library panel), Libraries panel libraries, flattener, PDF and print
-/// presets (imported).
+/// libraries (which open in the library panel), flattener and PDF presets (imported).
 pub fn open_filters() -> impl Iterator<Item = (&'static str, &'static [&'static str])> {
     std::iter::once(("All readable files", OPEN_EXTS))
         .chain(format_filters())
         .chain(std::iter::once(("Swatch libraries", super::swatchlib::LIBRARY_EXTS)))
-        .chain(std::iter::once(("Libraries", super::library::LIBRARY_EXTS)))
         .chain(std::iter::once(("Flattener presets", super::flatten::PRESET_EXTS)))
         .chain(std::iter::once(("PDF presets", super::pdfcmds::PRESET_EXTS)))
-        .chain(std::iter::once(("Print presets", super::printpresets::PRESET_EXTS)))
 }
 
-/// File → Place dialog filters: "All placeable files", then one per placeable format, then text.
+/// File → Place dialog filters: "All placeable files", then one per placeable format.
 pub fn place_filters() -> impl Iterator<Item = (&'static str, &'static [&'static str])> {
-    std::iter::once(("All placeable files", PLACE_EXTS))
-        .chain(format_filters().filter(|(_, exts)| exts.iter().all(|ext| PLACE_EXTS.contains(ext))))
-        .chain(std::iter::once(("Text", TEXT_EXTS)))
+    std::iter::once(("All placeable files", PLACE_EXTS)).chain(format_filters().filter(|(_, exts)| exts.iter().all(|ext| PLACE_EXTS.contains(ext))))
 }
 
 /// A format by id or extension (any case, leading dot allowed; `jpeg` finds `jpg`).
@@ -1069,7 +897,6 @@ mod tests_screens;
 #[cfg(test)]
 mod tests_text;
 
-
 #[cfg(test)]
 mod tests_pdfsecurity;
 #[cfg(test)]
@@ -1080,18 +907,11 @@ mod tests_svgimport;
 #[cfg(test)]
 mod tests_eps;
 
-
 #[cfg(test)]
 mod tests_pdfoutput;
-#[cfg(test)]
-mod tests_tiffbmp;
 
 #[cfg(test)]
 mod tests_pdfx;
-#[cfg(test)]
-mod tests_psd;
-#[cfg(test)]
-mod tests_psdread;
 
 #[cfg(test)]
 mod tests_epsimport;

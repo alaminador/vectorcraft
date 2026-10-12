@@ -89,48 +89,6 @@ fn the_eyedropper_places_copied_gradients_on_the_target() {
 }
 
 #[test]
-fn graphic_styles_keep_gradients_relative_to_the_bounds() {
-    let (mut s, src, dst) = source_and_target();
-    s.execute("select.set", &json!({"ids": [src.0]})).unwrap();
-    s.execute("graphicStyle.new", &json!({"name": "Glow"})).unwrap();
-    let style = s.doc().unwrap().doc.graphic_styles.iter().find(|g| g.name == "Glow").cloned().unwrap();
-    let Paint::Gradient(g) = style.appearance.fill_paint() else { panic!() };
-    assert!(style.unit_box && close(g.geom.unwrap().start, Point::new(0.2, 0.5)), "stored in unit-box space: {g:?}");
-    s.execute("select.set", &json!({"ids": [dst.0]})).unwrap();
-    s.execute("graphicStyle.apply", &json!({"name": "Glow"})).unwrap();
-    let g = fill_geom(&s, dst).unwrap();
-    assert!(close(g.start, Point::new(540.0, 60.0)) && close(g.end, Point::new(660.0, 60.0)), "{g:?}");
-    // Both stay linked (each has the style's look on its own bounds); redefining the style from an
-    // edited source moves the new placement onto the linked target's bounds too.
-    let linked = |s: &mut Session| {
-        let list = s.execute("graphicStyle.list", &json!({})).unwrap();
-        list["styles"].as_array().unwrap().iter().find(|g| g["name"] == "Glow").unwrap()["linked"].clone()
-    };
-    assert_eq!(linked(&mut s), json!([src.0, dst.0]));
-    s.execute("select.set", &json!({"ids": [src.0]})).unwrap();
-    s.execute("paint.setFill", &json!({"gradient": {"start": [13.3, 47.7], "end": [97.1, 71.9]}})).unwrap();
-    assert_eq!(linked(&mut s), json!([dst.0]), "the edited source is no longer linked");
-    s.execute("graphicStyle.redefine", &json!({"name": "Glow"})).unwrap();
-    let g = fill_geom(&s, dst).unwrap();
-    assert!(close(g.start, Point::new(506.6, 47.7)) && close(g.end, Point::new(674.2, 71.9)), "{g:?}");
-    assert_eq!(linked(&mut s), json!([src.0, dst.0]));
-    s.execute("select.set", &json!({"ids": [dst.0]})).unwrap();
-    // The flag survives a save; a style from an older file (no flag) keeps document coordinates.
-    let bytes = vectorcraft_format::save(&s.doc().unwrap().doc, false);
-    let back = vectorcraft_format::load(&bytes).unwrap();
-    assert_eq!(back.graphic_styles, s.doc().unwrap().doc.graphic_styles);
-    let legacy: vectorcraft_doc::GraphicStyle = serde_json::from_value(json!({"name": "Old", "appearance": style.appearance})).unwrap();
-    assert!(!legacy.unit_box);
-    s.edit("Add", |d, _| {
-        d.graphic_styles.push(legacy);
-        Ok(())
-    })
-    .unwrap();
-    s.execute("graphicStyle.apply", &json!({"name": "Old"})).unwrap();
-    assert!(close(fill_geom(&s, dst).unwrap().start, Point::new(0.2, 0.5)), "legacy styles are applied as stored");
-}
-
-#[test]
 fn eyedropper_options_choose_what_copy_from_takes() {
     let mut s = session();
     let src = rect(&mut s, 10.0, 10.0, 100.0, 100.0);

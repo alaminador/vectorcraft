@@ -1,4 +1,4 @@
-//! Delete and Backspace with the Width and Puppet Warp tools, through the shortcut routing: the
+//! Delete and Backspace with the Width tool, through the shortcut routing: the
 //! selected width point or pin goes, and with nothing of the tool's selected the keys clear the
 //! selected art as usual.
 
@@ -80,26 +80,5 @@ fn delete_and_backspace_remove_the_selected_width_point_then_clear() {
         // Nothing of the tool's is selected now: the key clears the selected line.
         press(&mut app, key);
         assert!(!exists(&app, id), "{key:?} with no width point selected clears the selection");
-    }
-}
-
-#[test]
-fn delete_and_backspace_remove_the_selected_pin_then_clear() {
-    for key in [Key::Delete, Key::Backspace] {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 400, "height": 400})).unwrap();
-        let id = app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 200, "height": 100})).unwrap()["id"].as_u64().unwrap();
-        app.run("select.set", json!({"ids": [id]})).unwrap();
-        app.select_tool("puppetWarp");
-        let pins = |app: &VectorcraftApp| app.session.tool_options()["pins"].as_array().map_or(0, Vec::len);
-        // A click on the art away from the automatic pins adds a pin and selects it.
-        click(&mut app, 112.0, 188.0);
-        let n = pins(&app);
-        assert!(n > 1, "{n} pins");
-        press(&mut app, key);
-        assert!(exists(&app, id), "{key:?} kept the art");
-        assert_eq!(pins(&app), n - 1, "{key:?} removed the pin");
-        press(&mut app, key);
-        assert!(!exists(&app, id), "{key:?} with no pin selected clears the selection");
     }
 }

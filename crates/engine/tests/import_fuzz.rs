@@ -839,30 +839,6 @@ fn libraries(what: &str, data: &str) -> Result<(), TestCaseError> {
     })
 }
 
-/// A Libraries panel library of the rich document's first object (a graphic), a colour, its
-/// type's character and paragraph styles and a group, exported, made once.
-fn saved_library() -> String {
-    static TEXT: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    TEXT.get_or_init(|| {
-        let mut s = rich_session();
-        s.execute("library.create", &json!({"name": "Fuzz"})).unwrap();
-        let first = s.doc().unwrap().doc.layers[0].children().unwrap()[0].id.0;
-        let g = s.execute("library.add", &json!({"kind": "graphic", "ids": [first]})).unwrap()["id"].clone();
-        s.execute("library.add", &json!({"kind": "fillColor", "color": "#336699"})).unwrap();
-        s.execute("select.all", &json!({})).unwrap();
-        for kind in ["charStyle", "paraStyle"] {
-            s.execute("library.add", &json!({"kind": kind})).unwrap();
-        }
-        s.execute(
-            "library.createGroup",
-            &json!({"name": "Logos", "items": [{"kind": "graphic", "item": g}, {"kind": "fillColor", "item": "#336699"}]}),
-        )
-        .unwrap();
-        s.execute("library.export", &json!({})).unwrap()["data"].as_str().unwrap().to_string()
-    })
-    .clone()
-}
-
 fn flattener_presets(what: &str, data: &str) -> Result<(), TestCaseError> {
     survive_library(what, "flattener.presets.import", data, |s, r| {
         let _ = no_panic(s.execute("select.all", &json!({})));
@@ -939,23 +915,9 @@ proptest! {
     }
 
     #[test]
-    fn mutated_style_libraries_never_panic(cut in 0usize..20_000, edits in prop::collection::vec(arb_edit(), 0..10)) {
-        let text = saved("graphicStyle.saveLibrary", json!({}));
-        styles("mutated style library", &mutate_text(&text, cut, &edits))?;
-    }
-
-    #[test]
     fn mutated_flattener_presets_never_panic(cut in 0usize..5_000, edits in prop::collection::vec(arb_edit(), 0..10)) {
         let text = saved("flattener.presets.export", json!({"names": ["high", "medium", "low"]}));
         flattener_presets("mutated flattener presets", &mutate_text(&text, cut, &edits))?;
-    }
-
-    #[test]
-    fn mutated_libraries_never_panic(keep in 0.0f64..1.2, edits in prop::collection::vec(arb_edit(), 0..10)) {
-        // Cut anywhere in the file (whole most of the time), the edits anywhere in it.
-        let text = saved_library();
-        let cut = (text.chars().count() as f64 * keep) as usize;
-        libraries("mutated library", &mutate_text(&text, cut, &edits))?;
     }
 
     #[test]
@@ -1013,19 +975,6 @@ fn raster_samples() -> Vec<(&'static str, Vec<u8>)> {
         out.push((name, b));
     }
     out[0].1 = vectorcraft_engine::cmd::fileio::ppi::with_png_resolution(&out[0].1, (300.0, 150.0));
-    // A layered PSD with transparency (as VectorCraft exports it), and a PackBits PSB by hand.
-    let mut s = rich_session();
-    let r = s.execute("document.export", &json!({"format": "psd", "ppi": 2})).unwrap();
-    out.push(("a.psd", vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap()));
-    let mut psb = b"8BPS\0\x02\0\0\0\0\0\0\0\x04\0\0\0\x02\0\0\0\x03\0\x08\0\x03".to_vec();
-    psb.extend([0; 8]);
-    psb.extend(10u64.to_be_bytes());
-    psb.extend(2u64.to_be_bytes());
-    psb.extend((-1i16).to_be_bytes());
-    psb.extend([0, 1]);
-    psb.extend((0..8).flat_map(|_| 2u32.to_be_bytes()));
-    psb.extend((0..8u8).flat_map(|v| [0xfe, v * 30]));
-    out.push(("a.psb", psb));
     out
 }
 
@@ -1035,7 +984,7 @@ proptest! {
     /// Mutated image headers (resolution metadata, chunk and segment lengths) never crash reading
     /// their resolution or placing them.
     #[test]
-    fn mutated_images_place_without_panics(which in 0usize..6, cut in 0usize..4000, edits in prop::collection::vec((0usize..120, any::<u8>()), 0..12)) {
+    fn mutated_images_place_without_panics(which in 0usize..4, cut in 0usize..4000, edits in prop::collection::vec((0usize..120, any::<u8>()), 0..12)) {
         let (name, mut bytes) = raster_samples().swap_remove(which);
         for (at, b) in edits {
             if let Some(x) = bytes.get_mut(at) {
@@ -1439,14 +1388,6 @@ proptest! {
         print_presets("print presets garbage", &format!("{head}{s}"))?;
     }
 
-    #[test]
-    fn mutated_print_presets_never_panic(cut in 0usize..20_000, edits in prop::collection::vec(arb_edit(), 0..10)) {
-        let mut s = rich_session();
-        s.execute("print.presets.save", &json!({"name": "Tiles", "settings": {"scaling": "tileFull", "scale": {"width": 300, "height": 300}, "marks": {"trim": true}}})).unwrap();
-        s.execute("print.presets.save", &json!({"name": "Seps", "settings": {"output": {"mode": "separations", "inks": [{"name": "Cyan", "print": false}]}}})).unwrap();
-        let text = s.execute("print.presets.export", &json!({"names": ["Tiles", "Seps", "[Default]"]})).unwrap()["data"].as_str().unwrap().to_string();
-        print_presets("mutated print presets", &mutate_text(&text, cut, &edits))?;
-    }
 }
 
 // ---------- perspective grid presets files ----------
@@ -1472,14 +1413,6 @@ proptest! {
         perspective_presets("perspective presets garbage", &format!("{head}{s}"))?;
     }
 
-    #[test]
-    fn mutated_perspective_presets_never_panic(cut in 0usize..20_000, edits in prop::collection::vec(arb_edit(), 0..10)) {
-        let mut s = rich_session();
-        s.execute("perspective.presets.save", &json!({"name": "Tall", "kind": 3, "units": "inches", "scale": [1, 4], "angle": 25, "thirdVp": [1, 30]})).unwrap();
-        s.execute("perspective.presets.save", &json!({"name": "Flat", "preset": "[1P-Low View]", "gridline": 4, "groundColor": "#00ff00"})).unwrap();
-        let text = s.execute("perspective.presets.export", &json!({"names": ["Tall", "Flat", "[2P-High View]"]})).unwrap()["data"].as_str().unwrap().to_string();
-        perspective_presets("mutated perspective presets", &mutate_text(&text, cut, &edits))?;
-    }
 }
 
 // ---------- the editing data of Illustrator files ----------

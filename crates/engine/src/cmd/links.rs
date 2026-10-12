@@ -293,35 +293,6 @@ fn stale(d: &Document, g: &Group) -> bool {
     }
 }
 
-/// A linked file of a document (File → Package): its path, name and bytes.
-pub(crate) struct LinkedFile {
-    pub path: String,
-    pub name: String,
-    /// The file actually read, which may be next to the current document after a move.
-    /// Nested links must be resolved against this folder, not the obsolete original path.
-    pub found_path: Option<String>,
-    /// Read from where the file is found, else the pixels the document holds when they are the
-    /// file's own; `None` when neither.
-    pub bytes: Option<Vec<u8>>,
-}
-
-/// Every file the linked images of `d` (saved at `doc_path`) show, in the layers, symbols and
-/// patterns, once each.
-pub(crate) fn linked_files(d: &Document, doc_path: Option<&str>) -> Vec<LinkedFile> {
-    let mut seen = std::collections::BTreeSet::new();
-    groups(d, None)
-        .into_iter()
-        .filter(|g| seen.insert(g.link.path.clone()))
-        .map(|g| {
-            let own = |b: &&ImageBlob| !b.is_proxy() && fileio::format_for_name(g.link.name()).is_some_and(|f| f.mime == b.mime);
-            let found = locate(&g.link, folder(doc_path));
-            let found_path = found.as_ref().map(|f| f.path.clone());
-            let bytes = found.and_then(|mut f| f.read().ok()).or_else(|| d.images.get(&g.key).filter(own).map(|b| b.bytes.to_vec()));
-            LinkedFile { path: g.link.path.clone(), name: g.link.name().to_string(), found_path, bytes }
-        })
-        .collect()
-}
-
 /// The linked files of the open document `st` that `links.findFiles` looks for, each with the
 /// objects in the layers that show it: the files of objects `ids` whatever their status, else the
 /// files that can't be found.

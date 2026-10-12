@@ -88,14 +88,6 @@ fn scope(s: &Session, selection_only: bool) -> Result<Vec<NodeId>> {
 /// A font as type names it: family, style and, when it names one, the installed version.
 pub(super) type UsedFont = (String, String, Option<String>);
 
-/// How a font is named in reports: family and style, then the version the type names, if any.
-pub(super) fn font_label((family, style, version): &UsedFont) -> String {
-    match version {
-        Some(v) => format!("{family} {style} ({v})"),
-        None => format!("{family} {style}"),
-    }
-}
-
 /// The fonts (family, style, version) of the type in the layers and symbols of `d`.
 pub(super) fn used_fonts(d: &Document) -> BTreeSet<UsedFont> {
     let mut fonts = BTreeSet::new();

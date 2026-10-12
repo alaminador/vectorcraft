@@ -1,8 +1,7 @@
 //! The raster export options: PNG Options (resolution, background, anti-aliasing, interlaced),
 //! JPEG Options (no transparency; colour model, quality 0–10, method and scans, profile, image
-//! map), WebP Options, and PNG-8 and GIF Options (the palette: colour reduction, colours, dither,
-//! transparency and matte), TIFF, BMP and Targa Options ([`super::tiff_bmp_tga`]) and PSD Options
-//! ([`super::psd_options`]). Fields
+//! map), WebP Options, and PNG-8 Options (the palette: colour reduction, colours, dither,
+//! transparency and matte). Fields
 //! are `document.export` params (format, path, artboard choice…); `__`-prefixed ones are the
 //! dialog's.
 
@@ -13,7 +12,7 @@ use vectorcraft_render::AntiAlias;
 use vectorcraft_render::encode::jpeg::{self, ColorModel, Method};
 use vectorcraft_render::encode::quantize::{Dither, PaletteOptions, Reduction};
 
-use super::{DialogSpec, form, psd_options, tiff_bmp_tga};
+use super::{DialogSpec, form};
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::{VectorcraftApp, io, widgets};
@@ -88,7 +87,7 @@ pub(super) fn defaults(app: &VectorcraftApp, f: &Format) -> Map<String, Value> {
                 ("imageMap".into(), json!(IMAGE_MAPS[0])),
             ]);
         }
-        "gif" | "png8" => {
+        "png8" => {
             let p = PaletteOptions::default();
             o.extend([
                 ("reduction".into(), json!(p.reduction.id())),
@@ -100,8 +99,7 @@ pub(super) fn defaults(app: &VectorcraftApp, f: &Format) -> Map<String, Value> {
                 ("interlaced".into(), json!(false)),
             ]);
         }
-        "psd" => psd_options::defaults(cmyk, &mut o),
-        id => tiff_bmp_tga::defaults(id, cmyk, &mut o),
+        _ => {}
     }
     o
 }
@@ -173,9 +171,8 @@ pub(super) fn option_rows(ui: &mut egui::Ui, d: &mut Dialog, id: &str, screens: 
     label(ui, tl!("Background Color:"));
     let bg = d.str("background");
     let choice = BACKGROUNDS.iter().position(|v| bg.eq_ignore_ascii_case(v)).unwrap_or(3);
-    // JPEG has no transparency, nor have some TIFF, BMP and Targa options: their list starts at
-    // White, which is what transparent becomes.
-    let first = usize::from(!tiff_bmp_tga::keeps_alpha(id, d));
+    // JPEG has no transparency: its list starts at White, which is what transparent becomes.
+    let first = usize::from(id == "jpg");
     ui.horizontal(|ui| {
         if let Some(i) = widgets::dropdown(ui, "ro-bg", BACKGROUND_LABELS[choice.max(first)], &BACKGROUND_LABELS[first..], 150.0) {
             let value = BACKGROUNDS.get(i + first).copied().unwrap_or("#808080");
@@ -201,14 +198,13 @@ pub(super) fn option_rows(ui: &mut egui::Ui, d: &mut Dialog, id: &str, screens: 
             ui.end_row();
         }
         "jpg" => jpeg_rows(ui, d, &label, screens),
-        "gif" | "png8" => palette_rows(ui, d, &label),
+        "png8" => palette_rows(ui, d, &label),
         "webp" => {
             ui.label("");
             label(ui, tl!("Lossless (lossy WebP isn't available yet)"));
             ui.end_row();
         }
-        "psd" => psd_options::rows(ui, d, &label),
-        id => tiff_bmp_tga::rows(ui, d, id, &label),
+        _ => {}
     }
 }
 

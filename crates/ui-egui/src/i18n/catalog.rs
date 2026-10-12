@@ -208,4 +208,3 @@ impl Catalog {
         forms.get(index.min(forms.len().saturating_sub(1))).map(String::as_str)
     }
 }
-

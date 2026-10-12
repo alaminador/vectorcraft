@@ -201,11 +201,9 @@ fn lookup<'a>(m: &'a Map<String, Value>, path: &str) -> Option<&'a Value> {
     keys.try_fold(first, |v, k| v.get(k))
 }
 
-/// The value at `path`: the dialog's, else the default of the settings it edits (the PDF
-/// settings, or the print settings of the Print dialogs).
+/// The value at `path`: the dialog's, else the default of the PDF settings.
 pub(super) fn get<'a>(d: &'a Dialog, path: &str) -> &'a Value {
-    let defaults = super::print::defaults(&d.kind).unwrap_or(&DEFAULTS);
-    lookup(&d.fields, path).or_else(|| defaults.as_object().and_then(|m| lookup(m, path))).unwrap_or(&Value::Null)
+    lookup(&d.fields, path).or_else(|| DEFAULTS.as_object().and_then(|m| lookup(m, path))).unwrap_or(&Value::Null)
 }
 
 pub(super) fn set(d: &mut Dialog, path: &str, value: Value) {

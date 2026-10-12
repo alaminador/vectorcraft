@@ -1090,28 +1090,4 @@ mod tests {
         assert_eq!(drop(Dragged::Contents, 3), None);
         assert_eq!(drop(Dragged::Contents, 2), Some(("appearance.moveItem", json!({"from": "contents", "to": 2}))));
     }
-
-    #[test]
-    fn with_nothing_selected_it_lists_what_new_art_gets() {
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: Value| app.session.execute(id, &p).unwrap();
-        run(&mut app, "file.new", json!({"width": 100, "height": 100}));
-        run(&mut app, "shape.rectangle", json!({"x": 0, "y": 0, "width": 20, "height": 20}));
-        run(&mut app, "appearance.addFill", json!({}));
-        run(&mut app, "effect.apply", json!({"effect": "stylize.dropShadow"}));
-        run(&mut app, "transparency.set", json!({"opacity": 50}));
-        run(&mut app, "graphicStyle.new", json!({"name": "Fancy"}));
-        run(&mut app, "select.none", json!({}));
-        let shown = frame(&mut app);
-        assert!(shown.contains(&"No Selection".to_string()) && shown.contains(&"Opacity: Default".to_string()), "{shown:?}");
-        // A style clicked with nothing selected: the rows show what the next object gets.
-        run(&mut app, "graphicStyle.apply", json!({"name": "Fancy"}));
-        run(&mut app, "stroke.set", json!({"dash": [3, 3]}));
-        let shown = frame(&mut app);
-        let rows: Vec<&String> = shown.iter().filter(|t| ["Fill:", "Stroke:"].contains(&t.as_str())).collect();
-        assert_eq!(rows, ["Fill:", "Stroke:", "Fill:"], "the added fill is on top");
-        for want in ["No Selection: Fancy".to_string(), effect_label("stylize.dropShadow"), "Opacity: 50%".into(), "Dashed".into()] {
-            assert!(shown.contains(&want), "{want} in {shown:?}");
-        }
-    }
 }

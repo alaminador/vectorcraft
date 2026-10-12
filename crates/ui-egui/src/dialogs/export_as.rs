@@ -9,7 +9,7 @@ use std::sync::LazyLock;
 use serde_json::{Value, json};
 use vectorcraft_engine::cmd::fileio::{self, ArtboardPick, Format};
 
-use super::{DialogSpec, eps_options, form, png_options, save_pdf, svg_options, text_export};
+use super::{DialogSpec, eps_options, form, png_options, save_pdf, svg_options};
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::{VectorcraftApp, io, widgets};
@@ -133,10 +133,6 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         }
         // Artboards as pages go on in Save PDF; the art's bounds are written straight away.
         "pdf" if use_artboards => save_pdf::open(app, &json!({ "path": path, "range": (!all).then_some(range) })),
-        "txt" => {
-            text_export::open(app, &path);
-            Ok(Value::Null)
-        }
         _ => {
             let mut params = json!({ "format": f.id, "path": path, "useArtboards": use_artboards });
             if use_artboards {

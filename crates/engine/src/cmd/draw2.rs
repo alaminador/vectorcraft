@@ -8,11 +8,11 @@ use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::{Appearance, Document, Node, NodeId, NodeKind, PressureProfile, Selection};
 use vectorcraft_geom::hit::fill_contains;
-use vectorcraft_geom::{Anchor, AnchorKind, BezPath, FillRule, PathData, Point, Rect, SubPath, Vec2};
+use vectorcraft_geom::{Anchor, BezPath, FillRule, PathData, Point, Rect, SubPath, Vec2};
 use vectorcraft_pathops as po;
 use vectorcraft_pathops::{BoolOp, Cap, Join, SimplifyOptions};
 
-use super::create::{add_look, add_node};
+use super::create::add_look;
 use super::*;
 use crate::EngineError;
 
@@ -100,24 +100,6 @@ pub fn specs() -> Vec<CommandSpec> {
             knife
         ),
         cmd!(
-            "path.eraseRegion",
-            "Eraser",
-            [],
-            None,
-            "{points: [[x,y]…], size?: pt (10)} erase a round-brush stroke from paths (selected, or all) → {ids}",
-            has_doc,
-            erase_region
-        ),
-        cmd!(
-            "path.eraseSegments",
-            "Path Eraser",
-            [],
-            None,
-            "{points: [[x,y]…], width?: pt (8)} erase the parts of selected paths under the drag → {ids}",
-            has_selection,
-            erase_segments
-        ),
-        cmd!(
             "path.smoothRegion",
             "Smooth",
             [],
@@ -134,15 +116,6 @@ pub fn specs() -> Vec<CommandSpec> {
             "{points: [[x,y]…], tolerance?: pt (12)} join the open-path endpoints scrubbed over → {id}",
             has_doc,
             join_scrub
-        ),
-        cmd!(
-            "path.blob",
-            "Blob Brush",
-            [],
-            None,
-            "{points: [[x,y]…], size?: pt (10), merge?: true} filled brush shape, merged with touching same-colour blobs → {id}",
-            has_doc,
-            blob
         ),
     ]
 }
@@ -239,15 +212,6 @@ fn dist_to_polyline(pts: &[Point], q: Point) -> f64 {
 fn poly_bounds(pts: &[Point], pad: f64) -> Rect {
     let r = pts.iter().fold(Rect::from_points(pts[0], pts[0]), |r, p| r.union_pt(*p));
     r.inflate(pad, pad)
-}
-
-/// The filled area painted by a round brush of diameter `size` along `pts`.
-fn brush_region(pts: &[Point], size: f64) -> PathData {
-    let mut pts = pts.to_vec();
-    if pts.len() == 1 {
-        pts.push(pts[0] + Vec2::new(0.01, 0.0));
-    }
-    po::outline_stroke(&PathData::single(SubPath::polyline(&pts, false)), size, Cap::Round, Join::Round, 4.0)
 }
 
 /// Path leaves the area tools act on: under the selected objects, or every path when nothing is
@@ -363,122 +327,6 @@ pub(super) fn components(pd: &PathData) -> Vec<PathData> {
         }
     }
     groups.into_iter().map(PathData::new).collect()
-}
-
-/// The pieces of `sp` where `remove(point)` is false. `None` when nothing is removed.
-fn cut_subpath(sp: &SubPath, remove: &dyn Fn(Point) -> bool) -> Option<Vec<SubPath>> {
-    let nseg = sp.segment_count();
-    if nseg == 0 {
-        return sp.anchors.first().filter(|a| remove(a.p)).map(|_| vec![]);
-    }
-    const K: usize = 24;
-    let mut runs: Vec<Vec<(usize, f64, f64)>> = vec![];
-    let mut cur: Vec<(usize, f64, f64)> = vec![];
-    let mut any = false;
-    for i in 0..nseg {
-        let c = sp.segment(i);
-        let mut prev_t = 0.0;
-        let mut prev_rm = remove(c.eval(0.0));
-        let mut start = if prev_rm { None } else { Some(0.0) };
-        if prev_rm {
-            any = true;
-            if !cur.is_empty() {
-                runs.push(std::mem::take(&mut cur));
-            }
-        }
-        for k in 1..=K {
-            let t = k as f64 / K as f64;
-            let rm = remove(c.eval(t));
-            if rm != prev_rm {
-                let (mut lo, mut hi) = (prev_t, t);
-                for _ in 0..30 {
-                    let m = 0.5 * (lo + hi);
-                    if remove(c.eval(m)) == prev_rm { lo = m } else { hi = m }
-                }
-                let b = 0.5 * (lo + hi);
-                if prev_rm {
-                    start = Some(b);
-                } else {
-                    any = true;
-                    if let Some(s) = start.take() {
-                        cur.push((i, s, b));
-                    }
-                    runs.push(std::mem::take(&mut cur));
-                }
-            }
-            prev_t = t;
-            prev_rm = rm;
-        }
-        if let Some(s) = start {
-            cur.push((i, s, 1.0));
-        }
-    }
-    if !cur.is_empty() {
-        runs.push(cur);
-    }
-    runs.retain(|r| !r.is_empty());
-    if !any {
-        return None;
-    }
-    // A closed path's last and first runs meet at anchor 0.
-    if sp.closed && runs.len() >= 2 {
-        let first_starts = runs.first().and_then(|r| r.first()).is_some_and(|s| s.0 == 0 && s.1 == 0.0);
-        let last_ends = runs.last().and_then(|r| r.last()).is_some_and(|s| s.0 + 1 == nseg && s.2 == 1.0);
-        if first_starts && last_ends {
-            let first = runs.remove(0);
-            if let Some(last) = runs.last_mut() {
-                last.extend(first);
-            }
-        }
-    }
-    let out = runs
-        .iter()
-        .filter(|r| r.len() > 1 || r[0].2 - r[0].1 > 1e-4)
-        .map(|r| {
-            let mut anchors: Vec<Anchor> = vec![];
-            for &(i, t0, t1) in r {
-                let c = sp.segment(i).subsegment(t0..t1);
-                let (h1, h2) = if sp.segment_is_line(i) { (c.p0, c.p3) } else { (c.p1, c.p2) };
-                match anchors.last_mut() {
-                    Some(a) => a.h_out = h1,
-                    None => anchors.push(Anchor { h_out: h1, ..Anchor::corner(c.p0) }),
-                }
-                anchors.push(Anchor { p: c.p3, h_in: h2, h_out: c.p3, kind: AnchorKind::Corner });
-            }
-            for a in &mut anchors {
-                *a = Anchor::with_handles(a.p, a.h_in, a.h_out);
-            }
-            SubPath::new(anchors, false)
-        })
-        .filter(|s| s.anchors.len() >= 2)
-        .collect();
-    Some(out)
-}
-
-/// Erase from an outline path (open or closed) where `remove` holds. Returns the new geometry per
-/// output object (one object per piece when the path had a single subpath), or None if unchanged.
-pub(super) fn erase_outline(pd: &PathData, remove: &dyn Fn(Point) -> bool) -> Option<Vec<PathData>> {
-    let mut changed = false;
-    let mut subs = vec![];
-    for sp in &pd.subpaths {
-        match cut_subpath(sp, remove) {
-            Some(pieces) => {
-                changed = true;
-                subs.extend(pieces);
-            }
-            None => subs.push(sp.clone()),
-        }
-    }
-    if !changed {
-        return None;
-    }
-    Some(if pd.subpaths.len() == 1 {
-        subs.into_iter().map(PathData::single).collect()
-    } else if subs.is_empty() {
-        vec![]
-    } else {
-        vec![PathData::new(subs)]
-    })
 }
 
 fn stroke_paint(s: &Session) -> Paint {
@@ -929,64 +777,6 @@ fn knife(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(ids_json(&ids))
 }
 
-fn erase_region(s: &mut Session, p: &Value) -> Result<Value> {
-    const C: &str = "path.eraseRegion";
-    let pts = points_param(p, "points", C)?;
-    let size = f64_or(p, "size", 10.0);
-    if !(size.is_finite() && size > 0.0) {
-        return Err(bad(C, "size must be positive"));
-    }
-    let r = size / 2.0;
-    let st = s.doc()?;
-    let region = brush_region(&pts, size);
-    let mut plan: Vec<(NodeId, Vec<PathData>)> = vec![];
-    for id in target_paths(&st.doc, &st.selection, poly_bounds(&pts, r)) {
-        let (pd, rule) = path_of(&st.doc, id)?;
-        if pd.is_closed() {
-            if po::area(&po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Intersect), FillRule::NonZero) <= 1e-6 {
-                continue;
-            }
-            plan.push((id, components(&po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Difference))));
-        } else if let Some(pieces) = erase_outline(&pd, &|q| dist_to_polyline(&pts, q) <= r) {
-            plan.push((id, pieces));
-        }
-    }
-    apply_plan(s, "Eraser", plan)
-}
-
-fn apply_plan(s: &mut Session, label: &str, plan: Vec<(NodeId, Vec<PathData>)>) -> Result<Value> {
-    if plan.is_empty() {
-        return Ok(json!({ "ids": [] }));
-    }
-    let ids = s.edit(label, |d, sel| {
-        let mut all = vec![];
-        for (id, pieces) in plan {
-            all.extend(replace_with_pieces(d, id, pieces)?);
-        }
-        sel.set(all.iter().copied());
-        Ok(all)
-    })?;
-    Ok(ids_json(&ids))
-}
-
-fn erase_segments(s: &mut Session, p: &Value) -> Result<Value> {
-    const C: &str = "path.eraseSegments";
-    let pts = points_param(p, "points", C)?;
-    let w = f64_or(p, "width", 8.0);
-    if !(w.is_finite() && w > 0.0) {
-        return Err(bad(C, "width must be positive"));
-    }
-    let st = s.doc()?;
-    let mut plan = vec![];
-    for id in target_paths(&st.doc, &st.selection, poly_bounds(&pts, w)) {
-        let (pd, _) = path_of(&st.doc, id)?;
-        if let Some(pieces) = erase_outline(&pd, &|q| dist_to_polyline(&pts, q) <= w / 2.0) {
-            plan.push((id, pieces));
-        }
-    }
-    apply_plan(s, "Path Eraser", plan)
-}
-
 // ---------- Smooth ----------
 
 /// Refit the anchors of an open run `a[lo..=hi]` keeping its end points and outer handles.
@@ -1210,57 +1000,3 @@ fn join_scrub(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 // ---------- Blob Brush ----------
-
-fn blob(s: &mut Session, p: &Value) -> Result<Value> {
-    const C: &str = "path.blob";
-    let pts = points_param(p, "points", C)?;
-    let size = f64_or(p, "size", 10.0);
-    if !(size.is_finite() && size > 0.0) {
-        return Err(bad(C, "size must be positive"));
-    }
-    let region = brush_region(&pts, size);
-    if region.is_empty() {
-        return Err(EngineError::Other("empty brush stroke".into()));
-    }
-    let paint = if !s.paint.stroke.is_none() {
-        s.paint.stroke.clone()
-    } else if !s.paint.fill.is_none() {
-        s.paint.fill.clone()
-    } else {
-        Paint::solid(Color::BLACK)
-    };
-    let st = s.doc()?;
-    let mut merge_ids = vec![];
-    if bool_or(p, "merge", true) {
-        let all = Selection::default();
-        for id in target_paths(&st.doc, &all, poly_bounds(&pts, size)) {
-            let Some(n) = st.doc.node(id) else { continue };
-            if n.appearance.fill_paint() != paint || !n.appearance.stroke_paint().is_none() {
-                continue;
-            }
-            let (pd, rule) = path_of(&st.doc, id)?;
-            if pd.is_closed() && po::area(&po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Intersect), FillRule::NonZero) > 1e-6 {
-                merge_ids.push((id, pd, rule));
-            }
-        }
-    }
-    let ap = Appearance::basic(paint, Paint::None, 1.0);
-    if merge_ids.is_empty() {
-        return add_node(s, "Blob Brush", path_kind(region), ap, None);
-    }
-    let mut inputs: Vec<(&PathData, FillRule)> = vec![(&region, FillRule::NonZero)];
-    inputs.extend(merge_ids.iter().map(|(_, pd, r)| (pd, *r)));
-    let merged = po::unite_all(&inputs);
-    let Some(((keep, _, _), rest)) = merge_ids.split_last() else { return add_node(s, "Blob Brush", path_kind(region), ap, None) };
-    let keep = *keep;
-    let others: Vec<NodeId> = rest.iter().map(|m| m.0).collect();
-    s.edit("Blob Brush", |d, sel| {
-        *path_mut(d, keep)? = merged;
-        for id in others {
-            d.remove(id)?;
-        }
-        sel.set([keep]);
-        Ok(())
-    })?;
-    Ok(json!({ "id": keep.0 }))
-}

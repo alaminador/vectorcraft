@@ -298,7 +298,6 @@ pub(crate) fn apply_transform(s: &mut Session, label: &str, ids: Vec<NodeId>, xf
             options["corners"] = json!(!sc.keep_corners);
         }
         st.last_transform = Some((xf, options));
-        st.last_perspective = None;
     }
     Ok(json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>() }))
 }
@@ -409,9 +408,6 @@ fn shear(s: &mut Session, p: &Value) -> Result<Value> {
 /// The last transform's matrix on the selection, with the options `last_transform` keeps for it; an
 /// option that `p` sets to true or false (a recorded Transform Again's) takes precedence.
 fn transform_again(s: &mut Session, p: &Value) -> Result<Value> {
-    if let Some(again) = s.doc()?.last_perspective.clone() {
-        return super::distortcmds::transform_again(s, &again);
-    }
     let (m, mut options) = s.doc()?.last_transform.clone().ok_or_else(|| EngineError::Other("no previous transform".into()))?;
     if let (Some(o), Some(given)) = (options.as_object_mut(), p.as_object()) {
         o.extend(given.iter().filter(|(_, v)| v.is_boolean()).map(|(k, v)| (k.clone(), v.clone())));
@@ -872,7 +868,6 @@ fn isolate(s: &mut Session, p: &Value) -> Result<Value> {
 fn exit_isolation(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc_mut()?;
     if let Some(i) = st.isolation.take() {
-        super::distortcmds::finish_edit_text(st, i);
         let target = st.doc.parent_of(i).filter(|p| st.doc.node(*p).is_some_and(|n| n.extras().shaper.is_some())).unwrap_or(i);
         st.selection.set([target]);
     }

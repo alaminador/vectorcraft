@@ -453,7 +453,6 @@ fn expand_appearance(s: &mut Session, p: &Value) -> Result<Value> {
 mod tests {
     use serde_json::json;
     use vectorcraft_doc::NodeKind;
-    
 
     use crate::{NodeId, Session};
 

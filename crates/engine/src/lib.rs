@@ -26,7 +26,6 @@ use vectorcraft_tools::{PaintDefaults, Tool};
 
 pub use cmd::EyedropperOptions;
 pub use cmd::clipboard::Clipboard;
-pub use cmd::distortcmds::perspective_click;
 pub use cmd::rasterfx::{export_pdf, flatten_raster_effects};
 pub use cmd::{CommandInfo, CommandSpec, command_specs, find_command};
 pub use journal::Journal;
@@ -214,9 +213,6 @@ pub struct Interaction {
     pub layer_rows: Vec<NodeId>,
     pub variables_highlight: Option<String>,
     pub isolation: Option<NodeId>,
-    /// The perspective transform the previews make (`perspective.transform` params): Transform
-    /// Again repeats it once the drag is committed.
-    pub perspective_again: Option<Value>,
 }
 
 /// An open undo group ([`Session::begin_undo_group`]): the edits made in it are one undo step.
@@ -300,9 +296,6 @@ pub struct DocState {
     /// so an export or save to it asks first ([`cmd::fileio::check_not_lossy_overwrite`]). Not saved.
     pub imported_from: Option<String>,
     pub import_losses: Vec<String>,
-    /// Transform Again after a perspective move or scale (Perspective Selection tool): the
-    /// `perspective.transform` params it repeats. `None` once an ordinary transform follows.
-    pub last_perspective: Option<Value>,
 }
 
 static NEXT_DOC_UID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
@@ -391,7 +384,6 @@ impl DocState {
             layers_open,
             imported_from: None,
             import_losses: vec![],
-            last_perspective: None,
         }
     }
     /// Unsaved changes: the document differs from the saved one (selection changes don't count).
@@ -766,10 +758,6 @@ pub struct Prefs {
     /// Appearance panel → New Art Has Basic Appearance (on): new art takes one fill and stroke;
     /// off, the whole appearance of the last selection (`appearance.setNewArtBasic`).
     pub new_art_basic: bool,
-    /// The Color Themes panel's saved themes (`colorTheme.*`): a local library, not a Preferences
-    /// dialog field, so it has no [`cmd::prefscmds::PREF_SPECS`] row and resetting keeps it.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub color_themes: Vec<cmd::colortheme::ColorTheme>,
     /// New Document → Saved: the user's document presets (`file.newPresets.save`). A local
     /// library, not a Preferences dialog field: resetting the preferences keeps it.
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -789,17 +777,6 @@ pub struct Prefs {
     /// File Handling → Use Compression: native saves are gzip-compressed (`document.save
     /// {compress}` overrides it).
     pub use_compression: bool,
-    /// Save for Web: the user's presets (the built-in ones aren't stored). A local library, not a
-    /// Preferences dialog field: resetting the preferences keeps it; `webExport.presets.*` edit it.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub web_export_presets: Vec<cmd::webexport::WebPreset>,
-    /// Save for Web: the settings the dialog opens on (`webExport.settings`); none until set.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub web_export_settings: Option<cmd::webexport::WebSettings>,
-    /// Edit → Print Presets: the user's presets ([Default] isn't stored). A local library, not a
-    /// Preferences dialog field: resetting the preferences keeps it; `print.presets.*` edit it.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub print_presets: Vec<cmd::printpresets::PrintPreset>,
     /// Constrain Width and Height Proportions: the link between W and H in the Transform panel,
     /// the Properties panel and the Control bar (their size fields pass `proportional` to
     /// `object.setBounds`).
@@ -810,20 +787,12 @@ pub struct Prefs {
     /// resetting the preferences keeps them; `tool.setOption` edits them.
     #[serde(skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub tool_settings: std::collections::BTreeMap<String, serde_json::Map<String, Value>>,
-    /// View → Perspective Grid presets: the user's (the built-in ones aren't stored). A local
-    /// library, not a Preferences dialog field: resetting the preferences keeps it;
-    /// `perspective.presets.*` edit it.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub perspective_presets: Vec<vectorcraft_tools::distort::perspective::GridDefinition>,
     /// Blend Options set with no blend selected: what new blends start with
     /// (`object.blend.options`; none: Smooth Color, Align to Page). A tool setting, not a
     /// Preferences dialog field: it has no [`cmd::prefscmds::PREF_SPECS`] row and resetting the
     /// preferences keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blend_options: Option<vectorcraft_doc::live::BlendDefaults>,
-    /// Perspective Grid Options (double-click the Perspective Grid tool): whether the Plane
-    /// Switching Widget shows and where (`perspective.widget.options`).
-    pub perspective_widget: vectorcraft_tools::distort::perspective::widget::WidgetOptions,
 }
 
 impl Default for Prefs {
@@ -952,21 +921,15 @@ impl Default for Prefs {
             width_profiles: vec![],
             japanese_crop_marks: false,
             new_art_basic: true,
-            color_themes: vec![],
             new_doc_presets: vec![],
             recent_new_docs: vec![],
             pdf_presets: vec![],
             templates_folder: String::new(),
             append_converted: true,
             use_compression: false,
-            web_export_presets: vec![],
-            web_export_settings: None,
-            print_presets: vec![],
             constrain_proportions: false,
             tool_settings: Default::default(),
-            perspective_presets: vec![],
             blend_options: None,
-            perspective_widget: Default::default(),
         }
     }
 }
@@ -1022,10 +985,6 @@ pub struct Session {
     /// The selected freeform gradient point (`paint.freeform.selectPoint`) and whose gradient it
     /// was selected on: read it with [`Session::selected_freeform_point`].
     pub(crate) freeform_point: Option<(usize, cmd::gradient::StopOwner)>,
-    /// User Defined and loaded graphic style libraries (Window → Graphic Style Libraries); not saved.
-    pub style_libraries: cmd::stylelib::Libraries,
-    /// The Libraries panel's libraries of graphics, colours and text styles (`library.*`).
-    pub libraries: cmd::library::Libraries,
     /// URLs recently given in the Attributes panel (`attributes.set {url}`), newest first; not saved.
     pub recent_urls: Vec<String>,
     /// The language the UI is drawn in (a language code, never `auto`), set by the UI each frame;
@@ -1049,11 +1008,6 @@ pub struct Session {
     /// Envelope Options with no envelope selected: the options and fidelity new envelopes get
     /// (`None`: the reference app's defaults, fidelity 50); not saved.
     pub(crate) envelope_defaults: Option<(vectorcraft_doc::live::EnvelopeOptions, f64)>,
-    /// The Liquify stroke the last live preview applied, which the next sample of the drag goes on
-    /// from ([`cmd::distortcmds::LiquifyStroke`]).
-    pub(crate) liquify_stroke: Option<Box<cmd::distortcmds::LiquifyStroke>>,
-    /// A press on the Plane Switching Widget is under way: its drag and release are the widget's.
-    pub(crate) plane_widget_press: bool,
     /// A guide being dragged out of a ruler ([`Session::ruler_guide`]).
     pub(crate) ruler_guide: Option<vectorcraft_tools::rulerguide::NewGuide>,
     /// The last search for the files of missing fonts (`text.findFontFiles`), until another
@@ -1112,8 +1066,6 @@ impl Session {
             pending_paint: None,
             swatch_libraries: Default::default(),
             freeform_point: None,
-            style_libraries: Default::default(),
-            libraries: Default::default(),
             recent_urls: vec![],
             ui_language: None,
             journal_note: Default::default(),
@@ -1122,8 +1074,6 @@ impl Session {
             recovery: Default::default(),
             in_tool_actions: false,
             envelope_defaults: None,
-            liquify_stroke: None,
-            plane_widget_press: false,
             ruler_guide: None,
             font_search: None,
             link_search: None,
@@ -1400,7 +1350,7 @@ impl Session {
         let before_sel = st.selection.clone();
         let doc = Arc::make_mut(&mut st.doc);
         let result = match f(doc, &mut st.selection) {
-            Ok(v) => match cmd::shaper::refresh(&before, Arc::make_mut(&mut st.doc)) {
+            Ok(v) => match Ok::<(), EngineError>(()) {
                 Err(e) => Err(e),
                 Ok(()) => {
                     // Inline graphics in text follow their symbols.
@@ -1470,10 +1420,6 @@ impl Session {
             st.layer_rows.clear();
         }
         st.revision += 1;
-        // Puppet Warp pins belong to the art they were placed on: another selection starts afresh.
-        if st.doc.puppet.as_ref().is_some_and(|p| p.ids != st.selection.objects) {
-            cmd::distortcmds::drop_puppet_pins(st);
-        }
         Ok(())
     }
 
@@ -1493,7 +1439,6 @@ impl Session {
             layer_rows: st.layer_rows.clone(),
             variables_highlight: st.variables_highlight.clone(),
             isolation: st.isolation,
-            perspective_again: None,
         });
         Ok(())
     }
@@ -1514,8 +1459,6 @@ impl Session {
                 st.selection.clone_from(&it.selection);
             }
         }
-        let rw = cmd::distortcmds::perspective_rewrite(self, cmd, params);
-        let (cmd, params) = rw.as_ref().map_or((cmd, params), |(c, p)| (c.as_str(), p));
         let r = self.execute(cmd, params);
         let params = self.noted(params);
         let st = self.doc_mut()?;
@@ -1530,7 +1473,6 @@ impl Session {
         let st = self.doc_mut()?;
         let Some(mut it) = st.interaction.take() else { return Ok(()) };
         let Some(preview) = it.preview.take() else { return Ok(()) };
-        let perspective_again = it.perspective_again.take();
         let copy = preview.0 == "object.transform" && preview.1.get("copy").and_then(Value::as_bool).unwrap_or(false);
         // Alt pressed or released during a move drag turns it into a copy or back: name it for
         // what it did in the end.
@@ -1551,11 +1493,7 @@ impl Session {
                     o.remove("ids");
                 }
                 st.last_transform = Some((m, options));
-                st.last_perspective = None;
             }
-        }
-        if perspective_again.is_some() {
-            st.last_perspective = perspective_again;
         }
         self.journal.push(preview);
         Ok(())
@@ -1668,17 +1606,9 @@ mod tests_cmykflatten;
 #[cfg(test)]
 mod tests_colorguide;
 #[cfg(test)]
-mod tests_colorguidelib;
-#[cfg(test)]
 mod tests_colormgmt;
 #[cfg(test)]
-mod tests_colorthemes;
-#[cfg(test)]
 mod tests_containers;
-#[cfg(test)]
-mod tests_css;
-#[cfg(test)]
-mod tests_cut;
 #[cfg(test)]
 mod tests_dashalign;
 #[cfg(test)]
@@ -1726,8 +1656,6 @@ mod tests_gradient;
 #[cfg(test)]
 mod tests_gradpanel;
 #[cfg(test)]
-mod tests_halftone;
-#[cfg(test)]
 mod tests_history_mem;
 #[cfg(test)]
 mod tests_inline;
@@ -1742,8 +1670,6 @@ mod tests_layerclip;
 #[cfg(test)]
 mod tests_layers;
 #[cfg(test)]
-mod tests_library;
-#[cfg(test)]
 mod tests_linked_stops;
 #[cfg(test)]
 mod tests_linkfiles;
@@ -1753,8 +1679,6 @@ mod tests_links;
 mod tests_linkspanel;
 #[cfg(test)]
 mod tests_linkwatch;
-#[cfg(test)]
-mod tests_liquify;
 #[cfg(test)]
 mod tests_live;
 #[cfg(test)]
@@ -1778,8 +1702,6 @@ mod tests_outlinestroke;
 #[cfg(test)]
 mod tests_overprint;
 #[cfg(test)]
-mod tests_package;
-#[cfg(test)]
 mod tests_paintproxy;
 #[cfg(test)]
 mod tests_panelcmds;
@@ -1800,14 +1722,6 @@ mod tests_pdfpresets;
 #[cfg(test)]
 mod tests_pdfraster;
 #[cfg(test)]
-mod tests_persp_planes;
-#[cfg(test)]
-mod tests_persp_select;
-#[cfg(test)]
-mod tests_persp_text;
-#[cfg(test)]
-mod tests_perspgrid;
-#[cfg(test)]
 mod tests_place;
 #[cfg(test)]
 mod tests_placed_document;
@@ -1816,21 +1730,7 @@ mod tests_prefs;
 #[cfg(test)]
 mod tests_previewbounds;
 #[cfg(test)]
-mod tests_print;
-#[cfg(test)]
-mod tests_printadvanced;
-#[cfg(test)]
-mod tests_printpresets;
-#[cfg(test)]
-mod tests_printpreview;
-#[cfg(test)]
-mod tests_printps;
-#[cfg(test)]
-mod tests_printtiling;
-#[cfg(test)]
 mod tests_proxyitems;
-#[cfg(test)]
-mod tests_puppetwarp;
 #[cfg(test)]
 mod tests_rasterfilters;
 #[cfg(test)]
@@ -1850,10 +1750,6 @@ mod tests_saveoptions;
 #[cfg(test)]
 mod tests_scalestrokes;
 #[cfg(test)]
-mod tests_shaper;
-#[cfg(test)]
-mod tests_slices;
-#[cfg(test)]
 mod tests_smartguides;
 #[cfg(test)]
 mod tests_strokegeom;
@@ -1863,8 +1759,6 @@ mod tests_strokegradient;
 mod tests_strokereach;
 #[cfg(test)]
 mod tests_strokeux;
-#[cfg(test)]
-mod tests_stylelib;
 #[cfg(test)]
 mod tests_stylepanel;
 #[cfg(test)]
@@ -1882,7 +1776,6 @@ mod tests_textcombos;
 #[cfg(test)]
 mod tests_textedit;
 #[cfg(test)]
-mod tests_textimport;
 #[cfg(test)]
 mod tests_tileedge;
 #[cfg(test)]
@@ -1897,10 +1790,6 @@ mod tests_typearea;
 mod tests_typescale;
 #[cfg(test)]
 mod tests_units;
-#[cfg(test)]
-mod tests_variables;
-#[cfg(test)]
-mod tests_webexport;
 #[cfg(test)]
 mod tests_widthpoints;
 #[cfg(test)]

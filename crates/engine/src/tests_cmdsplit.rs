@@ -38,10 +38,6 @@ fn moved_commands_keep_their_ids() {
         "paint.setGradientGeom",
         "stroke.set",
         "stroke.setAdvanced",
-        "graphicStyle.apply",
-        "graphicStyle.new",
-        "graphicStyle.delete",
-        "graphicStyle.duplicate",
         "swatch.new",
         "swatch.delete",
         "swatch.newGroup",
@@ -82,25 +78,4 @@ fn leaf_targets_expand_groups_and_stop_at_compound_paths() {
     assert_eq!(paint_targets(&s, &json!({"id": comp.0})).unwrap(), vec![comp]);
     s.execute("select.set", &json!({"ids": [g.0, comp.0]})).unwrap();
     assert_eq!(paint_targets(&s, &json!({})).unwrap(), vec![a, b, comp]);
-}
-
-#[test]
-fn duplicate_names_stay_unique() {
-    let mut s = session();
-    s.execute("swatch.new", &json!({"name": "Sky", "color": "#3399ff"})).unwrap();
-    assert_eq!(s.execute("swatch.duplicate", &json!({"name": "Sky"})).unwrap()["name"], "Sky copy");
-    assert_eq!(s.execute("swatch.duplicate", &json!({"name": "Sky"})).unwrap()["name"], "Sky copy 2");
-    // Colour-group names share the swatch namespace.
-    assert_eq!(s.execute("swatch.newGroup", &json!({"name": "Sky"})).unwrap()["name"], "Sky 2");
-    // New swatches from a colour are named by their RGB values (also inside new groups).
-    assert_eq!(s.execute("swatch.new", &json!({"color": "#ff8000"})).unwrap()["name"], "R=255 G=128 B=0");
-    s.execute("swatch.newGroup", &json!({"name": "G", "colors": ["#00ff00"]})).unwrap();
-    let d = &s.doc().unwrap().doc;
-    assert_eq!(d.swatch_groups.iter().find(|g| g.name == "G").unwrap().swatches[0].name, "R=0 G=255 B=0");
-
-    let id = rect(&mut s, 0.0);
-    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
-    s.execute("graphicStyle.new", &json!({"name": "Look"})).unwrap();
-    assert_eq!(s.execute("graphicStyle.duplicate", &json!({"name": "Look"})).unwrap()["name"], "Look copy");
-    assert_eq!(s.execute("graphicStyle.duplicate", &json!({"name": "Look"})).unwrap()["name"], "Look copy 2");
 }

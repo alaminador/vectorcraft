@@ -11,8 +11,7 @@ use vectorcraft_geom::Rect;
 use vectorcraft_render::AntiAlias;
 use vectorcraft_render::encode::jpeg::{self, JpegOptions};
 use vectorcraft_render::encode::quantize::{Dither, PaletteOptions, Reduction};
-use vectorcraft_render::encode::tiff::{ByteOrder, TiffOptions};
-use vectorcraft_render::encode::{RasterExportOptions, RasterFormat, bmp, psd, tga};
+use vectorcraft_render::encode::{RasterExportOptions, RasterFormat};
 
 use super::super::*;
 use super::Format;
@@ -163,18 +162,6 @@ struct RasterOptions {
     transparency: Option<bool>,
     matte: Option<Value>,
     lossless: Option<bool>,
-    lzw: Option<bool>,
-    byte_order: Option<String>,
-    /// BMP and Targa bits per pixel.
-    depth: Option<u8>,
-    /// BMP layout: `windows` or `os2`.
-    file_format: Option<String>,
-    rle: Option<bool>,
-    flip_rows: Option<bool>,
-    /// PSD: Write Layers.
-    layers: Option<bool>,
-    max_editability: Option<bool>,
-    hidden_layers: Option<bool>,
 }
 
 impl RasterOptions {
@@ -218,52 +205,8 @@ impl RasterOptions {
                     None => Some([255; 3]),
                 },
             },
-            tiff: TiffOptions {
-                color_model,
-                lzw: self.lzw.unwrap_or(true),
-                byte_order: parse(self.byte_order.as_deref(), ByteOrder::from_id, "byteOrder", "little or big")?,
-                embed_icc,
-            },
-            bmp: bmp::BmpOptions {
-                os2: parse(self.file_format.as_deref(), bmp_layout, "fileFormat", "windows or os2")?,
-                depth: self.depth.unwrap_or(24),
-                rle: self.rle.unwrap_or(false),
-                top_down: self.flip_rows.unwrap_or(false),
-                gray: color_model == jpeg::ColorModel::Gray,
-            },
-            tga: tga::TgaOptions { depth: self.depth.unwrap_or(24) },
-            psd: psd::PsdOptions {
-                color_model,
-                layers: self.layers.unwrap_or(true),
-                max_editability: self.max_editability.unwrap_or(false),
-                hidden_layers: self.hidden_layers.unwrap_or(false),
-                embed_icc,
-            },
         })
     }
-}
-
-/// The BMP layout by name: `true` for OS/2.
-fn bmp_layout(s: &str) -> Option<bool> {
-    match s.to_ascii_lowercase().as_str() {
-        "windows" => Some(false),
-        "os2" | "os/2" => Some(true),
-        _ => None,
-    }
-}
-
-/// Refuse options `format` can't write together: BMP and Targa depths and layouts, and colour
-/// models (BMP is RGB or grey, Targa RGB).
-fn check_options(format: RasterFormat, o: &RasterExportOptions) -> Result<()> {
-    let model = o.jpeg.color_model;
-    let r = match format {
-        RasterFormat::Bmp if model == jpeg::ColorModel::Cmyk => Err("BMP files are RGB or grayscale: colorModel rgb or gray".to_string()),
-        RasterFormat::Tga if model != jpeg::ColorModel::Rgb => Err("Targa files are RGB: colorModel rgb".to_string()),
-        RasterFormat::Bmp => o.bmp.check(),
-        RasterFormat::Tga => o.tga.check(),
-        _ => Ok(()),
-    };
-    r.map_err(|e| bad(C, e))
 }
 
 /// An enum option by id (its default when absent).
@@ -334,7 +277,6 @@ const WEBP_SIDE: f64 = 16383.0;
 fn check_format_size(f: &Format, w: f64, h: f64) -> Result<()> {
     let max = match f.id {
         "webp" => WEBP_SIDE,
-        "psd" => f64::from(psd::MAX_SIDE),
         _ => return Ok(()),
     };
     if w.round() > max || h.round() > max {
@@ -415,7 +357,6 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
             d.template = true;
             super::native::encode(C, f, &d, p)?
         }
-        "txt" => super::text::encode(doc, p)?,
         "svg" | "svgz" => return super::svg::encode(doc, p, f.id == "svgz").map_err(|e| bad(C, e)),
         // EPS reads its own `useArtboards` (the art's bounds unless asked).
         "eps" => return super::eps::encode(doc, p),
@@ -424,7 +365,7 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
             let (bytes, warnings) = super::pdf::encode(C, doc, p)?;
             return Ok(Encoded { warnings, ..Encoded::one(bytes) });
         }
-        "png" | "jpg" | "webp" | "gif" | "png8" | "tiff" | "bmp" | "tga" | "psd" => {
+        "png" | "jpg" | "webp" | "png8" => {
             let o: RasterOptions = options(f, p)?;
             // New Document → Background Contents: White makes the export opaque, unless `background`
             // says otherwise (JPEG has no alpha: white either way).
@@ -434,15 +375,9 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
             let format = match f.id {
                 "png" => RasterFormat::Png,
                 "jpg" => RasterFormat::Jpeg,
-                "gif" => RasterFormat::Gif,
                 "png8" => RasterFormat::Png8,
-                "tiff" => RasterFormat::Tiff,
-                "bmp" => RasterFormat::Bmp,
-                "tga" => RasterFormat::Tga,
-                "psd" => RasterFormat::Psd,
                 _ => RasterFormat::WebP,
             };
-            check_options(format, &settings)?;
             // Use Artboards: one file per chosen artboard (default all); else the one chosen.
             let chosen = match use_artboards {
                 Some(true) => boards(o.boards.resolve(n))?.unwrap_or_else(|| (0..n).collect()),

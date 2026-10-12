@@ -124,32 +124,6 @@ fn settings_lists_every_preferences_page() {
     assert_eq!((dialog.kind.as_str(), dialog.fields.get("__category")), ("preferences", Some(&json!("Units"))));
 }
 
-/// Language ▸: Automatic, then each language in its own name (in any UI language), the
-/// preference checked; Appearance ▸: the UI brightness choices, the current one checked.
-#[test]
-fn language_and_appearance_are_in_the_app_menu() {
-    let mut app = app(false);
-    app.session.prefs.interface_language = "ja".into();
-    let bar = bar(&app);
-    let app_menu = &bar.menus[0].children;
-    assert_eq!(ids(submenu(app_menu, "Language"))[..2], ["app.language", "---"], "Automatic, then the languages");
-    let langs: Vec<(String, Option<bool>)> = items(submenu(app_menu, "Language")).iter().map(|it| (it.label.clone(), it.checked)).collect();
-    let mut want = vec![("Automatic".to_string(), Some(false))];
-    want.extend(Lang::all().map(|l| (l.name().to_string(), Some(l.code() == "ja"))));
-    assert_eq!(langs, want);
-    // In every UI language the languages keep their own names.
-    for ui in Lang::all() {
-        for l in Lang::all() {
-            assert_eq!(crate::i18n::tr_id(ui, "app.language", l.name()), l.name(), "{} in {}", l.name(), ui.code());
-        }
-    }
-    let appearance: Vec<(&'static str, Option<bool>)> = items(submenu(app_menu, "Appearance")).iter().map(|it| (it.source, it.checked)).collect();
-    assert_eq!(appearance.len(), crate::theme::Brightness::ALL.len());
-    assert_eq!(appearance.iter().filter(|(_, c)| *c == Some(true)).count(), 1, "{appearance:?}");
-    assert!(appearance.iter().all(|(_, c)| c.is_some()));
-    assert_eq!(crate::i18n::tr_ctx(Lang::from_code("ja").unwrap(), "theme", "Appearance"), "外観", "the theme, not the Appearance panel");
-}
-
 /// Everything the in-window bar lists is in the Mac menu bar, once: what moved to the app menu
 /// (About, Settings, Quit, Language, UI Brightness) leaves its other places, and Join Our Discord
 /// stays under Help.

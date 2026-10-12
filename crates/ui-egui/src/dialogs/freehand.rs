@@ -20,7 +20,7 @@ pub const KIND: &str = "freehandOptions";
 pub(super) const SPEC: DialogSpec = DialogSpec { heading, body, confirm, min_width: 420.0, ..DialogSpec::FORM };
 
 /// The tools the dialog serves.
-pub const TOOLS: [&str; 5] = ["pencil", "paintbrush", "smooth", "blobBrush", "eraser"];
+pub const TOOLS: [&str; 2] = ["pencil", "smooth"];
 
 /// The options the dialog edits, in the order it shows them (a tool has those it reports).
 const KEYS: [&str; 5] = ["fidelity", "size", "fill", "closeWithin", "editWithin"];
@@ -161,24 +161,11 @@ mod tests {
             (o["fidelity"].as_f64(), o["fill"].as_bool(), o["closeWithin"].as_f64(), o["editWithin"].as_f64()),
             (Some(6.5), Some(true), Some(0.0), Some(20.0))
         );
-        // The Paintbrush keeps its own: the Pencil's change left it alone.
-        app.run("tool.options", json!({"tool": "paintbrush"})).unwrap();
-        let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.f64("fidelity", 0.0), d.bool("fill")), (1.5, false));
-        assert!(painted(&mut app).contains("Paintbrush Tool Options"));
-        // Smooth has Fidelity only, the Blob Brush and the Eraser Size only.
+        // Smooth has Fidelity only.
         app.run("tool.options", json!({"tool": "smooth"})).unwrap();
         let text = painted(&mut app);
         assert!(text.contains("Smooth Tool Options") && text.contains("Fidelity:"), "{text}");
         assert!(!text.contains("Fill new strokes") && !text.contains("Size:"), "{text}");
-        for tool in ["blobBrush", "eraser"] {
-            app.run("tool.options", json!({"tool": tool})).unwrap();
-            let text = painted(&mut app);
-            assert!(text.contains("Size:") && !text.contains("Fidelity:"), "{tool}: {text}");
-            app.ui.dialog.as_mut().unwrap().fields.insert("size".into(), json!(24));
-            super::super::confirm(&mut app).unwrap();
-            assert_eq!(app.session.tool_options_of(tool)["size"].as_f64(), Some(24.0), "{tool}");
-        }
     }
 
     #[test]

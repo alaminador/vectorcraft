@@ -55,8 +55,8 @@ fn exports_add_the_format_extension_to_a_bare_name() {
     app.run("select.all", json!({})).unwrap();
     app.run("document.exportSelection", json!({})).unwrap();
     assert_eq!(last(&w), "/tmp/art.png", "Export Selection: its default format");
-    io::save_command_output(&mut app, "document.export", "txt", json!({"format": "txt"})).unwrap();
-    assert_eq!(last(&w), "/tmp/art.txt");
+    io::save_command_output(&mut app, "document.export", "eps", json!({"format": "eps"})).unwrap();
+    assert_eq!(last(&w), "/tmp/art.eps");
 }
 
 #[test]

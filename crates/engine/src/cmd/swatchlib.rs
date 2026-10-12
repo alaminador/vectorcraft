@@ -16,9 +16,19 @@ use vectorcraft_color::{Paint, Swatch, SwatchGroup, SwatchLibrary, default_swatc
 
 use super::fileio::{create_dir, extension, read_file, write_file, write_new_file};
 use super::menucmds::squash;
-use super::package::free_name;
 use super::swatch::{map_default_paints, str_list, swatch_json};
 use super::*;
+
+/// `name`, else the first free `stem 2.ext`, `stem 3.ext`… (compared without case, as most
+/// desktop file systems do); the name is taken.
+fn free_name(name: &str, taken: &mut std::collections::HashSet<String>) -> String {
+    let p = std::path::Path::new(name);
+    let stem = p.file_stem().map_or_else(|| name.to_string(), |s| s.to_string_lossy().into_owned());
+    let ext = p.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+    let out = unique_name(&stem, |s| taken.contains(&format!("{s}{ext}").to_lowercase())) + &ext;
+    taken.insert(out.to_lowercase());
+    out
+}
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
