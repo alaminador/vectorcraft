@@ -390,91 +390,6 @@ fn mixed_lists_translate_only_their_built_in_entries() {
 fn given_headings_are_shown_as_they_are() {
     let d = Dialog::new(confirm::KIND, json!({"message": "Delete “Black”?", "detail": "Regular"}));
     assert_eq!((spec(&d.kind).heading)(&d), "Delete “Black”?");
-    let d = Dialog::new(plugin::KIND, json!({"__label": "Black", "__plugin": "x"}));
-    assert_eq!((spec(&d.kind).heading)(&d), "Black");
-}
-
-/// A plug-in dialog with one whole-number field `seed` in `min..=max`, driven by egui events.
-struct PluginIntField {
-    ctx: egui::Context,
-    d: Dialog,
-    specs: Vec<(String, vectorcraft_plugins::ParamSpec)>,
-    pos: egui::Pos2,
-}
-
-impl PluginIntField {
-    fn new(min: i64, max: i64, start: i64) -> Self {
-        let ctx = egui::Context::default();
-        theme::install_fonts(&ctx);
-        theme::apply(&ctx, Default::default());
-        let specs = vec![("seed".into(), vectorcraft_plugins::ParamSpec::Int { min, max, default: 0 })];
-        let mut f = PluginIntField { ctx, d: Dialog::new(plugin::KIND, json!({ "seed": start })), specs, pos: egui::Pos2::ZERO };
-        fn number_rect(shape: &egui::Shape, text: &str) -> Option<egui::Rect> {
-            match shape {
-                egui::Shape::Text(t) if t.galley.text() == text => Some(t.visual_bounding_rect()),
-                egui::Shape::Vec(shapes) => shapes.iter().find_map(|s| number_rect(s, text)),
-                _ => None,
-            }
-        }
-        let out = f.run(vec![]);
-        f.pos = out.shapes.iter().find_map(|s| number_rect(&s.shape, &start.to_string())).unwrap().center();
-        f
-    }
-
-    fn run(&mut self, events: Vec<egui::Event>) -> egui::FullOutput {
-        let (d, specs) = (&mut self.d, &self.specs);
-        let mut out = self.ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| {
-            form::schema_fields(ui, d, specs);
-        });
-        out.textures_delta.clear();
-        out
-    }
-
-    /// Clicks the field, sends `events`, presses Enter and returns the field's value.
-    fn commit(&mut self, events: Vec<egui::Event>) -> serde_json::Value {
-        use egui::{Event, Key, Modifiers, PointerButton};
-        let (pos, button) = (self.pos, PointerButton::Primary);
-        self.run(vec![Event::PointerMoved(pos), Event::PointerButton { pos, button, pressed: true, modifiers: Modifiers::default() }]);
-        self.run(vec![Event::PointerButton { pos, button, pressed: false, modifiers: Modifiers::default() }]);
-        self.run(events);
-        self.run(vec![Event::Key { key: Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::default() }]);
-        self.d.fields["seed"].clone()
-    }
-
-    /// Replaces the field's text with `text` and commits it.
-    fn type_text(&mut self, text: &str) -> serde_json::Value {
-        let all = egui::Modifiers { ctrl: true, command: true, ..Default::default() };
-        self.commit(vec![
-            egui::Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: all },
-            egui::Event::Text(text.into()),
-        ])
-    }
-}
-
-#[test]
-fn plugin_integer_field_preserves_precision_and_clamps_exactly() {
-    let (min, max) = (-9007199254740995_i64, 9007199254740995_i64);
-    let mut f = PluginIntField::new(min, max, 0);
-    for (text, expected) in [
-        ("9007199254740993", 9007199254740993_i64),
-        ("9007199254740996", max),
-        ("-9007199254740996", min),
-        ("invalid", min),
-        ("1.5", min),
-        ("9223372036854775808", min),
-    ] {
-        assert_eq!(f.type_text(text), json!(expected), "{text}");
-    }
-}
-
-#[test]
-fn plugin_integer_field_with_small_bounds_keeps_numeric_editing() {
-    let mut f = PluginIntField::new(1, 16, 3);
-    let up = egui::Event::Key { key: egui::Key::ArrowUp, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() };
-    assert_eq!(f.commit(vec![up]), json!(4));
-    for (text, expected) in [("7", 7), ("2 + 3", 5), ("17", 16)] {
-        assert_eq!(f.type_text(text), json!(expected), "{text}");
-    }
 }
 
 #[test]
@@ -595,38 +510,6 @@ fn a_dialogs_focus_skips_a_greyed_out_first_field() {
     assert!(app.ui.dialog.is_none());
     let info = app.run("object.blend.info", json!({})).unwrap();
     assert_eq!((info["spacing"].clone(), info["steps"].clone()), (json!("steps"), json!(7)), "{info}");
-}
-
-/// #1000: a count typed in Object › Create Object Mosaic… reaches the command (a whole number typed
-/// in a command's dialog is an integer), so the mosaic has that many columns, not the 10 × 10 grid.
-#[test]
-fn object_mosaic_makes_the_grid_typed_in_its_dialog() {
-    let mut app = app();
-    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 60, "height": 40})).unwrap();
-    app.run("object.rasterize", json!({"ppi": 72})).unwrap();
-    let ctx = egui::Context::default();
-    theme::install_fonts(&ctx);
-    theme::apply(&ctx, Default::default());
-    let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
-        let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| show(app, ui.ctx()));
-        out.textures_delta.clear();
-    };
-    let entry = crate::menus::menu_entries(&app).into_iter().find(|e| e.label == "Create Object Mosaic…").expect("menu item");
-    let (cmd, params) = crate::menus::click_target(&entry.label, entry.command.as_deref().unwrap(), &entry.params);
-    crate::menus::invoke(&mut app, &cmd, params);
-    // Its first field, Columns, is focused: type 3 over it and press Enter.
-    frame(&mut app, vec![]);
-    frame(&mut app, vec![egui::Event::Text("3".into())]);
-    let enter = egui::Event::Key { key: egui::Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() };
-    frame(&mut app, vec![enter]);
-    assert!(app.ui.dialog.is_none());
-    let mut tiles = None;
-    app.session.doc().unwrap().doc.walk(|n| {
-        if n.name.as_deref() == Some("Object Mosaic") {
-            tiles = n.children().map(|c| c.len());
-        }
-    });
-    assert_eq!(tiles, Some(3 * 10));
 }
 
 /// #793: Artboard Options lists its fields as Name, Width, Height, not by key.

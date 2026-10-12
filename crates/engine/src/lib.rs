@@ -679,7 +679,6 @@ pub struct Prefs {
     /// are listed and used as if installed (#683); empty for none.
     pub fonts_folder: String,
     // Performance & Storage (Plug-ins & Scratch Disks)
-    pub plugins_folder: String,
     pub scratch_primary: String,
     pub scratch_secondary: String,
     // User Interface
@@ -905,7 +904,6 @@ impl Default for Prefs {
             hyphenation_language: s("English: USA"),
             hyphenation_exceptions: String::new(),
             fonts_folder: String::new(),
-            plugins_folder: String::new(),
             scratch_primary: s("Startup"),
             scratch_secondary: s("None"),
             ui_brightness: s("mediumDark"),
@@ -1813,8 +1811,6 @@ mod tests_perspgrid;
 mod tests_place;
 #[cfg(test)]
 mod tests_placed_document;
-#[cfg(test)]
-mod tests_plugins;
 #[cfg(test)]
 mod tests_prefs;
 #[cfg(test)]

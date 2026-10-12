@@ -209,20 +209,3 @@ impl Catalog {
     }
 }
 
-/// `{name}` placeholders of a template, in order of appearance.
-#[cfg(test)]
-pub fn placeholders(s: &str) -> Vec<&str> {
-    let mut out = Vec::new();
-    let mut rest = s;
-    while let Some(a) = rest.find('{') {
-        let after = &rest[a + 1..];
-        match after.find('}') {
-            Some(b) => {
-                out.push(&after[..b]);
-                rest = &after[b + 1..];
-            }
-            None => break,
-        }
-    }
-    out
-}

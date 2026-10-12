@@ -22,7 +22,6 @@ vectorcraft-brush = { path = "crates/brush" }
 vectorcraft-trace = { path = "crates/trace" }
 vectorcraft-text = { path = "crates/text" }
 vectorcraft-effects = { path = "crates/effects" }
-vectorcraft-three-d = { path = "crates/three-d" }
 vectorcraft-render = { path = "crates/render" }
 vectorcraft-svg = { path = "crates/svg" }
 vectorcraft-pdf = { path = "crates/pdf" }
@@ -32,10 +31,7 @@ vectorcraft-engine = { path = "crates/engine" }
 vectorcraft-ui-egui = { path = "crates/ui-egui" }
 vectorcraft-mcp = { path = "crates/mcp" }
 vectorcraft-testkit = { path = "crates/testkit" }
-vectorcraft-cad = { path = "crates/cad" }
 vectorcraft-eps = { path = "crates/eps" }
-vectorcraft-metafile = { path = "crates/metafile" }
-vectorcraft-plugins = { path = "crates/plugins" }
 vectorcraft-affinity = { path = "crates/affinity" }
 
 # foundation
@@ -49,12 +45,6 @@ proptest = "1"
 crc32fast = "1.5"
 # tests: a TCP port bound without listening (connections to it are refused)
 socket2 = "0.6"
-# Sandboxed WebAssembly plug-ins: a pure-Rust interpreter (MIT OR Apache-2.0) that builds for wasm32
-# too. Without `wat` (text parsing is test-only) and memory64; `validate` keeps full module
-# validation on; the portable dispatcher can't overflow the host stack on long-running modules.
-wasmi = { version = "2.0.0", default-features = false, features = ["std", "validate", "stable", "portable-dispatch"] }
-# Tests: WebAssembly text -> binary for the plug-in fixtures (Apache-2.0 WITH LLVM-exception).
-wat = "1.228"
 
 # rendering / formats
 vello_cpu = { version = "0.2", features = ["f32_pipeline"] }

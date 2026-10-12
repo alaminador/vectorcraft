@@ -254,7 +254,6 @@ pub const PREF_SPECS: &[PrefSpec] = &[
     ),
     p!("hyphenationExceptions", "Hyphenation", "", "Exceptions (comma separated)", text),
     // Performance & Storage
-    p!("pluginsFolder", "Performance & Storage", "Plug-ins", "Additional Plug-ins Folder", text),
     p!("scratchPrimary", "Performance & Storage", "Scratch Disks", "Primary", text),
     p!("scratchSecondary", "Performance & Storage", "Scratch Disks", "Secondary", text),
     // User Interface
@@ -455,13 +454,12 @@ impl Prefs {
         Ok(())
     }
 
-    /// The folders the app reads (fonts, plug-ins) or writes (Data Recovery copies, the Templates
+    /// The folders the app reads (fonts) or writes (Data Recovery copies, the Templates
     /// folder it makes for its dialogs) on its own, with the access each needs.
-    fn folders_mut(&mut self) -> [(&mut String, crate::file_access::Access); 4] {
+    fn folders_mut(&mut self) -> [(&mut String, crate::file_access::Access); 3] {
         use crate::file_access::Access;
         [
             (&mut self.fonts_folder, Access::Read),
-            (&mut self.plugins_folder, Access::Read),
             (&mut self.recovery_folder, Access::Write),
             (&mut self.templates_folder, Access::Write),
         ]
@@ -559,8 +557,6 @@ impl Session {
                 st.revision += 1;
             }
         }
-        // Plug-ins in a newly set Additional Plug-ins Folder are installed.
-        super::plugin::sync_prefs(self);
     }
 }
 

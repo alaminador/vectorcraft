@@ -213,10 +213,6 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
         return;
     }
     if app.ui.dialog.is_some() || app.ui.palette_open {
-        if app.ui.dialog.as_ref().is_some_and(crate::dialogs::revolve_gizmo::active) && crate::dialogs::revolve_gizmo::dragging(ctx) {
-            // Escape first restores this rotation gesture. The settings stay open.
-            return;
-        }
         if crate::shortcut_editor::is_recording(app) {
             return;
         }

@@ -82,12 +82,6 @@ pub fn detect(name: &str, bytes: &[u8]) -> Option<&'static Format> {
         // .ai and .ait files are PDF inside; the extension keeps the template meaning.
         return by_name.filter(|f| matches!(f.id, "ai" | "ait")).or_else(|| format("pdf"));
     }
-    if vectorcraft_cad::is_dxf(bytes) {
-        return format("dxf");
-    }
-    if let Some(kind) = vectorcraft_metafile::sniff(bytes) {
-        return format(kind.id());
-    }
     if psdread::is_psd(bytes) {
         return format(if psdread::is_psb(bytes) { "psb" } else { "psd" });
     }
@@ -234,14 +228,6 @@ pub fn load_with(name: &str, bytes: &[u8], opts: &LoadOptions) -> Result<Loaded>
                 }
                 Err(e) => Err(e),
             })?
-        }
-        "dxf" => {
-            let (doc, warnings) = super::dxfimport::import(bytes, &opts.dxf)?;
-            (doc, warnings, false)
-        }
-        "emf" | "wmf" => {
-            let (doc, warnings) = super::metafile::import(bytes)?;
-            (doc, warnings, false)
         }
         "affinity" => {
             let i = super::affinity::import(&title, bytes)?;

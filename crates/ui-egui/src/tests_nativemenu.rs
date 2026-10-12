@@ -354,7 +354,7 @@ fn key_equivalents_run_through_the_normal_shortcut_path_once() {
     // Idle frames don't read the menus again. The shortcut and plug-in generations are
     // process-wide, and tests running alongside with other shortcuts bump them (rightly reading
     // the menus again), so judge two idle frames in which they held still.
-    let globals = || (crate::shortcut_editor::GENERATION.load(std::sync::atomic::Ordering::Relaxed), crate::menus::plugin_revision());
+    let globals = || crate::shortcut_editor::GENERATION.load(std::sync::atomic::Ordering::Relaxed);
     let quiet = (0..50).any(|_| {
         let (before, synced) = (globals(), m.fake.synced());
         m.frame(vec![]);

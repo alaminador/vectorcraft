@@ -137,7 +137,7 @@ fn print(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let level = match p.get("level").filter(|v| !v.is_null()) {
         Some(v) => {
-            let t = super::fileio::dxf::text(v);
+            let t = super::fileio::eps::text(v);
             Level::from_id(&t).ok_or_else(|| bad(PRINT, format!("level `{t}`: 2 or 3")))?
         }
         None => Level::default(),

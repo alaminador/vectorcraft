@@ -159,10 +159,9 @@ fn open_exts_cover_every_readable_format() {
     assert_eq!(filters[0], ("All readable files", OPEN_EXTS));
     assert_eq!(
         filters.len(),
-        7 + FORMATS.iter().filter(|f| f.read).count(),
-        "and swatch libraries, libraries, flattener, PDF and print presets, plug-ins"
+        6 + FORMATS.iter().filter(|f| f.read).count(),
+        "and swatch libraries, libraries, flattener, PDF and print presets"
     );
-    assert_eq!(filters.last(), Some(&("Plug-ins", crate::cmd::plugin::EXTS)), "File › Open installs plug-ins");
 }
 
 /// The extensions usage texts list for export: one per writable format, each picking that format

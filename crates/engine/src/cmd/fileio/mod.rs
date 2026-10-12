@@ -11,24 +11,19 @@
 //!   per-format options (`file.formatOptions`); [`save_with`] is the one save path of every frontend.
 //! - `pdf`: PDF settings and presets for every PDF export, `document.exportPdf`.
 //! - `pdfimport`: the PDF pages, box and password `document.open` and Place read, `document.pdfInfo`.
-//! - `dxf`: DXF export options, `document.exportDxf`, and the formats that can't be written (DWG, PICT).
+//! - `unsupported`: the formats that can't be read or written, with what to use instead.
 //! - `eps`: EPS export options (flattened transparency, previews, the embedded document), `document.exportEps`.
-//! - `dxfimport`: the DXF options `document.open` and Place read, `document.dxfInfo`.
-//! - `metafile`: EMF and WMF export, open and place.
 //!
 //! [`FORMATS`] is the single list of formats (append-only); open dialogs use [`open_filters`],
 //! agents query `document.formats`.
 
 mod affinity;
 mod batch;
-pub mod dxf;
-pub mod dxfimport;
 mod encode;
 pub mod eps;
 mod export;
 pub(crate) mod imagemap;
 mod load;
-mod metafile;
 mod native;
 pub mod pdf;
 mod pdfimport;
@@ -39,11 +34,12 @@ mod save;
 mod screens;
 mod svg;
 mod text;
+mod unsupported;
 mod zip;
 
 use serde_json::{Value, json};
 
-pub use dxf::{UNSUPPORTED, Unsupported, unsupported};
+pub use unsupported::{UNSUPPORTED, Unsupported, unsupported};
 pub use encode::{ARTBOARD_PARAMS, ArtboardPick, Encoded, encode, encode_all, encode_with_warnings};
 pub(crate) use encode::{anti_alias, background, with_single_artboard};
 pub use export::export_source;
@@ -104,7 +100,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Serialize Document",
             [],
             None,
-            "{format?: vectorcraft (default)|template|svg|svgz|pdf|png|jpg|webp|gif|png8|txt|dxf|eps|emf|wmf|tiff|bmp|tga|psd, …the format's options (see document.formats; SVG ones also as svg: {…}), selectedOnly?: false (the selected objects alone, in their layers)} → {text, warnings} for svg (plus dataBase64, the file, when its encoding isn't UTF-8), else {dataBase64, warnings}; an SVG of several artboards also gives files: [{name, text}], linked images linked: [{name, dataBase64}]",
+            "{format?: vectorcraft (default)|template|svg|svgz|pdf|png|jpg|webp|gif|png8|txt|eps|tiff|bmp|tga|psd, …the format's options (see document.formats; SVG ones also as svg: {…}), selectedOnly?: false (the selected objects alone, in their layers)} → {text, warnings} for svg (plus dataBase64, the file, when its encoding isn't UTF-8), else {dataBase64, warnings}; an SVG of several artboards also gives files: [{name, text}], linked images linked: [{name, dataBase64}]",
             has_doc,
             export::serialize
         ),
@@ -113,7 +109,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Export Document",
             [],
             None,
-            "{path?, format?: svg|svgz|pdf|png|jpg|webp|gif|png8|txt|dxf|eps|emf|wmf|tiff|bmp|tga|psd|vectorcraft|template (default: from the path's extension, else png; png8 writes an indexed .png), selectedOnly?: false (the selected objects alone, in their layers), artboard?: 0, artboards?: [i…], range?: \"1-3, 5\" | \"all\" (1-based; PDF writes one page per artboard, default all; SVG writes one file per artboard, {stem}-{artboard}.svg; raster formats write one artboard), useArtboards?: true (raster: one file per chosen artboard, default all, {stem}-{artboard}.{ext}; pdf: every page) | false (pdf/raster: the bounds of the visible art; SVG has it as an SVG option), raster: ppi?: 72 (pixels per inch, stored in the file; wins over scale), scale?: 1 (pixels per point), background?: transparent|white|black|\"#rrggbb\" (jpg: white when transparent), antiAlias?: none|art (default)|type (text snapped to pixels), interlaced?: false (png, Adam7), jpg: quality?: 90 (0–100), colorModel?: rgb|cmyk|gray, method?: baseline|optimized|progressive, scans?: 3 (3–5, progressive), embedIcc?: true, imageMap?: none|client|server (an HTML or NCSA map of the objects with a URL, written as <stem>.html / <stem>.map), gif/png8: colors?: 256 (2–256), reduction?: perceptual|selective (default)|adaptive|web|blackWhite|gray, dither?: none|diffusion (default)|pattern|noise, ditherAmount?: 100, transparency?: true, matte?: white|\"#rrggbb\"|none, interlaced?, webp: lossless?: true (lossy WebP isn't available yet: written lossless, with a warning), txt: the stories in stacking order (back to front; a thread once), encoding?: utf8|utf16 (with a byte order mark), lineEndings?: lf|crlf, selectionOnly?: false; SVG options flat or as svg: {styling, outlineText, images, objectIds, decimals, minify, responsive, useArtboards, preserveEditing, metadata, fewerTspans, hiddenLayers, encoding, profile, embedFonts} (see document.formats), …the PDF options of document.exportPdf, …the DXF options of document.exportDxf (useArtboards: one drawing per artboard), …the EPS options of document.exportEps (useArtboards: one file per artboard, {stem}_{artboard}.eps; else the visible art), emf/wmf: one picture of the artboard (useArtboards: true one file per chosen artboard, false the bounds of the visible art; EMF keeps curves, clipping, transparent images and gradients as images clipped to their shape; WMF flattens curves into polygons behind a placeable header; what a format leaves out comes back in warnings), tiff: colorModel?: rgb|cmyk|gray (rgb keeps transparency as an alpha channel), lzw?: true, byteOrder?: little|big, embedIcc?: true, bmp: colorModel?: rgb|gray, depth?: 24 (1 black and white, 4|8 a palette by reduction and dither, 16, 24, 32 with alpha), fileFormat?: windows|os2 (1, 4, 8 or 24 bits), rle?: false (4 and 8 bits, windows), flipRows?: false (top-down rows), tga: depth?: 24 (16 one-bit alpha, 24, 32 with alpha), psd: colorModel?: rgb|cmyk|gray, layers?: true (each top-level layer a pixel layer with its opacity and blend mode; a background colour is a Background layer; false: one flat image, on white), maxEditability?: false (layers and sublayers become groups, each object a layer named as in the Layers panel, text by its text; clipping, masked or knockout layers stay one layer), hiddenLayers?: false (hidden layers and objects written hidden instead of left out), embedIcc?: true, at most 30000 pixels a side; formats without alpha are flattened on white} → {path, format, bytes, warnings, files?: [path…] (several), linked?: [path…] (linked images, image maps)}; no path → {dataBase64, format, bytes, warnings, files?: [{name, dataBase64}], linked?: [{name, dataBase64}]}. Never changes the document's path",
+            "{path?, format?: svg|svgz|pdf|png|jpg|webp|gif|png8|txt|eps|tiff|bmp|tga|psd|vectorcraft|template (default: from the path's extension, else png; png8 writes an indexed .png), selectedOnly?: false (the selected objects alone, in their layers), artboard?: 0, artboards?: [i…], range?: \"1-3, 5\" | \"all\" (1-based; PDF writes one page per artboard, default all; SVG writes one file per artboard, {stem}-{artboard}.svg; raster formats write one artboard), useArtboards?: true (raster: one file per chosen artboard, default all, {stem}-{artboard}.{ext}; pdf: every page) | false (pdf/raster: the bounds of the visible art; SVG has it as an SVG option), raster: ppi?: 72 (pixels per inch, stored in the file; wins over scale), scale?: 1 (pixels per point), background?: transparent|white|black|\"#rrggbb\" (jpg: white when transparent), antiAlias?: none|art (default)|type (text snapped to pixels), interlaced?: false (png, Adam7), jpg: quality?: 90 (0–100), colorModel?: rgb|cmyk|gray, method?: baseline|optimized|progressive, scans?: 3 (3–5, progressive), embedIcc?: true, imageMap?: none|client|server (an HTML or NCSA map of the objects with a URL, written as <stem>.html / <stem>.map), gif/png8: colors?: 256 (2–256), reduction?: perceptual|selective (default)|adaptive|web|blackWhite|gray, dither?: none|diffusion (default)|pattern|noise, ditherAmount?: 100, transparency?: true, matte?: white|\"#rrggbb\"|none, interlaced?, webp: lossless?: true (lossy WebP isn't available yet: written lossless, with a warning), txt: the stories in stacking order (back to front; a thread once), encoding?: utf8|utf16 (with a byte order mark), lineEndings?: lf|crlf, selectionOnly?: false; SVG options flat or as svg: {styling, outlineText, images, objectIds, decimals, minify, responsive, useArtboards, preserveEditing, metadata, fewerTspans, hiddenLayers, encoding, profile, embedFonts} (see document.formats), …the PDF options of document.exportPdf, …the DXF options of document.exportDxf (useArtboards: one drawing per artboard), …the EPS options of document.exportEps (useArtboards: one file per artboard, {stem}_{artboard}.eps; else the visible art), emf/wmf: one picture of the artboard (useArtboards: true one file per chosen artboard, false the bounds of the visible art; EMF keeps curves, clipping, transparent images and gradients as images clipped to their shape; WMF flattens curves into polygons behind a placeable header; what a format leaves out comes back in warnings), tiff: colorModel?: rgb|cmyk|gray (rgb keeps transparency as an alpha channel), lzw?: true, byteOrder?: little|big, embedIcc?: true, bmp: colorModel?: rgb|gray, depth?: 24 (1 black and white, 4|8 a palette by reduction and dither, 16, 24, 32 with alpha), fileFormat?: windows|os2 (1, 4, 8 or 24 bits), rle?: false (4 and 8 bits, windows), flipRows?: false (top-down rows), tga: depth?: 24 (16 one-bit alpha, 24, 32 with alpha), psd: colorModel?: rgb|cmyk|gray, layers?: true (each top-level layer a pixel layer with its opacity and blend mode; a background colour is a Background layer; false: one flat image, on white), maxEditability?: false (layers and sublayers become groups, each object a layer named as in the Layers panel, text by its text; clipping, masked or knockout layers stay one layer), hiddenLayers?: false (hidden layers and objects written hidden instead of left out), embedIcc?: true, at most 30000 pixels a side; formats without alpha are flattened on white} → {path, format, bytes, warnings, files?: [path…] (several), linked?: [path…] (linked images, image maps)}; no path → {dataBase64, format, bytes, warnings, files?: [{name, dataBase64}], linked?: [{name, dataBase64}]}. Never changes the document's path",
             has_doc,
             export::export
         ),
@@ -565,7 +561,6 @@ pub const FORMATS: &[Format] = &[
     },
     Format { id: "png8", label: "PNG-8", extensions: &["png"], mime: "image/png", read: false, write: true, raster: true, options: PALETTE_OPTIONS },
     Format { id: "txt", label: "Text", extensions: TEXT_EXTS, mime: "text/plain", read: false, write: true, raster: false, options: text::OPTIONS },
-    Format { id: "dxf", label: "DXF", extensions: &["dxf"], mime: "image/vnd.dxf", read: true, write: true, raster: false, options: dxf::OPTIONS },
     Format {
         id: "eps",
         label: "EPS",
@@ -576,14 +571,12 @@ pub const FORMATS: &[Format] = &[
         raster: false,
         options: eps::OPTIONS,
     },
-    Format { id: "emf", label: "EMF", extensions: &["emf"], mime: "image/emf", read: true, write: true, raster: false, options: metafile::OPTIONS },
-    Format { id: "wmf", label: "WMF", extensions: &["wmf"], mime: "image/wmf", read: true, write: true, raster: false, options: metafile::OPTIONS },
     Format { id: "tga", label: "Targa", extensions: &["tga"], mime: "image/x-tga", read: false, write: true, raster: true, options: TGA_OPTIONS },
     Format { id: "psd", label: "PSD", extensions: &["psd"], mime: "image/x-psd", read: true, write: true, raster: true, options: PSD_OPTIONS },
+    // Photoshop's large document format: read like a PSD (its merged image), never written.
     // Affinity Photo's `.afphoto` opens by its content but isn't listed: Finder shouldn't offer a
     // vector app for a raster editor's documents.
     reader("affinity", "Affinity", &["af", "afdesign", "afpub"], "application/vnd.affinity", false),
-    // Photoshop's large document format: read like a PSD (its merged image), never written.
     reader("psb", "PSB", &["psb"], "image/x-psb", true),
 ];
 
@@ -607,9 +600,6 @@ pub const OPEN_EXTS: &[&str] = &[
     "psd",
     "psb",
     "vctemplate",
-    "dxf",
-    "emf",
-    "wmf",
     "eps",
     "af",
     "afdesign",
@@ -656,9 +646,6 @@ pub const PLACE_EXTS: &[&str] = &[
     "psd",
     "psb",
     "vctemplate",
-    "dxf",
-    "emf",
-    "wmf",
     "eps",
     "af",
     "afdesign",
@@ -682,7 +669,6 @@ pub fn open_filters() -> impl Iterator<Item = (&'static str, &'static [&'static 
         .chain(std::iter::once(("Flattener presets", super::flatten::PRESET_EXTS)))
         .chain(std::iter::once(("PDF presets", super::pdfcmds::PRESET_EXTS)))
         .chain(std::iter::once(("Print presets", super::printpresets::PRESET_EXTS)))
-        .chain(std::iter::once(("Plug-ins", super::plugin::EXTS)))
 }
 
 /// File → Place dialog filters: "All placeable files", then one per placeable format, then text.
@@ -1052,8 +1038,6 @@ pub(crate) fn write_or_return(path: Option<&str>, bytes: &[u8], extra: Value) ->
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
-mod tests_affinity;
-#[cfg(test)]
 mod tests_pdf;
 #[cfg(test)]
 mod tests_pdfcolor;
@@ -1085,8 +1069,6 @@ mod tests_screens;
 #[cfg(test)]
 mod tests_text;
 
-#[cfg(test)]
-mod tests_dxf;
 
 #[cfg(test)]
 mod tests_pdfsecurity;
@@ -1098,10 +1080,6 @@ mod tests_svgimport;
 #[cfg(test)]
 mod tests_eps;
 
-#[cfg(test)]
-mod tests_dxfimport;
-#[cfg(test)]
-mod tests_metafile;
 
 #[cfg(test)]
 mod tests_pdfoutput;
@@ -1118,6 +1096,8 @@ mod tests_psdread;
 #[cfg(test)]
 mod tests_epsimport;
 
+#[cfg(test)]
+mod tests_affinity;
 #[cfg(test)]
 mod tests_aiimport;
 

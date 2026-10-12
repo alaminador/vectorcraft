@@ -642,12 +642,6 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     ("file.openRecent30", "Open Recent File 30", "", "{}"),
     ("file.reveal", "Show in Folder", "", "{} show the document's file in the system file manager (desktop) → {path}"),
     (
-        "ui.dxfOptionsDialog",
-        "DXF Options Dialog",
-        "",
-        "{path?, useArtboards?, range?, …document.exportDxf options} open DXF Options (dialog `dxfOptions`: fields = these options over the ones used last); OK checks them, remembers them and writes path (else asks). Export As… → DXF opens it too",
-    ),
-    (
         "links.editOriginal",
         "Edit Original",
         "",
@@ -744,18 +738,6 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "Print Preset",
         "",
         "{name?: a saved preset to edit | preset?: the preset a new one starts from (default [Default])} open the preset editor (dialog `printPreset`: the Print dialog's settings fields plus `name`); OK runs print.presets.save and returns to Print Presets",
-    ),
-    (
-        "plugin.dialog",
-        "Plug-in…",
-        "",
-        "{id: an object filter plug-in (plugin.list), params?: {…}} Object › Plug-ins: run the filter at once when it takes no parameters or params are given (plugin.run), else open its dialog (dialog `plugin`: a field per parameter, `__plugin` the id, live preview; OK runs plugin.run as one undo step)",
-    ),
-    (
-        "ui.installPlugin",
-        "Install Plug-in…",
-        "",
-        "{path?: a .wasm file} install a WebAssembly plug-in (plugin.install); without a path pick one (the web opens the browser's file picker; File › Open of a .wasm installs it too)",
     ),
     (
         "ui.perspectiveGridDialog",
@@ -1364,11 +1346,6 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         // Save for Office Documents…: its dialog; with options, pick the file (or write `path`).
         "document.exportForOffice" if p.as_object().is_none_or(|o| o.is_empty()) => crate::dialogs::office_export::open(app),
         "document.exportForOffice" => io::save_command_output(app, id, "png", p.clone()).map(|path| json!({ "path": path })),
-        "ui.dxfOptionsDialog" if app.session.active().is_none() => Err("no document".into()),
-        "ui.dxfOptionsDialog" => {
-            crate::dialogs::dxf_options::open(app, p);
-            Ok(Value::Null)
-        }
         "links.editOriginal" => crate::panels::links::open_file(app, p, false),
         "links.reveal" => crate::panels::links::open_file(app, p, true),
         "ui.placementOptionsDialog" => crate::dialogs::placement_options::open(app, p),
@@ -1415,8 +1392,6 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             Ok(Value::Null)
         }
         "ui.printPresetDialog" => crate::dialogs::print::open_preset(app, p),
-        "plugin.dialog" => crate::dialogs::plugin::open(app, p),
-        "ui.installPlugin" => io::install_plugin(app, s("path")),
         "ui.perspectiveGridDialog" => crate::dialogs::perspective_grid::open(app),
         "ui.perspectivePresetsDialog" => {
             crate::dialogs::perspective_presets::open(app, s("selected").as_deref());
@@ -1631,9 +1606,8 @@ fn shows_a_name(id: &str, label: &str) -> bool {
     ];
     SLOTS.iter().any(|s| id.starts_with(s))
         || saved_selection_slot(id).is_some()
-        || matches!(id, "text.setStyle" | "plugin.dialog")
+        || matches!(id, "text.setStyle")
         || (id == "window.workspace" && !crate::workspaces::is_builtin(label))
-        || (matches!(id, "effect.apply" | "effect.dialog") && vectorcraft_effects::plugin_effects().iter().any(|e| e.label == label))
 }
 
 /// The label of a menu item as drawn: [`dynamic_label`] in the UI language. Labels assembled
@@ -1824,12 +1798,6 @@ pub fn entry<'a>(app: &VectorcraftApp, it: &'a Item) -> Option<Entry<'a>> {
     })
 }
 
-/// Changes whenever a plug-in is installed or removed: Object › Plug-ins and Effect › Plug-ins
-/// list them (the command palette's cache follows it).
-pub fn plugin_revision() -> u64 {
-    vectorcraft_plugins::registry::revision()
-}
-
 /// View → Perspective Grid → One/Two/Three Point Perspective: the saved-preset slots of each type.
 const PERSPECTIVE_SLOTS: [[&str; crate::dialogs::perspective_presets::SLOTS]; 3] = [
     [
@@ -1977,7 +1945,6 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         "ui.expandDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
         "ui.spotColors" => app.session.active().is_some(),
         "ui.menuDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
-        "ui.dxfOptionsDialog" => app.session.active().is_some(),
         "links.editOriginal" | "links.reveal" => selected_image(app, |im| im.link.is_some()) || selected_placed(app),
         "ui.placementOptionsDialog" => selected_image(app, |_| true) || selected_placed(app),
         "ui.findLinksInFolder" => crate::picks::can(app, &crate::picks::PickRequest::Folder) && app.session.active().is_some(),
@@ -1987,7 +1954,6 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         "file.exportSelection" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
         "css.copy" | "css.exportFile" => app.session.active().is_some(),
         "print.printerSetup" => app.services.print.as_ref().is_some_and(|s| s.has_setup()),
-        "plugin.dialog" => app.session.active().is_some(),
         "ui.perspectiveGridDialog" | "ui.savePerspectivePreset" => app.session.active().is_some(),
         id if id.starts_with(crate::dialogs::perspective_presets::SLOT) => {
             app.session.active().is_some() && crate::dialogs::perspective_presets::slot_preset(app, id).is_some()
@@ -2364,7 +2330,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                     ],
                 ),
                 Sep,
-                sub("Plug-ins", crate::dialogs::plugin::object_menu()),
             ],
         ),
         (
@@ -2991,7 +2956,7 @@ pub(crate) fn home_showing(app: &VectorcraftApp) -> bool {
 pub fn click_target(label: &str, id: &str, p: &Value) -> (String, Value) {
     let dialog = label.ends_with('…')
         && p.as_object().is_some_and(|o| !o.is_empty())
-        && !matches!(id, "effect.dialog" | "window.panel" | "window.brightness" | "view.screenMode" | "plugin.dialog");
+        && !matches!(id, "effect.dialog" | "window.panel" | "window.brightness" | "view.screenMode");
     if dialog {
         return ("ui.paramDialog".into(), json!({"command": id, "label": label.trim_end_matches('…'), "params": p}));
     }
@@ -3489,7 +3454,6 @@ fn effect_menu() -> Vec<Item> {
         }
     }
     // Live-effect plug-ins close the vector effects.
-    out.extend(crate::dialogs::plugin::effect_menu());
     let raster: Vec<Item> = RASTER_MENUS
         .iter()
         .filter_map(|(name, path)| {
@@ -3787,7 +3751,6 @@ mod tests {
             ("type.recentFont1", "Regular"),
             ("text.setStyle", "Black"),
             ("window.workspace", "Layers"),
-            ("plugin.dialog", "Group"),
             ("window.userSwatchLibrary3", "Default"),
         ] {
             assert!(shows_a_name(id, label), "{id} {label}");

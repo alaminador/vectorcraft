@@ -108,8 +108,6 @@ mod tests_picks;
 #[cfg(test)]
 mod tests_place;
 #[cfg(test)]
-mod tests_plugins;
-#[cfg(test)]
 mod tests_printps;
 #[cfg(test)]
 mod tests_printtiling;
@@ -143,8 +141,6 @@ mod tests_svgsave;
 mod tests_synthetic;
 #[cfg(test)]
 mod tests_sysclip;
-#[cfg(test)]
-mod tests_sysclip_emf;
 #[cfg(test)]
 mod tests_sysclip_probe;
 #[cfg(test)]

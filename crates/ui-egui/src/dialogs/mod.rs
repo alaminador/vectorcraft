@@ -18,8 +18,6 @@ mod command;
 pub mod confirm;
 pub mod corners;
 mod document_setup;
-pub mod dxf_import;
-pub mod dxf_options;
 pub mod edit_selection;
 mod effect;
 pub mod envelope;
@@ -60,7 +58,6 @@ pub mod perspective_plane;
 pub mod perspective_presets;
 pub mod place;
 pub mod placement_options;
-pub mod plugin;
 mod png_options;
 pub mod print;
 pub mod print_presets;
@@ -69,8 +66,6 @@ pub mod raster_effects;
 pub mod rearrange_artboards;
 pub mod recolor;
 mod recovery;
-mod revolve;
-pub(crate) mod revolve_gizmo;
 pub mod saturate;
 mod save_changes;
 pub mod save_for_web;
@@ -269,21 +264,18 @@ registry! {
     SaveOptions: [save_options::KIND] => save_options::SPEC,
     TextExport: [text_export::KIND] => text_export::SPEC,
     OfficeExport: [office_export::KIND] => office_export::SPEC,
-    DxfOptions: [dxf_options::KIND] => dxf_options::SPEC,
     PlacementOptions: [placement_options::KIND] => placement_options::SPEC,
     Package: [package::KIND] => package::SPEC,
     SliceOptions: [slices::OPTIONS] => slices::OPTIONS_SPEC,
     DivideSlices: [slices::DIVIDE] => slices::DIVIDE_SPEC,
     EpsOptions: [eps_options::KIND] => eps_options::SPEC,
     Recovery: [crate::recovery::KIND] => recovery::SPEC,
-    DxfImport: [dxf_import::KIND] => dxf_import::SPEC,
     RasterFormatOptions: ["tiffOptions", "bmpOptions", "tgaOptions"] => png_options::SPEC,
     SaveForWeb: [save_for_web::KIND] => save_for_web::SPEC,
     PsdOptions: ["psdOptions"] => png_options::SPEC,
     Print: [print::KIND] => print::SPEC,
     PrintPreset: [print::PRESET_KIND] => print::PRESET_SPEC,
     PrintPresets: [print_presets::KIND] => print_presets::SPEC,
-    Plugin: [plugin::KIND] => plugin::SPEC,
     VectorHalftone: [halftone::KIND] => halftone::SPEC,
     PerspectiveGrid: [perspective_grid::KIND] => perspective_grid::SPEC,
     Envelope: [envelope::WARP, envelope::MESH, envelope::OPTIONS] => envelope::SPEC,
@@ -365,7 +357,6 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
     // its first field is to take the keyboard focus (`focus_id`, until a field takes it).
     let (shown_id, focus_id) = (egui::Id::new("dialog-shown"), egui::Id::new("dialog-focus-pending"));
     let Some(mut d) = app.ui.dialog.clone() else {
-        revolve_gizmo::clear(ctx);
         app.ui.dialog_file = None;
         ctx.data_mut(|m| {
             m.remove::<String>(shown_id);
@@ -373,9 +364,6 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
         });
         return;
     };
-    if !revolve_gizmo::active(&d) {
-        revolve_gizmo::clear(ctx);
-    }
     let focus_first = ctx.data_mut(|m| {
         if m.get_temp::<String>(shown_id).as_deref() != Some(d.kind.as_str()) {
             m.insert_temp(shown_id, d.kind.clone());
@@ -398,13 +386,8 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
     let mut cancel = false;
     let mut discard = false;
     let heading = (spec.heading)(&d);
-    let revolves = revolve_gizmo::active(&d);
-    if revolves {
-        revolve_gizmo::show(app, ctx, &mut d);
-    }
-    let initial = if revolves { egui::vec2((ctx.content_rect().width() / 2.0 - 226.0).max(0.0), -40.0) } else { egui::vec2(0.0, -40.0) };
+    let initial = egui::vec2(0.0, -40.0);
     let id = egui::Id::new(("dialog", d.kind.as_str()));
-    let id = if revolves { id.with("revolve") } else { id };
     modal::show_at(ctx, &heading, id, initial, MARGIN, |ui| {
         // Never wider than the window (a large UI scale in a small window): the text wraps.
         let room = (ctx.content_rect().width() - 2.0 * (f32::from(MARGIN) + EDGE_GAP)).max(EDGE_GAP);
@@ -494,8 +477,6 @@ mod tests_raster_formats;
 mod tests_svg_options_range;
 
 #[cfg(test)]
-mod tests_dxf;
-#[cfg(test)]
 mod tests_screen_assets;
 #[cfg(test)]
 mod tests_screens;
@@ -503,8 +484,6 @@ mod tests_screens;
 #[cfg(test)]
 mod tests_eps;
 
-#[cfg(test)]
-mod tests_metafile;
 
 #[cfg(test)]
 mod tests_tiff_bmp_tga;

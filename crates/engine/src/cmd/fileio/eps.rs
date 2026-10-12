@@ -148,7 +148,7 @@ fn parse(p: &Value) -> Result<Settings> {
     let overprint = choice("overprints", q.overprints.clone(), Overprint::from_id, d.overprint, "preserve or discard")?;
     let mut flatten = flattener(&q, &[])?;
     flatten.preserve_overprints &= overprint == Overprint::Preserve;
-    let level = q.level.as_ref().map(super::dxf::text);
+    let level = q.level.as_ref().map(text);
     let eps = EpsOptions {
         level: choice("level", level, Level::from_id, d.level, "2 or 3")?,
         preview: choice("previewFormat", q.preview_format.clone(), Preview::from_id, d.preview, "none, tiffBw or tiffColor")?,
@@ -317,4 +317,12 @@ pub(super) fn with_flattener<'a>(s: &Session, cmd: &str, p: Cow<'a, Value>) -> R
         Some(q) => Cow::Owned(q),
         None => p,
     })
+}
+
+/// A string or number param as text (`3` and `"3"` alike).
+pub(crate) fn text(v: &Value) -> String {
+    match v {
+        Value::String(s) => s.clone(),
+        other => other.to_string(),
+    }
 }

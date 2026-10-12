@@ -888,10 +888,8 @@ fn delete_selected(app: &mut VectorcraftApp, ui: &Ui, node: Option<&Node>, sel: 
 /// opens the effect dialog.
 pub(crate) fn fx_menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let mut groups: Vec<(String, Vec<(String, String)>)> = vec![];
-    let plugins: Vec<_> = vectorcraft_effects::plugin_effects().into_iter().map(catalog_entry).collect();
-    // Built-in effects in the UI language; a plug-in's by the name it gives.
-    let built_in = catalog().iter().map(|(id, label, menu)| (id, tl!(label), menu));
-    for (id, label, menu) in built_in.chain(plugins.iter().map(|(id, label, menu)| (id, label.as_str(), menu))) {
+    // Built-in effects in the UI language.
+    for (id, label, menu) in catalog().iter().map(|(id, label, menu)| (id, tl!(label), menu)) {
         let g = menu.get(1).cloned().unwrap_or_else(|| "Other".into());
         match groups.iter_mut().find(|(n, _)| *n == g) {
             Some((_, v)) => v.push((id.clone(), label.to_string())),

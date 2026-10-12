@@ -385,7 +385,7 @@ fn encode_all_of(doc: &Document, format: &str, p: &Value) -> Result<Encoded> {
     let mut enc = encode_files(doc, f, p)?;
     // Formats that draw type: missing fonts come out in the fallback font (PDF and SVG say so
     // themselves: SVG only when it outlines or embeds fonts).
-    if (f.raster || matches!(f.id, "eps" | "emf" | "wmf"))
+    if (f.raster || matches!(f.id, "eps"))
         && let Some(w) = crate::cmd::fonts::substitution_warning(doc)
     {
         enc.warnings.push(w);
@@ -398,7 +398,7 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
     let doc = &*doc.without_edit_modes();
     let n = doc.artboards.len();
     // SVG reads its own `useArtboards` (an SVG option).
-    let use_artboards = if f.raster || matches!(f.id, "pdf" | "ai" | "dxf" | "emf" | "wmf") { use_artboards(p)? } else { None };
+    let use_artboards = if f.raster || matches!(f.id, "pdf" | "ai") { use_artboards(p)? } else { None };
     if use_artboards == Some(false) {
         let bounds = vectorcraft_render::encode::art_bounds(doc).ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
         let mut q = super::export::without_artboards(p);
@@ -417,11 +417,8 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
         }
         "txt" => super::text::encode(doc, p)?,
         "svg" | "svgz" => return super::svg::encode(doc, p, f.id == "svgz").map_err(|e| bad(C, e)),
-        "dxf" => return super::dxf::encode(doc, p, use_artboards),
         // EPS reads its own `useArtboards` (the art's bounds unless asked).
         "eps" => return super::eps::encode(doc, p),
-        "emf" => return super::metafile::encode(doc, p, use_artboards, vectorcraft_metafile::Kind::Emf),
-        "wmf" => return super::metafile::encode(doc, p, use_artboards, vectorcraft_metafile::Kind::Wmf),
         "ai" => return super::save::encode_ai(C, f, doc, p),
         "pdf" => {
             let (bytes, warnings) = super::pdf::encode(C, doc, p)?;

@@ -20,13 +20,6 @@ const TEMPLATE_EXTS: &[&str] = &["vctemplate", "ait", "vectorcraft", "drawcraft"
 /// `warnings` say what didn't come in as it was), else null.
 pub fn open_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Option<String>) -> Result<Value, String> {
     let opens = opens_as(name);
-    // A WebAssembly plug-in is installed.
-    if opens == Some(OpensAs::Plugin) {
-        let r =
-            app.run("plugin.install", json!({"dataBase64": vectorcraft_format::base64_encode(bytes), "name": path.as_deref().unwrap_or(name)}))?;
-        app.status(format!("Installed plug-in {}", r["name"].as_str().unwrap_or(name)));
-        return Ok(Value::Null);
-    }
     if let Some(OpensAs::Presets { import, what }) = opens {
         let r = app.run(import, serde_json::json!({"data": String::from_utf8_lossy(bytes)}))?;
         let names: Vec<&str> = r["imported"].as_array().into_iter().flatten().filter_map(Value::as_str).collect();
@@ -47,11 +40,8 @@ pub fn open_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Opti
         let load = if swatches { crate::panels::swatches::load_library } else { crate::panels::graphic_styles::load_library };
         return load(app, p).map(|_| Value::Null);
     }
-    // A PDF with several pages or a password asks first (the Import PDF dialog), and so does a
-    // DXF drawing (DXF Import Options).
-    if crate::dialogs::import_pdf::offer(app, name, bytes, path.clone(), None)
-        || crate::dialogs::dxf_import::offer(app, name, bytes, path.clone(), None)
-    {
+    // A PDF with several pages or a password asks first (the Import PDF dialog).
+    if crate::dialogs::import_pdf::offer(app, name, bytes, path.clone(), None) {
         return Ok(Value::Null);
     }
     open_document(app, name, bytes, path, &Value::Null)
@@ -61,8 +51,6 @@ pub fn open_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Opti
 /// panel ([`opens_as`]).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum OpensAs {
-    /// A WebAssembly plug-in: installed.
-    Plugin,
     /// Flattener, PDF, print or perspective grid presets: imported with command `import`, and
     /// `what` names them in the status bar.
     Presets { import: &'static str, what: &'static str },
@@ -85,9 +73,7 @@ pub fn opens_as(name: &str) -> Option<OpensAs> {
         (vectorcraft_engine::cmd::printpresets::PRESET_EXTS, "print.presets.import", "print presets"),
         (vectorcraft_engine::cmd::perspgrid::PRESET_EXTS, "perspective.presets.import", "perspective grid presets"),
     ];
-    if vectorcraft_engine::cmd::plugin::EXTS.contains(&ext.as_str()) {
-        Some(OpensAs::Plugin)
-    } else if let Some(&(_, import, what)) = presets.iter().find(|(exts, ..)| exts.contains(&ext.as_str())) {
+    if let Some(&(_, import, what)) = presets.iter().find(|(exts, ..)| exts.contains(&ext.as_str())) {
         Some(OpensAs::Presets { import, what })
     } else if vectorcraft_engine::cmd::library::LIBRARY_EXTS.contains(&ext.as_str()) {
         Some(OpensAs::Library)
@@ -121,19 +107,6 @@ pub(crate) fn opened(app: &mut VectorcraftApp, r: &Value) {
 /// A path from the open dialog, or "cancelled".
 fn pick_open(app: &mut VectorcraftApp, pick: &FilePick) -> Result<String, String> {
     crate::picks::open(app, pick).ok_or_else(|| "cancelled".into())
-}
-
-/// Object › Plug-ins › Install Plug-in…: installs the `.wasm` at `path`, else a picked one (the
-/// web's file picker hands the file to [`open_bytes`], which installs it).
-pub fn install_plugin(app: &mut VectorcraftApp, path: Option<String>) -> Result<Value, String> {
-    let path = match path {
-        Some(p) => p,
-        None if app.services.open_async.is_some() => return open_dialog(app).map(|_| Value::Null),
-        None => pick_open(app, &FilePick { filters: vec![("Plug-ins", vectorcraft_engine::cmd::plugin::EXTS)], ..Default::default() })?,
-    };
-    let r = app.run("plugin.install", json!({ "path": path }))?;
-    app.status(format!("Installed plug-in {}", r["name"].as_str().unwrap_or_default()));
-    Ok(r)
 }
 
 /// File → Open…
@@ -180,10 +153,8 @@ pub fn open_path(app: &mut VectorcraftApp, path: &str) -> Result<Value, String> 
 fn open_file(app: &mut VectorcraftApp, path: &str, background: bool) -> Result<Value, String> {
     let mut bytes = read(app, path)?;
     if background && opens_as(path).is_none() {
-        // A PDF with several pages or a password, or a DXF drawing, asks first, as at once.
-        if crate::dialogs::import_pdf::offer(app, path, &bytes, Some(path.to_string()), None)
-            || crate::dialogs::dxf_import::offer(app, path, &bytes, Some(path.to_string()), None)
-        {
+        // A PDF with several pages or a password asks first, as at once.
+        if crate::dialogs::import_pdf::offer(app, path, &bytes, Some(path.to_string()), None) {
             note_recent(app, path);
             return Ok(Value::Null);
         }

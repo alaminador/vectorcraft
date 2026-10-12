@@ -1,5 +1,5 @@
 //! The previews an EPS file carries for apps that don't read PostScript, opened when its
-//! PostScript can't be: a TIFF image or a Windows metafile behind the binary header, or an EPSI
+//! PostScript can't be: a TIFF image behind the binary header, or an EPSI
 //! bitmap in comments, stretched over the page.
 
 use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
@@ -16,14 +16,11 @@ pub(super) struct Preview {
 }
 
 /// The best preview of `bytes` (the whole file; `ps` its PostScript) over `frame`: the TIFF
-/// image, else the metafile's vectors, else the EPSI bitmap.
+/// image, else the EPSI bitmap.
 pub(super) fn preview(bytes: &[u8], ps: &[u8], frame: Rect) -> Option<Preview> {
     const IMAGE: &str = "its preview was placed instead, at screen resolution";
     if let Some(document) = crate::sections(bytes).and_then(|(_, tiff)| tiff).and_then(tiff_rgba).and_then(|img| image_doc(img, frame)) {
         return Some(Preview { document, what: IMAGE });
-    }
-    if let Some(document) = crate::metafile_preview(bytes).and_then(|wmf| metafile_doc(wmf, frame)) {
-        return Some(Preview { document, what: "its Windows metafile preview was opened instead, which may simplify the art" });
     }
     epsi(ps).and_then(|img| image_doc(img, frame)).map(|document| Preview { document, what: IMAGE })
 }
@@ -54,28 +51,6 @@ fn image_doc(img: image::RgbaImage, frame: Rect) -> Option<Document> {
     let layer = doc.layers.first().map(|l| l.id)?;
     doc.insert(Some(layer), 0, n).ok()?;
     Some(doc)
-}
-
-/// A document of `frame`'s size with the metafile's art stretched from its picture frame over it.
-fn metafile_doc(wmf: &[u8], frame: Rect) -> Option<Document> {
-    let mut doc = vectorcraft_metafile::import(wmf).ok()?.document;
-    let from = doc.artboards.first()?.rect;
-    if from.width() <= 0.0 || from.height() <= 0.0 {
-        return None;
-    }
-    let a = Affine::translate(frame.origin().to_vec2())
-        * Affine::scale_non_uniform(frame.width() / from.width(), frame.height() / from.height())
-        * Affine::translate(-from.origin().to_vec2());
-    for layer in &mut doc.layers {
-        let layer = std::sync::Arc::make_mut(layer);
-        for n in layer.children_mut().into_iter().flatten() {
-            std::sync::Arc::make_mut(n).transform(a, true);
-        }
-    }
-    if let Some(board) = doc.artboards.first_mut() {
-        board.rect = frame;
-    }
-    doc.layers.iter().any(|l| l.children().is_some_and(|c| !c.is_empty())).then_some(doc)
 }
 
 /// The EPSI preview in `ps`'s comments (`%%BeginPreview: width height depth lines`, hex rows,

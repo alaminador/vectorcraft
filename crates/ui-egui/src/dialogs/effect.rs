@@ -20,12 +20,9 @@ use crate::{VectorcraftApp, widgets};
 pub(super) const SPEC: DialogSpec = DialogSpec { heading: |d| heading_label(d), body, confirm, preview: true, ..DialogSpec::FORM };
 
 /// The effect's name (`__label`, English) in the UI language: the catalog may carry it with or
-/// without its trailing ellipsis. A plug-in effect's name is shown as it is.
+/// without its trailing ellipsis.
 fn heading_label(d: &Dialog) -> String {
     let label = d.str("__label");
-    if vectorcraft_plugins::effect::plugin_id(&d.str("__effect")).is_some() {
-        return label;
-    }
     let dotted = format!("{label}…");
     let shown = tl!(&dotted);
     if shown != dotted { shown.trim_end_matches('…').to_string() } else { tl!(&label).to_string() }
@@ -127,20 +124,13 @@ fn confirm_exists(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String>
 
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let (id, relative) = (d.str("__effect"), d.bool("relative"));
-    if id == vectorcraft_effects::REVOLVE {
-        super::revolve::body(app, ui, d);
-        let (cmd, params) = command(d);
-        form::preview(app, ui, d, &d.str("__label"), cmd, params);
-        return false;
-    }
-    // Plug-in effects get fields from their parameter schema; colour adjustments their sliders.
-    let changed = match vectorcraft_plugins::effect::installed(&id) {
-        Some(plugin) => form::schema_fields(ui, d, &plugin.manifest().params),
-        None if vectorcraft_effects::is_adjustment(&id) => adjust_fields(ui, d),
-        None if id == TRANSFORM => transform_fields(ui, d, app.session.general_unit()),
-        None if id == ZIG_ZAG => zig_zag_fields(ui, d, app.session.general_unit()),
-        None if id == "artistic.filmGrain" => film_grain_fields(ui, d),
-        None => {
+    // Colour adjustments get their sliders.
+    let changed = match () {
+        _ if vectorcraft_effects::is_adjustment(&id) => adjust_fields(ui, d),
+        _ if id == TRANSFORM => transform_fields(ui, d, app.session.general_unit()),
+        _ if id == ZIG_ZAG => zig_zag_fields(ui, d, app.session.general_unit()),
+        _ if id == "artistic.filmGrain" => film_grain_fields(ui, d),
+        _ => {
             let doc = vectorcraft_effects::effect_info(&id).map(|e| e.params).unwrap_or_default();
             let unit = app.session.general_unit();
             form::param_fields(ui, d, &|k| vectorcraft_effects::is_length(&id, k, relative), &|k| choices(&id, k), &|k| doc_rank(doc, k), unit)

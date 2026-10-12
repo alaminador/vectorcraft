@@ -175,10 +175,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let resp = ui.interact(rect, egui::Id::new("canvas"), Sense::click_and_drag());
     // A press on the canvas while the context menu is open only closes it (a drag too, which egui
     // alone would leave open); the tool doesn't get it.
-    if app.ui.dialog.as_ref().is_some_and(crate::dialogs::revolve_gizmo::active) {
-        // The artboard's 3D gizmo owns these gestures while its options are open.
-        // Do not let a ring drag also move or deselect the editable source path.
-    } else if resp.context_menu_opened() && resp.hovered() && ui.input(|i| i.pointer.any_pressed()) {
+    if resp.context_menu_opened() && resp.hovered() && ui.input(|i| i.pointer.any_pressed()) {
         egui::Popup::close_all(ui.ctx());
     } else {
         handle_input(app, ui, &resp, rect);
@@ -419,15 +416,14 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
 
     // Selection visuals and tool overlays.
-    let revolve_edit = app.ui.dialog.as_ref().is_some_and(crate::dialogs::revolve_gizmo::active);
     let view_info = app.view_info();
     // View → Hide Gradient Annotator hides the Gradient tool's annotator.
-    let overlays = if !revolve_edit && (app.session.tool_id() != "gradient" || app.ui.view.gradient_annotator) {
+    let overlays = if app.session.tool_id() != "gradient" || app.ui.view.gradient_annotator {
         app.session.overlays(view_info)
     } else {
         vec![]
     };
-    if app.ui.view.edges && !revolve_edit {
+    if app.ui.view.edges {
         hover_highlight(app, &painter, &xf);
         selection_overlay(app, &painter, &xf, overlays.iter().any(|o| matches!(o, Overlay::CurvePoint { .. })));
         if app.ui.view.text_threads {
@@ -449,7 +445,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         rulers(ui, full, &xf, app.hover_doc, app.session.general_unit(), origin_preview.unwrap_or_else(|| app.ruler_origin()), &t);
     }
-    if app.ui.task_bar && !revolve_edit && !app.session.tool_busy() && app.ui.screen_mode < 3 {
+    if app.ui.task_bar && !app.session.tool_busy() && app.ui.screen_mode < 3 {
         task_bar(app, ui, &xf);
     }
     if app.ui.screen_mode < 3 {

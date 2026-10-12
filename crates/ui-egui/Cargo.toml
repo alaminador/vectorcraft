@@ -20,10 +20,7 @@ vectorcraft-tools = { workspace = true }
 vectorcraft-engine = { workspace = true }
 vectorcraft-svg = { workspace = true }
 vectorcraft-effects = { workspace = true }
-vectorcraft-three-d = { workspace = true }
-vectorcraft-plugins = { workspace = true }
 vectorcraft-pdf = { workspace = true }
-vectorcraft-cad = { workspace = true }
 vectorcraft-eps = { workspace = true }
 vectorcraft-format = { workspace = true }
 egui = { workspace = true }
@@ -36,7 +33,6 @@ log = { workspace = true }
 [dev-dependencies]
 egui_kittest = { workspace = true, features = ["wgpu", "snapshot"] }
 vectorcraft-testkit = { workspace = true }
-wat = { workspace = true }
 
 [build-dependencies]
 serde_json = { workspace = true }

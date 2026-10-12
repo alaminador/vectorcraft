@@ -4,10 +4,7 @@
 //! - A raster image becomes one image at 100% of its physical size: its pixels at the resolution
 //!   the file declares ([`fileio::ppi`]; 72 ppi when it declares none), linked to its file with
 //!   `link` ([`super::links`]).
-//! - An SVG becomes one group of its art; so does a DXF drawing, read with the DXF options
-//!   (`dxf`, [`fileio::dxfimport`]).
-//! - An EMF or WMF picture becomes one group, clipped to its frame (`crop: "crop"`) or bounded by
-//!   its art (`crop: "bounding"`).
+//! - An SVG becomes one group of its art.
 //! - An EPS file (or a PostScript .ai) becomes one group, clipped to its bounding box or bounded by
 //!   its art: the document an EPS file of ours carries, else what its PostScript draws, else its
 //!   preview ([`fileio::load`]).
@@ -57,7 +54,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Place…",
             ["File"],
             Some("Cmd+Shift+P"),
-            "{path | name+dataBase64, link?: true (a raster image keeps its file's path; a VectorCraft document at path becomes one locked placed document showing artboard `page`, linked to the file and read again when it changes (links.update; saving it in this app updates it at once), drawn as vectors in every output; false: an editable copy of its art, as from dataBase64; other files are embedded), text?: {characterSet?: \"unicode\" (UTF-8, or UTF-16 with a byte-order mark; other bytes as the platform's 8-bit set) | \"ansi\" (the platform's 8-bit set), platform?: \"windows\" (Windows-1252) | \"mac\" (Mac Roman), removeLineReturns?: false (each block of lines becomes one paragraph; blank lines end paragraphs), removeParagraphReturns?: false (drop blank lines), replaceSpaces?: n (runs of n ≥ 2 spaces become a tab)} (a .txt file, placed as area type filling rect, the replaced object's bounds, or else the artboard less a 36 pt margin), template?: false (onto a new locked template layer below the current layer), replace?: false (swap the one selected object, keeping its stacking place and transform; no at/rect), at?: [x, y] centre (default: the first artboard's centre), rect?: [x, y, width, height] fit inside, aspect kept (wins over at), page?: 1 (PDF/.ai page, or a native document's artboard), crop?: \"crop\" (clipped to that page or artboard, default; an SVG, only when given: framed and clipped by its viewBox, else by its art's bounds) | \"bounding\" (the art's bounds) | \"art\" | \"trim\" | \"bleed\" | \"media\" (a PDF page's boxes), password? (an encrypted PDF), dxf?: {…the DXF options of document.open} (a .dxf drawing: fit fills the artboard under at, else the first; fitted or uncentred art lands with its drawing's artboard on that artboard, else it is centred on at)} → {ids, name, format, linked, width, height, warnings}. Raster images come in at 100% of their physical size (the file's ppi, else 72); SVG, DXF, PDF/.ai, EMF/WMF (clipped to the picture's frame), EPS (clipped to its bounding box; as document.open reads it) and native documents as one group, with the images, symbols, patterns and swatches they use. One undo step; selects what it placed (unless on a template layer); never touches the clipboard",
+            "{path | name+dataBase64, link?: true (a raster image keeps its file's path; a VectorCraft document at path becomes one locked placed document showing artboard `page`, linked to the file and read again when it changes (links.update; saving it in this app updates it at once), drawn as vectors in every output; false: an editable copy of its art, as from dataBase64; other files are embedded), text?: {characterSet?: \"unicode\" (UTF-8, or UTF-16 with a byte-order mark; other bytes as the platform's 8-bit set) | \"ansi\" (the platform's 8-bit set), platform?: \"windows\" (Windows-1252) | \"mac\" (Mac Roman), removeLineReturns?: false (each block of lines becomes one paragraph; blank lines end paragraphs), removeParagraphReturns?: false (drop blank lines), replaceSpaces?: n (runs of n ≥ 2 spaces become a tab)} (a .txt file, placed as area type filling rect, the replaced object's bounds, or else the artboard less a 36 pt margin), template?: false (onto a new locked template layer below the current layer), replace?: false (swap the one selected object, keeping its stacking place and transform; no at/rect), at?: [x, y] centre (default: the first artboard's centre), rect?: [x, y, width, height] fit inside, aspect kept (wins over at), page?: 1 (PDF/.ai page, or a native document's artboard), crop?: \"crop\" (clipped to that page or artboard, default; an SVG, only when given: framed and clipped by its viewBox, else by its art's bounds) | \"bounding\" (the art's bounds) | \"art\" | \"trim\" | \"bleed\" | \"media\" (a PDF page's boxes), password? (an encrypted PDF)} → {ids, name, format, linked, width, height, warnings}. Raster images come in at 100% of their physical size (the file's ppi, else 72); SVG, PDF/.ai, EPS (clipped to its bounding box; as document.open reads it) and native documents as one group, with the images, symbols, patterns and swatches they use. One undo step; selects what it placed (unless on a template layer); never touches the clipboard",
             has_doc,
             place
         ),
@@ -84,7 +81,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Load Place Cursor",
             [],
             None,
-            "{paths?: [path…], files?: [{name, dataBase64}…], link?, template?, page?, crop?, text?, dxf?, thumbnail?: px} load the place cursor (the `place` tool) with up to 100 files (as file.place reads them): a click places the current file at 100% with its top-left corner there, a drag places it at the dragged size (aspect kept), ←/→ and ↑/↓ cycle the files, Esc discards the current one; each placement is a file.place, and the previous tool returns after the last → {count, files: [{name, format, width, height, thumbnailBase64?}], skipped: [{name, error}]}",
+            "{paths?: [path…], files?: [{name, dataBase64}…], link?, template?, page?, crop?, text?, thumbnail?: px} load the place cursor (the `place` tool) with up to 100 files (as file.place reads them): a click places the current file at 100% with its top-left corner there, a drag places it at the dragged size (aspect kept), ←/→ and ↑/↓ cycle the files, Esc discards the current one; each placement is a file.place, and the previous tool returns after the last → {count, files: [{name, format, width, height, thumbnailBase64?}], skipped: [{name, error}]}",
             has_doc,
             queue
         ),
@@ -120,9 +117,6 @@ struct Loaded {
     warnings: Vec<String>,
     /// The link to a raster image's file (for Link), when read from a path.
     link: Option<LinkInfo>,
-    /// The artboard a DXF drawing fitted to an artboard, or not centred, was laid out on: it lands
-    /// on the target artboard the same way.
-    board: Option<Rect>,
 }
 
 /// Points per pixel of a raster image at the resolution it declares (72 ppi when none).
@@ -131,9 +125,8 @@ pub(crate) fn pt_per_px(ppi: Option<(f64, f64)>) -> (f64, f64) {
     (72.0 / x, 72.0 / y)
 }
 
-/// The file `p` names, read into placeable art; a DXF drawing's Fit to Artboard fills `board`
-/// (unless the params name their own box).
-fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
+/// The file `p` names, read into placeable art.
+fn load(p: &Value, cmd: &str) -> Result<Loaded> {
     let src = fileio::source(p, cmd)?;
     let name = fileio::file_name(src.name);
     // An Affinity file is recognised by its signature, whatever its name says.
@@ -142,7 +135,7 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         if text.trim().is_empty() {
             return Err(bad(cmd, format!("`{name}` has no text to place")));
         }
-        return Ok(Loaded { name, format: &text::FORMAT, art: Art::Text(text), natural: TEXT_FRAME, warnings: vec![], link: None, board: None });
+        return Ok(Loaded { name, format: &text::FORMAT, art: Art::Text(text), natural: TEXT_FRAME, warnings: vec![], link: None });
     }
     let format = fileio::detect(src.name, &src.bytes)
         .ok_or_else(|| bad(cmd, format!("can't place `{name}`: not a format VectorCraft reads (see document.formats)")))?;
@@ -150,12 +143,7 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         None => 1,
         Some(v) => v.as_u64().filter(|n| (1..=100_000).contains(n)).ok_or_else(|| bad(cmd, "page must be a whole number from 1"))? as usize,
     };
-    let mut opts = fileio::LoadOptions::from_params(cmd, p)?;
-    if let Some(b) = board
-        && p.get("dxf").and_then(|d| d.get("fitTo")).is_none()
-    {
-        opts.dxf.fit_to = (b.width(), b.height());
-    }
+    let opts = fileio::LoadOptions::from_params(cmd, p)?;
     // PostScript .ai files are read like EPS.
     let pdf = matches!(format.id, "pdf" | "ai" | "ait") && !vectorcraft_pdf::is_postscript(&src.bytes);
     if !pdf && !matches!(opts.crop, CropTo::Crop | CropTo::Bounding) {
@@ -172,20 +160,19 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
             let s = document::source(src.name, &src.bytes, Some(path), page, !crop, cmd)?;
             let link = LinkInfo { page: Some(page), ..super::links::link_info(path, &src.bytes) };
             let (natural, warnings) = (s.frame, s.warnings.clone());
-            return Ok(Loaded { name, format, art: Art::Document(s, link.clone(), !crop), natural, warnings, link: Some(link), board: None });
+            return Ok(Loaded { name, format, art: Art::Document(s, link.clone(), !crop), natural, warnings, link: Some(link) });
         }
         let a = document::document_art(src.name, &src.bytes, src.path, page, !crop, cmd)?;
         let art = Art::Vector { src: Box::new(a.doc), nodes: a.nodes, clip: a.clip };
-        return Ok(Loaded { name, format, art, natural: a.frame, warnings: a.warnings, link: None, board: None });
+        return Ok(Loaded { name, format, art, natural: a.frame, warnings: a.warnings, link: None });
     }
     if format.raster {
         let img = fileio::raster_image(&src.bytes)?;
         let (sx, sy) = pt_per_px(img.ppi);
         let natural = Rect::new(0.0, 0.0, img.width as f64 * sx, img.height as f64 * sy);
         let link = src.path.map(|path| super::links::link_info(path, &src.bytes));
-        return Ok(Loaded { name, format, art: Art::Image(img), natural, warnings: vec![], link, board: None });
+        return Ok(Loaded { name, format, art: Art::Image(img), natural, warnings: vec![], link });
     }
-    let anchored = format.id == "dxf" && (opts.dxf.fit || !opts.dxf.center);
     let (mut doc, warnings) = match format.id {
         // Only the page placed is read, its artboard the box asked for (Bounding Box: the art's
         // bounds, below).
@@ -194,9 +181,8 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
             fileio::page_document(&src.bytes, page - 1, &o).map_err(|e| bad(cmd, format!("{name}: {e}")))?
         }
         _ => {
-            // Of the open options, only a DXF drawing's apply (the colour mode stays the file's).
-            let o = fileio::LoadOptions { dxf: opts.dxf, ..Default::default() };
-            let mut l = fileio::load_with(src.name, &src.bytes, &o)?;
+            // None of the open options apply (the colour mode stays the file's).
+            let mut l = fileio::load_with(src.name, &src.bytes, &fileio::LoadOptions::default())?;
             // An Affinity file whose native document couldn't be read is only its preview: it
             // must never silently stand in for the art.
             if l.preview_only {
@@ -213,9 +199,8 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         }
     };
     doc.drop_edit_modes();
-    let board = doc.artboards.first().map(|a| a.rect).filter(|_| anchored);
     let layers = std::mem::take(&mut doc.layers);
-    let (nodes, clip) = if matches!(format.id, "svg" | "svgz" | "dxf") {
+    let (nodes, clip) = if matches!(format.id, "svg" | "svgz") {
         // An SVG with `crop: "crop"` asked for is framed and clipped by its viewBox (its artboard),
         // as a PDF by its page: art drawn on a shared canvas keeps its place and scale (#788). By
         // default, as Illustrator places one, it is its art's bounds.
@@ -233,7 +218,7 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
     };
     let natural = clip.or_else(|| nodes.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds())));
     let natural = natural.filter(|r| r.width() > 0.0 || r.height() > 0.0).ok_or_else(|| bad(cmd, format!("`{name}` has no art to place")))?;
-    Ok(Loaded { name, format, art: Art::Vector { src: Box::new(doc), nodes, clip }, natural, warnings, link: None, board })
+    Ok(Loaded { name, format, art: Art::Vector { src: Box::new(doc), nodes, clip }, natural, warnings, link: None })
 }
 
 /// The placeable art of `layers` that lies on `board`.
@@ -371,8 +356,7 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
         (true, [id]) => Some(*id),
         (true, _) => return Err(bad(PLACE, "replace: select the one object to replace")),
     };
-    let target = board_at(&st.doc, at);
-    let mut loaded = load(p, PLACE, target)?;
+    let mut loaded = load(p, PLACE)?;
     let old_node = old.and_then(|id| st.doc.node(id));
     // Type reflows rather than scales: its frame takes the size it is placed at.
     let is_text = matches!(loaded.art, Art::Text(_));
@@ -388,8 +372,6 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
     let m = match (old_node, rect) {
         (Some(o), _) => replace_xf(&st.doc, o, natural, !is_text),
         (None, Some(r)) => fit(natural, r),
-        // Its artboard's bottom-left corner on the target's.
-        (None, None) if let (Some(src), Some(to)) = (loaded.board, target) => Affine::translate((to.x0 - src.x0, to.y1 - src.y1)),
         (None, None) => {
             let c = at.or_else(|| st.doc.artboards.first().map(|a| a.rect.center())).unwrap_or_default();
             Affine::translate(c - natural.center())
@@ -480,12 +462,12 @@ fn queue(s: &mut Session, p: &Value) -> Result<Value> {
     let thumbnail = p.get("thumbnail").and_then(Value::as_f64);
     let (mut entries, mut files, mut skipped) = (vec![], vec![], vec![]);
     for mut q in queued_files(p)? {
-        for k in ["link", "template", "page", "crop", "text", "dxf"] {
+        for k in ["link", "template", "page", "crop", "text"] {
             if let Some(v) = p.get(k) {
                 q[k] = v.clone();
             }
         }
-        match load(&q, QUEUE, None) {
+        match load(&q, QUEUE) {
             Ok(l) => {
                 let (w, h) = (l.natural.width(), l.natural.height());
                 let mut f = json!({ "name": l.name, "format": l.format.id, "width": w, "height": h });
@@ -543,7 +525,7 @@ fn thumbnail_png(l: Loaded, px: f64) -> Result<String> {
 }
 
 fn info(_: &mut Session, p: &Value) -> Result<Value> {
-    let mut l = load(p, "file.place.info", None)?;
+    let mut l = load(p, "file.place.info")?;
     let natural = l.natural;
     let mut out = json!({
         "name": l.name,

@@ -20,9 +20,6 @@
 //!   art painting its members (its raster effects then apply to the composite).
 //! - [`clip_outline`] is the region a clip group clips to, shared by the renderer and the SVG and
 //!   PDF writers.
-//! - **Plug-in effects** (`plugin.<plug-in id>`, Effect › Plug-ins) are geometry effects run by an
-//!   installed WebAssembly plug-in (`vectorcraft-plugins`); [`effect_info`] describes them like
-//!   built-in ones, and an effect whose plug-in isn't installed leaves the geometry as it is.
 //! - **Colour adjustments** (Brightness/Contrast, Curves, Levels, Hue/Saturation, Shift to Color,
 //!   Temperature/Tint) recolour what an object paints with: [`adjust`] evaluates them for the
 //!   renderer and the exporters.
@@ -42,7 +39,6 @@ mod marks;
 pub mod pixel;
 mod raster;
 mod reshape;
-mod revolve;
 pub mod stroke;
 mod stylize;
 mod util;
@@ -69,7 +65,6 @@ pub use marks::{CROP_MARKS, crop_marks_art, has_crop_marks};
 pub use pixel::{PIXEL_EFFECTS, PixelFx, PixelSpace};
 pub use raster::{RasterFx, outset, raster_effects};
 pub use reshape::{expand_outlined, needs_outline, outline_art, outline_text, reshape};
-pub use revolve::{REVOLVE, has_revolve, revolve_art, revolve_options, validate_revolve};
 pub use warp::{WarpStyle, warp_point};
 
 /// Catalogue entry for one effect.
@@ -124,7 +119,6 @@ fn lengths_of(id: &str) -> Lengths {
         "distort.tweak" => Lengths { always: &[], absolute: &["h", "v"] },
         "distort.transform" => always(&["moveH", "moveV"]),
         "path.offsetPath" => always(&["offset"]),
-        "threeD.revolve" => always(&["offset"]),
         "path.outlineStroke" => always(&["width"]),
         "stylize.roundCorners" | "stylize.feather" | "blur.gaussian" | "blur.smart" | "sharpen.unsharpMask" => always(&["radius"]),
         "stylize.scribble" => always(&["overlap", "strokeWidth", "spacing", "variation"]),
@@ -162,7 +156,6 @@ const PIXELATE: &[&str] = &["Effect", "Pixelate"];
 const TEXTURE: &[&str] = &["Effect", "Texture"];
 const VIDEO: &[&str] = &["Effect", "Video"];
 const PATHFINDER: &[&str] = &["Effect", "Pathfinder"];
-const PLUGINS: &[&str] = &["Effect", "Plug-ins"];
 const ADJUST: &[&str] = &["Effect", "Color Adjustments"];
 
 /// The warp styles in Illustrator's Style menu order: (id suffix, label).
@@ -189,13 +182,6 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
     let g = |id, label, menu, params, defaults| EffectInfo { id, label, menu, params, defaults, raster: false, lengths: lengths_of(id) };
     let r = |id, label, menu, params, defaults| EffectInfo { id, label, menu, params, defaults, raster: true, lengths: lengths_of(id) };
     let mut v = vec![
-        g(
-            REVOLVE,
-            "Revolve…",
-            &["Effect", "3D and Materials"],
-            "{angle: degrees (0..360, 360), offset: pt (0..100000, 0), edge: left|right, rotationX: degrees (0), rotationY: degrees (0), rotationZ: degrees (0), perspective: % (0..100, 0), segments: integer (8..128, 64), shade: bool (true), lightAzimuth: degrees (-45), lightElevation: degrees (45), lightIntensity: % (80), ambient: % (25), expandVisibleOnly: bool (true, trim covered opaque solid surfaces only on Expand Appearance)}. Open paths create uncapped surfaces; intersecting profiles use approximate painter visibility.",
-            json!({"angle":360.0,"offset":0.0,"edge":"left","rotationX":0.0,"rotationY":0.0,"rotationZ":0.0,"perspective":0.0,"segments":64,"shade":true,"lightAzimuth":-45.0,"lightElevation":45.0,"lightIntensity":80.0,"ambient":25.0,"expandVisibleOnly":true}),
-        ),
         g(
             "convertToShape.rectangle",
             "Rectangle…",
@@ -579,39 +565,14 @@ fn catalog_index() -> &'static std::collections::HashMap<&'static str, EffectInf
     INDEX.get_or_init(|| effect_catalog().into_iter().map(|e| (e.id, e)).collect())
 }
 
-/// Catalogue entry for `id` (built-in, or an installed plug-in effect).
+/// Catalogue entry for `id`.
 pub fn effect_info(id: &str) -> Option<EffectInfo> {
-    catalog_index().get(id).cloned().or_else(|| plugin_info(id))
-}
-
-/// The catalogue entry of the installed effect plug-in with effect id `id` (`plugin.<id>`).
-fn plugin_info(id: &str) -> Option<EffectInfo> {
-    use vectorcraft_plugins::registry::intern;
-    let p = vectorcraft_plugins::effect::installed(id)?;
-    let m = p.manifest();
-    let dots = if m.params.is_empty() || m.name.ends_with('…') { "" } else { "…" };
-    Some(EffectInfo {
-        id: intern(id),
-        label: intern(&format!("{}{dots}", m.name)),
-        menu: PLUGINS,
-        params: intern(&m.params_doc()),
-        defaults: Value::Object(m.defaults()),
-        raster: false,
-        lengths: Lengths::default(),
-    })
-}
-
-/// The installed effect plug-ins as catalogue entries (Effect › Plug-ins), by plug-in id.
-pub fn plugin_effects() -> Vec<EffectInfo> {
-    vectorcraft_plugins::registry::list().iter().filter_map(|p| plugin_info(&vectorcraft_plugins::effect::effect_id(p.id()))).collect()
+    catalog_index().get(id).cloned()
 }
 
 /// Dialog defaults for `id` (`None` for unknown effects).
 pub fn default_params(id: &str) -> Option<Value> {
-    match catalog_index().get(id) {
-        Some(e) => Some(e.defaults.clone()),
-        None => plugin_info(id).map(|e| e.defaults),
-    }
+    catalog_index().get(id).map(|e| e.defaults.clone())
 }
 
 /// `params` layered over the defaults of `id` (unknown keys are kept).
@@ -619,7 +580,7 @@ pub fn merged_params(id: &str, params: &Value) -> Value {
     let mut out = match catalog_index().get(id).map(|e| &e.defaults) {
         Some(Value::Object(m)) => m.clone(),
         Some(_) => Map::new(),
-        None => vectorcraft_plugins::effect::installed(id).map(|p| p.manifest().defaults()).unwrap_or_default(),
+        None => Map::new(),
     };
     if let Value::Object(p) = params {
         for (k, v) in p {
@@ -632,7 +593,7 @@ pub fn merged_params(id: &str, params: &Value) -> Value {
 /// A new effect record with default parameters (overridden by `params`).
 pub fn new_effect(id: &str, params: &Value) -> Option<Effect> {
     if !catalog_index().contains_key(id) {
-        vectorcraft_plugins::effect::installed(id)?;
+        return None;
     }
     Some(Effect { id: id.to_string(), params: merged_params(id, params), visible: true })
 }
@@ -662,15 +623,13 @@ pub fn is_raster(id: &str) -> bool {
 }
 
 /// Does `id` change geometry? (Crop Marks adds art of its own instead, [`crop_marks_art`]; colour
-/// adjustments recolour, [`adjust`].) Plug-in effects do, installed or not (a missing plug-in
-/// leaves the geometry as it is).
+/// adjustments recolour, [`adjust`].)
 pub fn is_geometry(id: &str) -> bool {
     !is_raster(id)
         && !is_pathfinder(id)
         && !is_adjustment(id)
         && id != CROP_MARKS
-        && id != REVOLVE
-        && (catalog_index().contains_key(id) || vectorcraft_plugins::effect::plugin_id(id).is_some())
+        && catalog_index().contains_key(id)
 }
 
 /// Any visible geometry effect in the list?
@@ -745,9 +704,6 @@ pub fn apply_geometry_bez(effects: &[Effect], path: &BezPath, bounds: Rect, ctx:
 
 pub(crate) fn apply_one(id: &str, p: &Value, path: &PathData, b: Rect, ctx: &GeomContext) -> PathData {
     use util::*;
-    if let Some(plugin) = vectorcraft_plugins::effect::plugin_id(id) {
-        return vectorcraft_plugins::effect::apply(plugin, p, path, b, ctx.rule).unwrap_or_else(|| path.clone());
-    }
     match id {
         "distort.freeDistort" => distort::free_distort(path, b, p),
         "distort.puckerBloat" => distort::pucker_bloat(path, b, num(p, "amount", 0.0)),
