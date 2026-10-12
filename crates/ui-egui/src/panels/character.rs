@@ -5,7 +5,7 @@ use std::sync::{Mutex, OnceLock};
 
 use egui::{Key, Ui, vec2};
 use serde_json::{Value, json};
-use vectorcraft_doc::{CharStyle, NodeId, NodeKind};
+use vectorcraft_doc::{CharPosition, CharStyle, NodeId, NodeKind};
 use vectorcraft_tools::{Mods, ToolKey};
 
 use super::{pstate, set_pstate};
@@ -443,14 +443,22 @@ pub(crate) fn metrics_grid(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, s: &
             match widgets::spin_field_auto(ui, "ch-lead", leading, Some(auto), unit, fw, 1.0, 0.1, &SIZE_PRESETS) {
                 Some(SpinPick::Value(v)) => style(app, json!({"leading": v})),
                 Some(SpinPick::Auto) => style(app, json!({"leading": "auto"})),
-                None => {}
+                _ => {}
             }
         });
         ui.end_row();
-        cell(ui, "VA", tl!("Kerning (0 = Auto)"), |ui| {
+        cell(ui, "VA", tl!("Kerning"), |ui| {
+            // Auto: the font's kerning pairs; Optical: from the letters' shapes; a number (0 too)
+            // replaces the font's kerning.
             let kerning = shared(app, |s| s.kerning.unwrap_or(0.0));
-            if let Some(v) = widgets::spin_plain(ui, "ch-kern", kerning, "", 0, fw, 10.0, -1000.0, &TRACKING_PRESETS) {
-                format(app, if v == 0.0 { json!({"kerning": "auto"}) } else { json!({"kerning": v}) });
+            let auto = shared(app, |s| s.kerning.is_none() && !s.optical_kerning) == Some(true);
+            let optical = shared(app, |s| s.kerning.is_none() && s.optical_kerning) == Some(true);
+            let named = [(tl!("Auto"), auto), (tl!("Optical"), optical)];
+            match widgets::spin_plain_named(ui, "ch-kern", kerning, "", 0, fw, 10.0, -1000.0, &TRACKING_PRESETS, &named) {
+                Some(SpinPick::Value(v)) => format(app, json!({"kerning": v})),
+                Some(SpinPick::Named(0)) => format(app, json!({"kerning": "auto"})),
+                Some(SpinPick::Named(_)) => format(app, json!({"kerning": "optical"})),
+                _ => {}
             }
         });
         cell(ui, "VA↔", tl!("Tracking"), |ui| {
@@ -544,17 +552,26 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     ui.horizontal(|ui| {
         for (kind, tip, key, on, enabled) in [
             (Glyph::AllCaps, tl!("All Caps"), "allCaps", s.all_caps, true),
-            (Glyph::SmallCaps, tl!("Small Caps (on the roadmap)"), "", false, false),
-            (Glyph::Super, tl!("Superscript (on the roadmap)"), "", false, false),
-            (Glyph::Sub, tl!("Subscript (on the roadmap)"), "", false, false),
+            (Glyph::SmallCaps, tl!("Small Caps"), "smallCaps", s.small_caps.is_some(), true),
+            (Glyph::Super, tl!("Superscript"), "superscript", matches!(s.position, CharPosition::Superscript(_)), true),
+            (Glyph::Sub, tl!("Subscript"), "subscript", matches!(s.position, CharPosition::Subscript(_)), true),
             (Glyph::Underline, tl!("Underline"), "underline", s.underline, true),
             (Glyph::Strike, tl!("Strikethrough"), "strikethrough", s.strikethrough, true),
         ] {
-            if style_toggle(ui, kind, tip, on, enabled) && !key.is_empty() {
-                format(app, json!({key: !on}));
+            if style_toggle(ui, kind, tip, on, enabled) {
+                format(app, toggle_params(key, on));
             }
         }
     });
+}
+
+/// `text.setFormat` params that turn a style toggle (`key`, now `on`) the other way: Superscript
+/// and Subscript set the position (off: normal), the rest are flags.
+fn toggle_params(key: &str, on: bool) -> Value {
+    match key {
+        "superscript" | "subscript" => json!({"position": if on { "normal" } else { key }}),
+        _ => json!({key: !on}),
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -622,15 +639,15 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let s = st.map(|x| x.0);
     for (label, key, on) in [
         (tl!("All Caps"), "allCaps", s.as_ref().is_some_and(|s| s.all_caps)),
+        (tl!("Small Caps"), "smallCaps", s.as_ref().is_some_and(|s| s.small_caps.is_some())),
+        (tl!("Superscript"), "superscript", s.as_ref().is_some_and(|s| matches!(s.position, CharPosition::Superscript(_)))),
+        (tl!("Subscript"), "subscript", s.as_ref().is_some_and(|s| matches!(s.position, CharPosition::Subscript(_)))),
         (tl!("Underline"), "underline", s.as_ref().is_some_and(|s| s.underline)),
         (tl!("Strikethrough"), "strikethrough", s.as_ref().is_some_and(|s| s.strikethrough)),
     ] {
         if menu_item(ui, label, has, on) {
-            format(app, json!({key: !on}));
+            format(app, toggle_params(key, on));
         }
-    }
-    for l in ["Small Caps", "Superscript", "Subscript"] {
-        menu_item(ui, tl!(l), false, false);
     }
     ui.separator();
     // Character Alignment: where characters smaller than the largest on their line line up, with
@@ -683,8 +700,11 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         });
         ui.separator();
     }
-    for l in ["Standard Vertical Roman Alignment", "Tate-chu-yoko", "Fractional Widths", "System Layout", "No Break"] {
-        menu_item(ui, tl!(l), false, l == "Fractional Widths");
+    // Glyph positions are always fractional; the rest are not offered.
+    menu_item(ui, tl!("Fractional Widths"), false, true);
+    let no_break = s.as_ref().is_some_and(|s| s.no_break);
+    if menu_item(ui, tl!("No Break"), has, no_break) {
+        format(app, json!({"noBreak": !no_break}));
     }
     ui.separator();
     // The installed fonts are always listed; this picks up fonts installed since the app started.
@@ -698,7 +718,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         style(app, json!({"tracking": 0, "leading": "auto"}));
         format(
             app,
-            json!({"kerning": "auto", "baselineShift": 0, "hScale": 100, "vScale": 100, "rotation": 0, "underline": false, "strikethrough": false, "allCaps": false}),
+            json!({"kerning": "auto", "baselineShift": 0, "hScale": 100, "vScale": 100, "rotation": 0, "underline": false, "strikethrough": false, "allCaps": false, "smallCaps": false, "position": "normal", "noBreak": false}),
         );
     }
 }
@@ -707,6 +727,27 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 mod tests {
     use super::*;
     use vectorcraft_engine::Session;
+
+    /// Small Caps, Superscript and Subscript toggle like All Caps, from the buttons and the menu.
+    #[test]
+    fn small_caps_superscript_and_subscript_toggle() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("text.create", json!({"x": 10, "y": 50, "text": "Logo"})).unwrap();
+        let st = |app: &VectorcraftApp| text_style(app).unwrap().0;
+        format(&mut app, toggle_params("smallCaps", false));
+        assert!(st(&app).small_caps.is_some());
+        format(&mut app, toggle_params("superscript", false));
+        assert!(matches!(st(&app).position, CharPosition::Superscript(_)));
+        format(&mut app, toggle_params("subscript", false));
+        assert!(matches!(st(&app).position, CharPosition::Subscript(_)));
+        format(&mut app, toggle_params("subscript", true));
+        assert_eq!(st(&app).position, CharPosition::Normal);
+        format(&mut app, toggle_params("smallCaps", true));
+        assert!(st(&app).small_caps.is_none());
+        let text = crate::tests_labels::painted_text(&mut app, show);
+        assert!(!text.contains("roadmap"), "{text}");
+    }
 
     #[test]
     fn scaled_dimensions_do_not_show_false_mixed_values_from_roundoff() {

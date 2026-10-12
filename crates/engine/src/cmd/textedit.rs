@@ -27,7 +27,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Character",
             [],
             None,
-            "{id? (default: the one selected type object), start?: byte, end?: byte (default: all text), font?, style?, size?: pt, leading?: pt|\"auto\", tracking?, kerning?: 1/1000 em|\"auto\", baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, fill?: colour|\"none\", stroke?: colour|\"none\", strokeWidth?: pt, strokeOptions?: {weight?, cap?, join?, miterLimit?, dash?, dashOffset?, alignDashes?} (as stroke.set: the character stroke), underline?, strikethrough?, allCaps?: bool, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), features?: [\"dlig\", \"-liga\", …], charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\", proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed)} style a character range (size/leading/baselineShift are document points and hScale includes the object transform; runs are split at the range ends) → {id, runs}",
+            "{id? (default: the one selected type object), start?: byte, end?: byte (default: all text), font?, style?, size?: pt, leading?: pt|\"auto\", tracking?, kerning?: 1/1000 em|\"auto\"|\"optical\" (a number replaces the font's pair kerning; 0: none), noBreak?: bool (keep the characters on one line), baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, fill?: colour|\"none\", stroke?: colour|\"none\", strokeWidth?: pt, strokeOptions?: {weight?, cap?, join?, miterLimit?, dash?, dashOffset?, alignDashes?} (as stroke.set: the character stroke), underline?, strikethrough?, allCaps?: bool, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), features?: [\"dlig\", \"-liga\", …], charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\", proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed)} style a character range (size/leading/baselineShift are document points and hScale includes the object transform; runs are split at the range ends) → {id, runs}",
             has_doc,
             set_range_style
         ),
@@ -175,7 +175,8 @@ pub(crate) struct CharChange {
     size: Option<f64>,
     leading: Option<Option<f64>>,
     tracking: Option<f64>,
-    kerning: Option<Option<f64>>,
+    kerning: Option<Kerning>,
+    no_break: Option<bool>,
     baseline_shift: Option<f64>,
     h_scale: Option<f64>,
     v_scale: Option<f64>,
@@ -246,6 +247,38 @@ fn paint_param(p: &Value, k: &str, cmd: &str) -> Result<Option<Paint>> {
     }
 }
 
+/// Character panel › Kerning: the font's pairs (Auto), the outlines (Optical) or a fixed value.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Kerning {
+    Auto,
+    Optical,
+    /// 1/1000 em, without the font's pairs (0: no kerning).
+    Value(f64),
+}
+
+impl Kerning {
+    pub(crate) fn apply(self, st: &mut CharStyle) {
+        (st.kerning, st.optical_kerning) = match self {
+            Kerning::Auto => (None, false),
+            Kerning::Optical => (None, true),
+            Kerning::Value(v) => (Some(v.clamp(-1000.0, 10000.0)), false),
+        };
+    }
+}
+
+/// `kerning: 1/1000 em|"auto"|"optical"`.
+pub(crate) fn kerning_param(p: &Value, cmd: &str) -> Result<Option<Kerning>> {
+    match p.get("kerning") {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(a)) if a.eq_ignore_ascii_case("auto") => Ok(Some(Kerning::Auto)),
+        Some(Value::String(a)) if a.eq_ignore_ascii_case("optical") => Ok(Some(Kerning::Optical)),
+        Some(v) => match v.as_f64().filter(|v| v.is_finite()) {
+            Some(v) => Ok(Some(Kerning::Value(v))),
+            None => Err(bad(cmd, "kerning must be a number, \"auto\" or \"optical\"")),
+        },
+    }
+}
+
 fn auto_or_num(p: &Value, k: &str, cmd: &str) -> Result<Option<Option<f64>>> {
     match p.get(k) {
         None | Some(Value::Null) => Ok(None),
@@ -274,7 +307,8 @@ impl CharChange {
             size: num("size"),
             leading: auto_or_num(p, "leading", cmd)?,
             tracking: num("tracking"),
-            kerning: auto_or_num(p, "kerning", cmd)?,
+            kerning: kerning_param(p, cmd)?,
+            no_break: flag("noBreak"),
             baseline_shift: num("baselineShift"),
             h_scale: num("hScale"),
             v_scale: num("vScale"),
@@ -305,6 +339,7 @@ impl CharChange {
             && self.leading.is_none()
             && self.tracking.is_none()
             && self.kerning.is_none()
+            && self.no_break.is_none()
             && self.baseline_shift.is_none()
             && self.h_scale.is_none()
             && self.v_scale.is_none()
@@ -363,7 +398,10 @@ impl CharChange {
             st.tracking = v.clamp(-1000.0, 10000.0);
         }
         if let Some(v) = self.kerning {
-            st.kerning = v.map(|k| k.clamp(-1000.0, 10000.0));
+            v.apply(st);
+        }
+        if let Some(v) = self.no_break {
+            st.no_break = v;
         }
         if let Some(v) = self.baseline_shift {
             st.baseline_shift = v;
@@ -642,7 +680,10 @@ fn type_step(s: &mut Session, p: &Value) -> Result<Value> {
                             st.leading = Some(super::typecmd::local_type_value(t, st.effective_leading() * points + inc, (0.1, 5000.0), false, C)?);
                         }
                         Step::Tracking => st.tracking = (st.tracking + inc).clamp(-1000.0, 10000.0),
-                        Step::Kerning => st.kerning = Some((st.kerning.unwrap_or(0.0) + inc).clamp(-1000.0, 10000.0)),
+                        Step::Kerning => {
+                            st.kerning = Some((st.kerning.unwrap_or(0.0) + inc).clamp(-1000.0, 10000.0));
+                            st.optical_kerning = false;
+                        }
                         Step::BaselineShift => {
                             st.baseline_shift = super::typecmd::local_type_value(t, st.baseline_shift * points + inc, (-1296.0, 1296.0), false, C)?;
                         }

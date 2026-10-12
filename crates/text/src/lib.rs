@@ -17,6 +17,7 @@ mod features;
 mod fontdb;
 pub mod hyphen;
 mod layout;
+mod optical;
 mod shape;
 #[cfg(not(target_arch = "wasm32"))]
 mod suitcase;
@@ -512,6 +513,8 @@ mod tests_embed;
 mod tests_fit;
 #[cfg(test)]
 mod tests_inline;
+#[cfg(test)]
+mod tests_justify;
 #[cfg(test)]
 mod tests_scripts;
 #[cfg(test)]

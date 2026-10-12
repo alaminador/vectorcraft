@@ -128,7 +128,7 @@ impl OtFeatures {
         let own = self.with_tags(st.features.iter().map(String::as_str));
         let s = &own;
         let mut v = Vec::with_capacity(8);
-        if st.kerning.is_some() {
+        if st.kerning.is_some() || st.optical_kerning {
             v.push(f(b"kern", false));
         }
         let liga = s.ligatures && (!ligatures_suppressed_by(st.tracking) || explicit_ligatures(&st.features));

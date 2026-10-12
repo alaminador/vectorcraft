@@ -1104,6 +1104,8 @@ pub fn spin_field(
 pub enum SpinPick {
     Value(f64),
     Auto,
+    /// One of the named entries of a [`spin_plain_named`] dropdown, by index.
+    Named(usize),
 }
 
 impl SpinPick {
@@ -1111,7 +1113,7 @@ impl SpinPick {
     pub fn value(self) -> Option<f64> {
         match self {
             SpinPick::Value(v) => Some(v),
-            SpinPick::Auto => None,
+            SpinPick::Auto | SpinPick::Named(_) => None,
         }
     }
 }
@@ -1130,7 +1132,11 @@ pub fn spin_field_auto(
     min: f64,
     presets: &[f64],
 ) -> Option<SpinPick> {
-    spin_generic(ui, value, auto, width, step, min, presets, &|v| unit.format(v), &mut |ui, fw| num_field(ui, id, value, unit, fw))
+    let named = auto.map(|on| [(tl!("Auto"), on)]);
+    spin_generic(ui, value, named.as_ref().map_or(&[][..], |n| &n[..]), width, step, min, presets, &|v| unit.format(v), &mut |ui, fw| {
+        num_field(ui, id, value, unit, fw)
+    })
+    .map(|p| if p == SpinPick::Named(0) { SpinPick::Auto } else { p })
 }
 
 /// [`spin_field`] for unitless values (percent, degrees, 1/1000 em) with a display suffix; a
@@ -1149,15 +1155,35 @@ pub fn spin_plain(
 ) -> Option<f64> {
     let value = value.into();
     let fmt = |v: f64| format!("{v}{suffix}");
-    spin_generic(ui, value, None, width, step, min, presets, &fmt, &mut |ui, fw| mixed_field(ui, id, value, suffix, decimals, fw))
+    spin_generic(ui, value, &[], width, step, min, presets, &fmt, &mut |ui, fw| mixed_field(ui, id, value, suffix, decimals, fw))
         .and_then(SpinPick::value)
+}
+
+/// [`spin_plain`] whose dropdown starts with named entries (Kerning: Auto, Optical), each
+/// `(label, checked)`; a checked one leaves the presets unchecked. Picking one gives
+/// [`SpinPick::Named`] with its index.
+#[allow(clippy::too_many_arguments)]
+pub fn spin_plain_named(
+    ui: &mut Ui,
+    id: impl std::hash::Hash + std::fmt::Debug + Copy,
+    value: Option<f64>,
+    suffix: &str,
+    decimals: usize,
+    width: f32,
+    step: f64,
+    min: f64,
+    presets: &[f64],
+    named: &[(&str, bool)],
+) -> Option<SpinPick> {
+    let fmt = |v: f64| format!("{v}{suffix}");
+    spin_generic(ui, value, named, width, step, min, presets, &fmt, &mut |ui, fw| mixed_field(ui, id, value, suffix, decimals, fw))
 }
 
 #[allow(clippy::too_many_arguments)]
 fn spin_generic(
     ui: &mut Ui,
     value: Option<f64>,
-    auto: Option<bool>,
+    named: &[(&str, bool)],
     width: f32,
     step: f64,
     min: f64,
@@ -1207,12 +1233,12 @@ fn spin_generic(
             let dresp = chevron_cell(ui, h);
             egui::Popup::menu(&dresp).show(|ui| {
                 ui.set_min_width(width - 10.0);
-                if let Some(on) = auto
-                    && ui.selectable_label(on, tl!("Auto")).clicked()
-                {
-                    out = Some(SpinPick::Auto);
+                for (i, (label, on)) in named.iter().enumerate() {
+                    if ui.selectable_label(*on, *label).clicked() {
+                        out = Some(SpinPick::Named(i));
+                    }
                 }
-                let current = value.filter(|_| auto != Some(true));
+                let current = value.filter(|_| !named.iter().any(|(_, on)| *on));
                 for p in presets {
                     if ui.selectable_label(current.is_some_and(|v| (v - p).abs() < 1e-6), fmt(*p)).clicked() {
                         out = Some(SpinPick::Value(*p));

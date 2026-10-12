@@ -62,6 +62,8 @@ pub(crate) struct SGlyph {
     /// A word of a script written without spaces (Thai, Lao, Khmer, Myanmar) ends after the
     /// glyph's cluster, so a line may break there ([`mark_word_ends`]).
     pub word_end: bool,
+    /// Character panel menu › No Break: no line break between this glyph and a next one that has it too.
+    pub no_break: bool,
 }
 
 /// How `vpal` and the vertical kerning with it move an upright glyph in vertical type and change
@@ -491,6 +493,7 @@ fn inline_glyph(face: &Arc<FontFace>, st: &CharStyle, art: &InlineArt, run: usiz
         level,
         inline: Some(InlineBox { art: drawn, xf }),
         word_end: false,
+        no_break: st.no_break,
     }
 }
 
@@ -631,6 +634,7 @@ fn shape_segment(text: &str, context: &Range<usize>, seg: &Segment, feats: &OtFe
     cluster_starts.sort_unstable();
     cluster_starts.dedup();
     let n = raw.len();
+    let first = out.len();
     for (gi, &(gid, cl, xa, xo, yo)) in raw.iter().enumerate() {
         let cl = cl as usize;
         // Cluster end: the next larger cluster value in the segment, else the segment end.
@@ -669,6 +673,22 @@ fn shape_segment(text: &str, context: &Range<usize>, seg: &Segment, feats: &OtFe
             level: *level,
             inline: None,
             word_end: false,
+            no_break: st.no_break,
         });
+    }
+    // Optical kerning: each pair spaced from its outlines (the font's pairs are off, see
+    // `OtFeatures::resolve`). Horizontal left-to-right type only.
+    if st.optical_kerning && st.kerning.is_none() && !feats.vertical && !level.is_rtl() {
+        let Some(reference) = crate::optical::reference(face) else { return };
+        let depth = crate::optical::DEPTH * face.upem;
+        for gi in 0..raw.len().saturating_sub(1) {
+            let (Some(&(ga, _, xa, _, _)), Some(&(gb, _, xb, _, _))) = (raw.get(gi), raw.get(gi + 1)) else { continue };
+            let a = crate::optical::glyph_profile(face, ga, f64::from(xa));
+            let b = crate::optical::glyph_profile(face, gb, f64::from(xb));
+            let (Some(gap), Some(rhythm)) = (crate::optical::gap(&a, &b, depth), reference.for_pair(&a, &b)) else { continue };
+            if let Some(g) = out.get_mut(first + gi) {
+                g.adv += crate::optical::kern(gap, rhythm, face.upem) * k * hs;
+            }
+        }
     }
 }

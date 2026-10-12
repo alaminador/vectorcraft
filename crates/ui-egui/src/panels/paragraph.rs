@@ -25,7 +25,8 @@ pub const ALIGNMENTS: [(Justify, &str, &str, &str); 7] = [
 /// Paragraph attributes apply to the selected text objects' paragraphs or, while the Type tool
 /// edits text, to the paragraphs its selection (or caret) touches (ending its typing session).
 fn format(app: &mut VectorcraftApp, p: Value) {
-    para_cmd(app, "text.setFormat", p);
+    // The panel's own values are in range; a failure (no type left) has nothing to report.
+    let _ = para_cmd(app, "text.setFormat", p);
 }
 
 /// The alignment shortcuts' commands (Cmd+Shift+L, C, R, J and F, as in page layout apps) and the
@@ -42,18 +43,19 @@ pub const ALIGN_COMMANDS: [(&str, &str); 5] = [
 /// `justify` (an [`ALIGN_COMMANDS`] alignment, #1111).
 pub(crate) fn align(app: &mut VectorcraftApp, justify: &str) -> Result<Value, String> {
     text_style(app).ok_or("select some type first")?;
-    para_cmd(app, "text.setStyle", json!({ "justify": justify }));
+    para_cmd(app, "text.setStyle", json!({ "justify": justify }))?;
     Ok(Value::Null)
 }
 
-fn para_cmd(app: &mut VectorcraftApp, cmd: &str, mut p: Value) {
+/// Run `cmd` on the selected type's paragraphs, or on those the Type tool's selection touches.
+pub(crate) fn para_cmd(app: &mut VectorcraftApp, cmd: &str, mut p: Value) -> Result<Value, String> {
     if let Some((id, a, b)) = super::character::text_editing(app) {
         super::character::end_typing(app);
         p["ids"] = json!([id.0]);
         p["start"] = json!(a);
         p["end"] = json!(b);
     }
-    app.run(cmd, p).ok();
+    app.run(cmd, p).map_err(|e| e.to_string())
 }
 
 /// Does the paragraph being edited (at the caret), else the selected text's first paragraph, run
@@ -86,7 +88,7 @@ pub fn alignment_buttons(app: &mut VectorcraftApp, ui: &mut Ui, para: &ParaStyle
     let shown = shown_alignment(para.justify, resolved_rtl(app, para));
     for (j, icon, tip, id) in ALIGNMENTS {
         if widgets::icon_button(ui, icon, tip, shown == j, size).clicked() {
-            para_cmd(app, "text.setStyle", json!({"justify": id}));
+            let _ = para_cmd(app, "text.setStyle", json!({"justify": id}));
         }
     }
 }
@@ -197,8 +199,12 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         set_pstate(ui.ctx(), "pa-hide-options", !hidden);
     }
     ui.separator();
-    for l in [tl!("Roman Hanging Punctuation"), tl!("Justification…"), tl!("Hyphenation…")] {
-        menu_item(ui, l, false, false);
+    menu_item(ui, tl!("Roman Hanging Punctuation"), false, false);
+    if menu_item(ui, tl!("Justification…"), has, false) {
+        let _ = crate::dialogs::justification::open(app);
+    }
+    if menu_item(ui, tl!("Hyphenation…"), has, false) {
+        let _ = crate::dialogs::hyphenation::open(app);
     }
     // How leading is measured (Japanese layout measures it from em box top to em box top), with
     // the East Asian options.
@@ -240,10 +246,10 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     ui.separator();
     if menu_item(ui, tl!("Reset Panel"), has, false) {
-        para_cmd(app, "text.setStyle", json!({"justify": "auto"}));
+        let _ = para_cmd(app, "text.setStyle", json!({"justify": "auto"}));
         format(
             app,
-            json!({"leftIndent": 0, "rightIndent": 0, "firstLineIndent": 0, "spaceBefore": 0, "spaceAfter": 0, "hyphenate": false, "direction": "auto", "leadingModel": "romanBaseline", "burasagari": "standard", "kinsoku": "hard", "composer": "everyLine"}),
+            json!({"leftIndent": 0, "rightIndent": 0, "firstLineIndent": 0, "spaceBefore": 0, "spaceAfter": 0, "hyphenate": false, "direction": "auto", "leadingModel": "romanBaseline", "burasagari": "standard", "kinsoku": "hard", "composer": "everyLine", "justification": {"wordSpacing": [80, 100, 133], "letterSpacing": [0, 0, 0], "glyphScaling": [100, 100, 100], "autoLeading": 120, "singleWord": "fullJustify"}, "hyphenation": {"wordsLongerThan": 5, "afterFirst": 3, "beforeLast": 3, "limit": 0, "zone": 0, "capitalized": true}}),
         );
     }
 }

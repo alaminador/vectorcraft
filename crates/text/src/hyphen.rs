@@ -7,7 +7,9 @@
 //! [`set_hyphenation_exceptions`].
 
 use std::collections::HashMap;
+
 use std::sync::{Mutex, MutexGuard, OnceLock};
+use vectorcraft_doc::Hyphenation;
 
 /// Only words at least this long are hyphenated (Illustrator's default: longer than 5 letters).
 pub const MIN_WORD: usize = 6;
@@ -120,10 +122,17 @@ fn onset_pair(a: char, b: char) -> bool {
     )
 }
 
-/// Allowed hyphenation points in `word`, as char indices (a hyphen goes *before* the char).
-/// Words containing non-letters (other than a trailing apostrophe) are not hyphenated.
-/// Preferences exceptions override the pattern for a matching word.
+/// Allowed hyphenation points in `word`, as char indices (a hyphen goes *before* the char), with
+/// the default Hyphenation settings. Words containing non-letters (other than a trailing
+/// apostrophe) are not hyphenated. Preferences exceptions override the pattern for a matching word.
 pub fn hyphen_points(word: &str) -> Vec<usize> {
+    hyphen_points_with(word, &Hyphenation::default())
+}
+
+/// [`hyphen_points`] with the paragraph's Hyphenation settings: words longer than
+/// `words_longer_than` letters, at least `after_first` letters before a hyphen and `before_last`
+/// after it, capitalized words only with `capitalized`. Exceptions still decide their own words.
+pub fn hyphen_points_with(word: &str, h: &Hyphenation) -> Vec<usize> {
     if let Some(ex) = exception_for(word) {
         return match ex {
             Exception::Never => vec![],
@@ -132,16 +141,22 @@ pub fn hyphen_points(word: &str) -> Vec<usize> {
     }
     let c: Vec<char> = word.chars().collect();
     let n = c.len();
-    if n < MIN_WORD || !c.iter().all(|c| c.is_alphabetic() || matches!(c, '\'' | '’')) {
+    let min_word = (h.words_longer_than as usize).saturating_add(1).max(2);
+    if n < min_word || !c.iter().all(|c| c.is_alphabetic() || matches!(c, '\'' | '’')) {
         return vec![];
     }
     // A capitalised run like "NASA" or a proper name stays whole only when all caps.
     if c.iter().all(|c| c.is_uppercase()) {
         return vec![];
     }
+    // Hyphenate Capitalized Words off: a word starting with a capital stays whole.
+    if !h.capitalized && c.first().is_some_and(|c| c.is_uppercase()) {
+        return vec![];
+    }
+    let (before, after) = ((h.after_first as usize).max(1), (h.before_last as usize).max(1));
     let v: Vec<bool> = c.iter().map(|&x| is_vowel(x)).collect();
     let mut out = vec![];
-    for i in MIN_BEFORE..=n.saturating_sub(MIN_AFTER) {
+    for i in before..=n.saturating_sub(after) {
         if !c[i].is_alphabetic() || !c[i - 1].is_alphabetic() {
             continue;
         }

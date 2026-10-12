@@ -205,3 +205,82 @@ fn ranged_set_format_sets_direction_mojikumi_and_leading_model_per_paragraph() {
     s.execute("text.setFormat", &json!({"ids": [id], "direction": "auto"})).unwrap();
     assert!(text(&s, id).paragraph_styles().iter().all(|p| p.direction.is_none()));
 }
+
+/// Paragraph panel menu › Justification… and Hyphenation… through `text.setFormat`: partial
+/// objects change only their keys, per paragraph, are checked, survive a save and undo as one step.
+#[test]
+fn justification_and_hyphenation_set_per_paragraph_and_round_trip() {
+    use vectorcraft_doc::SingleWord;
+    let mut s = session();
+    let id = area(&mut s, "one\ntwo");
+    s.execute(
+        "text.setFormat",
+        &json!({"ids": [id], "start": 5, "end": 5, "justification": {"wordSpacing": [60, 90, 200], "singleWord": "alignCenter"}, "hyphenation": {"limit": 2, "capitalized": false}}),
+    )
+    .unwrap();
+    let t = text(&s, id);
+    let p = t.paragraph_styles();
+    assert_eq!(p[0].justification, Default::default(), "the first paragraph is untouched");
+    assert_eq!(p[1].justification.word_spacing, [60.0, 90.0, 200.0]);
+    assert_eq!(p[1].justification.single_word, SingleWord::AlignCenter);
+    assert_eq!(p[1].justification.letter_spacing, [0.0; 3], "keys not given keep their values");
+    assert_eq!((p[1].hyphenation.limit, p[1].hyphenation.capitalized, p[1].hyphenation.words_longer_than), (2, false, 5));
+    // Out of order or out of range values are refused and change nothing.
+    for bad in [
+        json!({"justification": {"wordSpacing": [120, 100, 133]}}),
+        json!({"justification": {"letterSpacing": [0, 0, 900]}}),
+        json!({"justification": {"glyphScaling": [100, 100]}}),
+        json!({"justification": {"autoLeading": -1}}),
+        json!({"justification": {"singleWord": "stretch"}}),
+        json!({"justification": 3}),
+        json!({"hyphenation": {"afterFirst": 0}}),
+        json!({"hyphenation": {"limit": 1.5}}),
+        json!({"hyphenation": {"zone": "wide"}}),
+        json!({"kerning": "tight"}),
+    ] {
+        let mut p = bad.clone();
+        p["ids"] = json!([id]);
+        assert!(s.execute("text.setFormat", &p).is_err(), "{bad}");
+    }
+    assert_eq!(text(&s, id), t);
+    // Saved and opened again.
+    let doc = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    match &doc.node(NodeId(id)).unwrap().kind {
+        NodeKind::Text(back) => assert_eq!(back.paragraph_styles(), t.paragraph_styles()),
+        _ => panic!("not text"),
+    }
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert!(text(&s, id).paragraph_styles().iter().all(|p| p.justification == Default::default() && p.hyphenation == Default::default()));
+}
+
+/// Kerning Auto, Optical and a value (0 too: no kerning), and No Break, on a range.
+#[test]
+fn kerning_optical_and_no_break_style_a_range() {
+    let mut s = session();
+    let id = area(&mut s, "AVATAR");
+    let style_of = |s: &Session, byte: usize| {
+        let t = text(s, id);
+        let mut at = 0;
+        t.runs
+            .iter()
+            .find(|r| {
+                at += r.text.len();
+                at > byte
+            })
+            .unwrap()
+            .style
+            .clone()
+    };
+    s.execute("text.setRangeStyle", &json!({"id": id, "start": 0, "end": 2, "kerning": "optical", "noBreak": true})).unwrap();
+    let st = style_of(&s, 0);
+    assert!(st.optical_kerning && st.kerning.is_none() && st.no_break);
+    assert!(!style_of(&s, 3).optical_kerning && !style_of(&s, 3).no_break);
+    s.execute("text.setFormat", &json!({"ids": [id], "kerning": 0})).unwrap();
+    let st = style_of(&s, 0);
+    assert_eq!((st.kerning, st.optical_kerning), (Some(0.0), false), "0 is no kerning, not Auto");
+    s.execute("text.setFormat", &json!({"ids": [id], "kerning": "optical"})).unwrap();
+    assert!(style_of(&s, 4).optical_kerning);
+    s.execute("text.setFormat", &json!({"ids": [id], "kerning": "auto", "noBreak": false})).unwrap();
+    let st = style_of(&s, 0);
+    assert_eq!((st.kerning, st.optical_kerning, st.no_break), (None, false, false));
+}

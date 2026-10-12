@@ -5,8 +5,9 @@
 //! (badness + penalty) demerits over the whole paragraph, plus a demerit when neighbouring lines
 //! fall in fitness classes more than one apart (a tight line next to a loose one).
 //!
-//! - **Justified** lines: word spacing may stretch to 150% and shrink to 80%; the badness comes
-//!   from the stretch/shrink ratio, so loose lines are traded for evenly spaced ones.
+//! - **Justified** lines: word spacing may stretch to the paragraph's maximum and shrink to its
+//!   minimum (Justification…, 133% and 80% by default); the badness comes from the stretch/shrink
+//!   ratio, so loose lines are traded for evenly spaced ones.
 //! - **Ragged** lines (left/centre/right aligned): spaces keep their width, so a line never
 //!   shrinks (it must fit). The badness comes from the line's leftover space measured against a
 //!   rag zone of a sixth of the line width, so the rag is even rather than full lines followed by
@@ -15,8 +16,6 @@
 
 use crate::shape::SGlyph;
 
-const STRETCH: f64 = 0.5;
-const SHRINK: f64 = 0.2;
 const HYPHEN_PENALTY: f64 = 50.0;
 const DOUBLE_HYPHEN_DEMERITS: f64 = 3000.0;
 const LINE_PENALTY: f64 = 10.0;
@@ -56,6 +55,11 @@ pub(crate) struct Params {
     /// Lines from this index on all have the same width, so their line numbers are interchangeable
     /// (keeps the number of active breakpoints small).
     pub uniform_from: usize,
+    /// How much a word space may grow (maximum / desired - 1) and shrink (1 - minimum / desired).
+    pub stretch: f64,
+    pub shrink: f64,
+    /// Most consecutive lines that may end in a hyphen (0: no limit).
+    pub hyphen_limit: usize,
 }
 
 struct Node {
@@ -65,6 +69,8 @@ struct Node {
     fitness: u8,
     demerits: f64,
     hyphenated: bool,
+    /// Consecutive hyphenated lines ending here.
+    hyphens: usize,
     prev: Option<usize>,
 }
 
@@ -120,7 +126,7 @@ pub(crate) fn compose(
     all.push(Breakpoint { end: n, hyphen: 0.0 });
     let (adj_demerits, hyphen_penalty) =
         if p.ragged { (ADJ_DEMERITS_RAGGED, HYPHEN_PENALTY_RAGGED) } else { (ADJ_DEMERITS_JUSTIFIED, HYPHEN_PENALTY) };
-    let mut nodes = vec![Node { pos: 0, line: 0, fitness: 1, demerits: 0.0, hyphenated: false, prev: None }];
+    let mut nodes = vec![Node { pos: 0, line: 0, fitness: 1, demerits: 0.0, hyphenated: false, hyphens: 0, prev: None }];
     let mut active: Vec<usize> = vec![0];
     for bp in &all {
         let last = bp.end == n;
@@ -149,12 +155,12 @@ pub(crate) fn compose(
                     if last && !p.justify_last {
                         0.0
                     } else if spaces > 0.0 {
-                        (lw - natural) / (spaces * STRETCH)
+                        (lw - natural) / (spaces * p.stretch.max(0.01))
                     } else {
                         f64::INFINITY
                     }
                 } else if natural > lw {
-                    if spaces > 0.0 { (lw - natural) / (spaces * SHRINK) } else { f64::NEG_INFINITY }
+                    if spaces > 0.0 { (lw - natural) / (spaces * p.shrink.max(1e-3)) } else { f64::NEG_INFINITY }
                 } else {
                     0.0
                 }
@@ -164,6 +170,9 @@ pub(crate) fn compose(
                 continue;
             }
             keep.push(ai);
+            if bp.hyphen > 0.0 && p.hyphen_limit > 0 && a.hyphens >= p.hyphen_limit {
+                continue;
+            }
             let free_last = last && (p.ragged || !p.justify_last);
             if ratio > p.tolerance && !(last && (p.ragged || (ratio.is_infinite() && p.justify_last))) {
                 continue;
@@ -189,7 +198,8 @@ pub(crate) fn compose(
         }
         active = keep;
         for (line, fitness, demerits, from) in best {
-            nodes.push(Node { pos: bp.end, line, fitness, demerits, hyphenated: bp.hyphen > 0.0, prev: Some(from) });
+            let hyphens = if bp.hyphen > 0.0 { nodes.get(from).map_or(0, |a| a.hyphens) + 1 } else { 0 };
+            nodes.push(Node { pos: bp.end, line, fitness, demerits, hyphenated: bp.hyphen > 0.0, hyphens, prev: Some(from) });
             active.push(nodes.len() - 1);
         }
         if active.is_empty() || active.len() > MAX_ACTIVE {

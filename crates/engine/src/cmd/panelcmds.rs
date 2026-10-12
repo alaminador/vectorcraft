@@ -43,7 +43,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Character / Paragraph",
             [],
             None,
-            "{ids?|id?, kerning?: 1/1000 em|\"auto\", baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, underline?, strikethrough?, allCaps?, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), leftIndent?, rightIndent?, firstLineIndent?, spaceBefore?, spaceAfter?: pt (±1296), hyphenate?: bool, mojikumi?: \"none\"|\"lineEndHalf\" (Japanese punctuation spacing), kinsoku?: \"none\"|\"hard\"|\"soft\" (Kinsoku Set: Soft lets 々, ー and small kana start a line), direction?: \"auto\"|\"leftToRight\"|\"rightToLeft\" (paragraph direction; auto: from each paragraph's first strong character), leadingModel?: \"romanBaseline\"|\"emBoxTop\" (leading measured baseline to baseline, or em box top to top), charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\" (where characters smaller than the largest on their line line up with it), proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed), burasagari?: \"none\"|\"standard\"|\"forced\" (Paragraph panel menu › Burasagari None/Regular/Force: an East Asian comma or full stop ending an area type line hangs outside it: when it doesn't fit, or always; new type: \"standard\"), composer?: \"singleLine\"|\"everyLine\" (line breaking, Every-line by default), start?: byte, end?: byte} (baselineShift is in document points and hScale includes the object transform; groups include their text descendants; with a range: the character attributes style that range and the paragraph attributes apply to the paragraphs it touches; without: all the text)",
+            "{ids?|id?, kerning?: 1/1000 em|\"auto\"|\"optical\" (a number replaces the font's pair kerning; 0: none), noBreak?: bool (Character panel menu › No Break: the characters stay on one line), baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, underline?, strikethrough?, allCaps?, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), leftIndent?, rightIndent?, firstLineIndent?, spaceBefore?, spaceAfter?: pt (±1296), hyphenate?: bool, mojikumi?: \"none\"|\"lineEndHalf\" (Japanese punctuation spacing), kinsoku?: \"none\"|\"hard\"|\"soft\" (Kinsoku Set: Soft lets 々, ー and small kana start a line), direction?: \"auto\"|\"leftToRight\"|\"rightToLeft\" (paragraph direction; auto: from each paragraph's first strong character), leadingModel?: \"romanBaseline\"|\"emBoxTop\" (leading measured baseline to baseline, or em box top to top), charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\" (where characters smaller than the largest on their line line up with it), proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed), burasagari?: \"none\"|\"standard\"|\"forced\" (Paragraph panel menu › Burasagari None/Regular/Force: an East Asian comma or full stop ending an area type line hangs outside it: when it doesn't fit, or always; new type: \"standard\"), composer?: \"singleLine\"|\"everyLine\" (line breaking, Every-line by default), justification?: {wordSpacing?: [min, desired, max] % (0–1000; 80/100/133), letterSpacing?: [min, desired, max] % of a quarter em (−100–500; 0/0/0), glyphScaling?: [min, desired, max] % (50–200; desired used), autoLeading?: % of the size (0–500; 120), singleWord?: \"fullJustify\"|\"alignLeft\"|\"alignCenter\"|\"alignRight\"} (Paragraph panel menu › Justification…: every line takes the desired spacing; justified lines then space words within min–max, then letters), hyphenation?: {wordsLongerThan?: 1–25 (5), afterFirst?: 1–15 (3), beforeLast?: 1–15 (3), limit?: 0–25 consecutive hyphens (0: no limit), zone?: pt (Single-line Composer: a line already this close to full breaks before the next word rather than hyphenating it), capitalized?: bool} (Paragraph panel menu › Hyphenation…; partial objects change only the keys given), start?: byte, end?: byte} (baselineShift is in document points and hScale includes the object transform; groups include their text descendants; with a range: the character attributes style that range and the paragraph attributes apply to the paragraphs it touches; without: all the text)",
             has_doc,
             set_format
         ),
@@ -192,18 +192,82 @@ pub(crate) fn push_artboard_copy(d: &mut vectorcraft_doc::Document, src: &vector
 /// Largest indent or paragraph spacing (points; Illustrator's limit).
 const MAX_PARA: f64 = 1296.0;
 
+/// `justification: {wordSpacing?: [min, desired, max] %, letterSpacing?: [min, desired, max] %,
+/// glyphScaling?: [min, desired, max] %, autoLeading?: %, singleWord?: "fullJustify"|"alignLeft"|
+/// "alignCenter"|"alignRight"}` merged into `base` (Paragraph panel menu › Justification…).
+pub(crate) fn justification_param(v: &Value, base: vectorcraft_doc::Justification, cmd: &str) -> Result<vectorcraft_doc::Justification> {
+    use vectorcraft_doc::SingleWord;
+    let o = v.as_object().ok_or_else(|| bad(cmd, "justification must be an object"))?;
+    let mut j = base;
+    let triple = |k: &str, (lo, hi): (f64, f64), cur: [f64; 3]| -> Result<[f64; 3]> {
+        let Some(v) = o.get(k).filter(|v| !v.is_null()) else { return Ok(cur) };
+        let a = v.as_array().filter(|a| a.len() == 3).ok_or_else(|| bad(cmd, format!("{k} must be [minimum, desired, maximum]")))?;
+        let mut t = [0.0; 3];
+        for (slot, x) in t.iter_mut().zip(a) {
+            let x = x.as_f64().filter(|x| x.is_finite()).ok_or_else(|| bad(cmd, format!("{k} must hold numbers")))?;
+            if !(lo..=hi).contains(&x) {
+                return Err(bad(cmd, format!("{k} values must be from {lo} to {hi}")));
+            }
+            *slot = x;
+        }
+        if !(t[0] <= t[1] && t[1] <= t[2]) {
+            return Err(bad(cmd, format!("{k}: minimum ≤ desired ≤ maximum")));
+        }
+        Ok(t)
+    };
+    j.word_spacing = triple("wordSpacing", (0.0, 1000.0), j.word_spacing)?;
+    j.letter_spacing = triple("letterSpacing", (-100.0, 500.0), j.letter_spacing)?;
+    j.glyph_scaling = triple("glyphScaling", (50.0, 200.0), j.glyph_scaling)?;
+    if let Some(v) = o.get("autoLeading").filter(|v| !v.is_null()) {
+        j.auto_leading =
+            v.as_f64().filter(|x| x.is_finite() && (0.0..=500.0).contains(x)).ok_or_else(|| bad(cmd, "autoLeading must be 0–500 (%)"))?;
+    }
+    if let Some(v) = o.get("singleWord").filter(|v| !v.is_null()) {
+        j.single_word = match v.as_str() {
+            Some("fullJustify") => SingleWord::FullJustify,
+            Some("alignLeft") => SingleWord::AlignLeft,
+            Some("alignCenter") => SingleWord::AlignCenter,
+            Some("alignRight") => SingleWord::AlignRight,
+            _ => return Err(bad(cmd, "singleWord must be \"fullJustify\", \"alignLeft\", \"alignCenter\" or \"alignRight\"")),
+        };
+    }
+    Ok(j)
+}
+
+/// `hyphenation: {wordsLongerThan?: 1–25, afterFirst?: 1–15, beforeLast?: 1–15, limit?: 0–25,
+/// zone?: pt, capitalized?: bool}` merged into `base` (Paragraph panel menu › Hyphenation…).
+pub(crate) fn hyphenation_param(v: &Value, base: vectorcraft_doc::Hyphenation, cmd: &str) -> Result<vectorcraft_doc::Hyphenation> {
+    let o = v.as_object().ok_or_else(|| bad(cmd, "hyphenation must be an object"))?;
+    let mut h = base;
+    let count = |k: &str, (lo, hi): (u64, u64), cur: u32| -> Result<u32> {
+        let Some(v) = o.get(k).filter(|v| !v.is_null()) else { return Ok(cur) };
+        let n = v.as_u64().filter(|n| (lo..=hi).contains(n)).ok_or_else(|| bad(cmd, format!("{k} must be a whole number from {lo} to {hi}")))?;
+        Ok(u32::try_from(n).unwrap_or(cur))
+    };
+    h.words_longer_than = count("wordsLongerThan", (1, 25), h.words_longer_than)?;
+    h.after_first = count("afterFirst", (1, 15), h.after_first)?;
+    h.before_last = count("beforeLast", (1, 15), h.before_last)?;
+    h.limit = count("limit", (0, 25), h.limit)?;
+    if let Some(v) = o.get("zone").filter(|v| !v.is_null()) {
+        h.zone = v.as_f64().filter(|x| x.is_finite() && (0.0..=MAX_PARA).contains(x)).ok_or_else(|| bad(cmd, "zone must be 0–1296 (pt)"))?;
+    }
+    if let Some(v) = o.get("capitalized").filter(|v| !v.is_null()) {
+        h.capitalized = v.as_bool().ok_or_else(|| bad(cmd, "capitalized must be true or false"))?;
+    }
+    Ok(h)
+}
+
 fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "text.setFormat";
     let ids = super::typecmd::text_targets(s, p, C)?;
     let num = |k: &str| p.get(k).and_then(Value::as_f64);
     let flag = |k: &str| p.get(k).and_then(Value::as_bool);
-    let kerning = match p.get("kerning") {
-        None | Some(Value::Null) => None,
-        Some(Value::String(a)) if a.eq_ignore_ascii_case("auto") => Some(None),
-        Some(v) => Some(Some(v.as_f64().ok_or_else(|| bad(C, "kerning must be a number or \"auto\""))?.clamp(-1000.0, 10000.0))),
-    };
+    let kerning = super::textedit::kerning_param(p, C)?;
     let keys = [
         "kerning",
+        "noBreak",
+        "justification",
+        "hyphenation",
         "baselineShift",
         "hScale",
         "vScale",
@@ -286,11 +350,23 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
             _ => return Err(bad(C, "`burasagari` must be \"none\", \"standard\" or \"forced\"")),
         }),
     };
+    let justification = p.get("justification").filter(|v| !v.is_null());
+    let hyphenation = p.get("hyphenation").filter(|v| !v.is_null());
+    // Check them before editing (they are merged into each paragraph's own values).
+    if let Some(j) = justification {
+        justification_param(j, vectorcraft_doc::Justification::default(), C)?;
+    }
+    if let Some(h) = hyphenation {
+        hyphenation_param(h, vectorcraft_doc::Hyphenation::default(), C)?;
+    }
     let range = super::typecmd::TextRange::parse(p, C)?;
     // The character attributes, given the baseline shift and horizontal scale in the type's own units.
     let chars = |st: &mut vectorcraft_doc::CharStyle, baseline_shift: Option<f64>, h_scale: Option<f64>| {
         if let Some(k) = kerning {
-            st.kerning = k;
+            k.apply(st);
+        }
+        if let Some(v) = flag("noBreak") {
+            st.no_break = v;
         }
         if let Some(v) = baseline_shift {
             st.baseline_shift = v;
@@ -372,6 +448,13 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 if let Some(v) = composer {
                     para.composer = v;
+                }
+                // Checked above.
+                if let Some(j) = justification.and_then(|j| justification_param(j, para.justification, C).ok()) {
+                    para.justification = j;
+                }
+                if let Some(h) = hyphenation.and_then(|h| hyphenation_param(h, para.hyphenation, C).ok()) {
+                    para.hyphenation = h;
                 }
             });
             super::typecmd::refresh_bounds(t);

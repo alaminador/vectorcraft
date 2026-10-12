@@ -29,7 +29,9 @@ pub mod find_links;
 mod form;
 pub mod freehand;
 mod gradient_stop;
+pub mod hyphenation;
 pub mod import_pdf;
+pub mod justification;
 pub mod layer_options;
 pub mod layers_panel_options;
 pub mod missing_fonts;
@@ -209,6 +211,8 @@ registry! {
     SpotColors: [spot_colors::KIND] => spot_colors::SPEC,
     TransformEach: [transform_each::KIND] => transform_each::SPEC,
     WidthPoint: [width_point::KIND] => width_point::SPEC,
+    Justification: [justification::KIND] => justification::SPEC,
+    Hyphenation: [hyphenation::KIND] => hyphenation::SPEC,
     Corners: [corners::KIND] => corners::SPEC,
     SavePdf: [save_pdf::KIND] => save_pdf::SPEC,
     SvgOptions: [svg_options::KIND] => svg_options::SPEC,

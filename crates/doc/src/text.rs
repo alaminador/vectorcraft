@@ -40,9 +40,18 @@ pub struct CharStyle {
     /// Tracking in 1/1000 em.
     #[serde(default)]
     pub tracking: f64,
-    /// Kerning: None = Auto (metrics), Some(v) = manual in 1/1000 em.
+    /// Kerning: None = Auto (the font's own pair kerning, or Optical with [`Self::optical_kerning`]),
+    /// Some(v) = manual in 1/1000 em, without the font's kerning (Some(0): none at all).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kerning: Option<f64>,
+    /// Character panel › Kerning › Optical: the space between letters set from their shapes
+    /// instead of the font's kerning pairs (with `kerning` None).
+    #[serde(default, rename = "opticalKerning", skip_serializing_if = "crate::skip::is_default")]
+    pub optical_kerning: bool,
+    /// Character panel menu › No Break: these characters stay on one line (a line breaks before
+    /// or after them, not between them).
+    #[serde(default, rename = "noBreak", skip_serializing_if = "crate::skip::is_default")]
+    pub no_break: bool,
     #[serde(default)]
     pub baseline_shift: f64,
     #[serde(default = "hundred")]
@@ -231,6 +240,8 @@ impl Default for CharStyle {
             leading: None,
             tracking: 0.0,
             kerning: None,
+            optical_kerning: false,
+            no_break: false,
             baseline_shift: 0.0,
             h_scale: 100.0,
             v_scale: 100.0,
@@ -398,6 +409,81 @@ pub struct ParaStyle {
     /// Kinsoku (Paragraph panel › Kinsoku Set): which Japanese characters may not start or end a
     /// line.
     pub kinsoku: Kinsoku,
+    /// Paragraph panel menu › Justification…: word and letter spacing, glyph scaling, Auto
+    /// Leading and Single Word Justification.
+    pub justification: Justification,
+    /// Paragraph panel menu › Hyphenation…: which words break, where, and how often.
+    pub hyphenation: Hyphenation,
+}
+
+/// Paragraph panel menu › Justification…. Spacing is in percent: word spacing of the font's space,
+/// letter spacing of the space width added between letters, glyph scaling of the glyphs' widths.
+/// Every line is set with the desired values; justified lines may then space words from
+/// `word_spacing[0]` to `[2]`, and past that letters from `letter_spacing[0]` to `[2]`. Glyph
+/// scaling's minimum and maximum are kept but not used yet: glyphs take the desired scaling.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Justification {
+    /// Minimum, desired, maximum (percent of the space; 0–1000).
+    pub word_spacing: [f64; 3],
+    /// Minimum, desired, maximum (percent of the space; −100–500).
+    pub letter_spacing: [f64; 3],
+    /// Minimum, desired, maximum (percent of the glyph width; 50–200).
+    pub glyph_scaling: [f64; 3],
+    /// Auto Leading: the leading of type whose leading is Auto, in percent of its size (0–500).
+    pub auto_leading: f64,
+    /// A justified line holding one word (no space to stretch).
+    pub single_word: SingleWord,
+}
+
+impl Default for Justification {
+    fn default() -> Self {
+        Self {
+            word_spacing: [80.0, 100.0, 133.0],
+            letter_spacing: [0.0; 3],
+            glyph_scaling: [100.0; 3],
+            auto_leading: 120.0,
+            single_word: SingleWord::FullJustify,
+        }
+    }
+}
+
+/// Justification › Single Word Justification.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SingleWord {
+    /// Its letters spread to fill the line.
+    #[default]
+    FullJustify,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+}
+
+/// Paragraph panel menu › Hyphenation… (with the Hyphenate checkbox, [`ParaStyle::hyphenate`]).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Hyphenation {
+    /// Words Longer Than: only words with more letters break (1–25).
+    pub words_longer_than: u32,
+    /// After First: letters a hyphen leaves at least before it (1–15).
+    pub after_first: u32,
+    /// Before Last: letters a hyphen leaves at least after it (1–15).
+    pub before_last: u32,
+    /// Hyphen Limit: most consecutive lines ending in a hyphen (0: no limit; up to 25).
+    pub limit: u32,
+    /// Hyphenation Zone (points): with the Single-line Composer, a line whose words already reach
+    /// this close to its end breaks before the next word instead of hyphenating it (0: hyphenate
+    /// wherever it fits).
+    pub zone: f64,
+    /// Hyphenate Capitalized Words.
+    pub capitalized: bool,
+}
+
+impl Default for Hyphenation {
+    fn default() -> Self {
+        Self { words_longer_than: 5, after_first: 3, before_last: 3, limit: 0, zone: 0.0, capitalized: true }
+    }
 }
 
 /// [`ParaStyle`] as saved. [`Justify::Auto`] is written as the alignment it has in the paragraph
@@ -437,6 +523,10 @@ struct ParaStyleFile {
     burasagari: Burasagari,
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     kinsoku: Kinsoku,
+    #[serde(default, skip_serializing_if = "crate::skip::is_default")]
+    justification: Justification,
+    #[serde(default, skip_serializing_if = "crate::skip::is_default")]
+    hyphenation: Hyphenation,
 }
 
 impl From<ParaStyle> for ParaStyleFile {
@@ -462,6 +552,8 @@ impl From<ParaStyle> for ParaStyleFile {
             leading_model,
             burasagari,
             kinsoku,
+            justification,
+            hyphenation,
             ..
         } = p;
         Self {
@@ -481,6 +573,8 @@ impl From<ParaStyle> for ParaStyleFile {
             leading_model,
             burasagari,
             kinsoku,
+            justification,
+            hyphenation,
         }
     }
 }
@@ -503,6 +597,8 @@ impl From<ParaStyleFile> for ParaStyle {
             leading_model,
             burasagari,
             kinsoku,
+            justification,
+            hyphenation,
             ..
         } = f;
         Self {
@@ -521,6 +617,8 @@ impl From<ParaStyleFile> for ParaStyle {
             leading_model,
             burasagari,
             kinsoku,
+            justification,
+            hyphenation,
         }
     }
 }
