@@ -512,7 +512,7 @@ pub(crate) fn outlined_stroke(
         let art = d.reid(&art);
         return Some(with_transparency(d, art, st.opacity, st.blend));
     }
-    let outline = logocraft_render::effects::stroke::outline_region(path, rule, st);
+    let outline = refit_outline(logocraft_render::effects::stroke::outline_region(path, rule, st), st.width);
     if outline.is_empty() {
         return None;
     }
@@ -538,6 +538,17 @@ pub(crate) fn outlined_stroke(
     };
     n.appearance = Appearance { items: vec![AppearanceItem::Fill(fill)], ..Default::default() }.into();
     Some(n)
+}
+
+/// A stroke outline refit as a designer would draw it: width profiles and some joins come out of
+/// the stroker as hundreds of short segments, which become a few smooth curves here, corners
+/// (turns over 30°) kept, never more than 0.05 pt (and 1/250 of the weight) off.
+fn refit_outline(outline: PathData, weight: f64) -> PathData {
+    let tolerance = if weight.is_finite() { (weight / 250.0).clamp(0.005, 0.05) } else { 0.05 };
+    let fitted =
+        logocraft_pathops::simplify_with(&outline, &logocraft_pathops::SimplifyOptions { tolerance, corner_angle_deg: 30.0, straight_lines: false });
+    // Simplify never adds anchors; an empty result (degenerate input) keeps the original.
+    if fitted.is_empty() { outline } else { fitted }
 }
 
 /// Path `l` with every stroke outlined, in appearance order: runs of fills stay on copies of

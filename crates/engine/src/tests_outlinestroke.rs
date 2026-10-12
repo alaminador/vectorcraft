@@ -162,3 +162,54 @@ fn brushed_strokes_outline_to_their_brush_art() {
     assert!(near(n.opacity as f64, 0.5, 1e-6), "the stroke opacity stays on the art");
     assert!(!doc.layers[0].children().unwrap().iter().any(|c| logocraft_brush::has_brush(c)));
 }
+
+/// Outline Stroke gives smooth curves a few anchors, as a designer would draw them, not the
+/// dozens of short segments the stroker approximates the offset curve with; the outline still
+/// follows the stroke to well under a hundredth of its weight.
+#[test]
+fn outlined_curves_have_few_anchors_and_stay_on_the_stroke() {
+    let mut s = session();
+    let r = s.execute("path.create", &json!({"d": "M 20 150 C 80 20 160 20 200 150 S 320 280 380 150"})).unwrap();
+    let id = NodeId(r["id"].as_u64().unwrap());
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    s.execute("paint.setFill", &json!({"none": true})).unwrap();
+    s.execute("stroke.set", &json!({"weight": 12, "cap": "round", "join": "round"})).unwrap();
+    let src = s.doc().unwrap().doc.node(id).unwrap().path_data().unwrap().to_bezpath();
+    let n = outline(&mut s);
+    let p = path_of(&n);
+    let anchors = p.anchor_count();
+    assert!(anchors <= 24, "{anchors} anchors");
+    // Every outline point is half the weight from the centre line.
+    use kurbo::{ParamCurve, ParamCurveNearest};
+    let segs: Vec<_> = src.segments().collect();
+    for sp in &p.subpaths {
+        for i in 0..sp.segment_count() {
+            for k in 0..8 {
+                let pt = sp.segment(i).eval(k as f64 / 8.0);
+                let d = segs.iter().map(|sg| sg.nearest(pt, 1e-6).distance_sq).fold(f64::MAX, f64::min).sqrt();
+                assert!((d - 6.0).abs() < 0.08, "{pt:?} is {d} from the path");
+            }
+        }
+    }
+    // A stroked circle outlines as two rings of a handful of anchors each, centred, inside or
+    // outside (the boolean step of aligned strokes must not leave dozens of points either).
+    for align in ["center", "inside", "outside"] {
+        let mut s = session();
+        s.execute("shape.ellipse", &json!({"x": 100, "y": 50, "width": 120, "height": 120})).unwrap();
+        s.execute("paint.setFill", &json!({"none": true})).unwrap();
+        s.execute("stroke.set", &json!({"weight": 10, "align": align})).unwrap();
+        let ring = path_of(&outline(&mut s));
+        assert_eq!(ring.subpaths.len(), 2, "{align}");
+        assert!(ring.anchor_count() <= 16, "{align}: {} anchors", ring.anchor_count());
+    }
+    // A width profile along the S-curve (Width tool) and a dashed curve: smooth too.
+    for opts in [json!({"weight": 12, "profile": "lens"}), json!({"weight": 12, "dash": [40, 20]})] {
+        let mut s = session();
+        s.execute("path.create", &json!({"d": "M 20 150 C 80 20 160 20 200 150 S 320 280 380 150"})).unwrap();
+        s.execute("paint.setFill", &json!({"none": true})).unwrap();
+        s.execute("stroke.set", &opts).unwrap();
+        let p = path_of(&outline(&mut s));
+        let per = p.anchor_count() as f64 / p.subpaths.len() as f64;
+        assert!(per <= 32.0, "{opts}: {} anchors in {} subpaths (380 before the refit)", p.anchor_count(), p.subpaths.len());
+    }
+}
