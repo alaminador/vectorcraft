@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*", "apps/*", "xtask"]
-default-members = ["crates/*", "apps/vectorcraft", "apps/vectorcraft-cli", "xtask"]
+default-members = ["crates/*", "apps/logocraft", "apps/logocraft-cli", "xtask"]
 
 [workspace.package]
 version = "0.10.0"
@@ -13,25 +13,25 @@ repository = "https://github.com/storytold/vectorcraft"
 [workspace.dependencies]
 craft-ui = { git = "https://github.com/storytold/craft-libs", rev = "5c874d51eeb3de70e735c8ce87a59a7dedd47675", features = ["serde"] }
 # internal
-vectorcraft-geom = { path = "crates/geom" }
-vectorcraft-color = { path = "crates/color" }
-vectorcraft-doc = { path = "crates/doc" }
-vectorcraft-pathops = { path = "crates/pathops" }
-vectorcraft-brush = { path = "crates/brush" }
-vectorcraft-trace = { path = "crates/trace" }
-vectorcraft-text = { path = "crates/text" }
-vectorcraft-effects = { path = "crates/effects" }
-vectorcraft-render = { path = "crates/render" }
-vectorcraft-svg = { path = "crates/svg" }
-vectorcraft-pdf = { path = "crates/pdf" }
-vectorcraft-format = { path = "crates/format" }
-vectorcraft-tools = { path = "crates/tools" }
-vectorcraft-engine = { path = "crates/engine" }
-vectorcraft-ui-egui = { path = "crates/ui-egui" }
-vectorcraft-mcp = { path = "crates/mcp" }
-vectorcraft-testkit = { path = "crates/testkit" }
-vectorcraft-eps = { path = "crates/eps" }
-vectorcraft-affinity = { path = "crates/affinity" }
+logocraft-geom = { path = "crates/geom" }
+logocraft-color = { path = "crates/color" }
+logocraft-doc = { path = "crates/doc" }
+logocraft-pathops = { path = "crates/pathops" }
+logocraft-brush = { path = "crates/brush" }
+logocraft-trace = { path = "crates/trace" }
+logocraft-text = { path = "crates/text" }
+logocraft-effects = { path = "crates/effects" }
+logocraft-render = { path = "crates/render" }
+logocraft-svg = { path = "crates/svg" }
+logocraft-pdf = { path = "crates/pdf" }
+logocraft-format = { path = "crates/format" }
+logocraft-tools = { path = "crates/tools" }
+logocraft-engine = { path = "crates/engine" }
+logocraft-ui-egui = { path = "crates/ui-egui" }
+logocraft-mcp = { path = "crates/mcp" }
+logocraft-testkit = { path = "crates/testkit" }
+logocraft-eps = { path = "crates/eps" }
+logocraft-affinity = { path = "crates/affinity" }
 
 # foundation
 kurbo = { version = "0.13", features = ["serde"] }
@@ -58,7 +58,7 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 ruzstd = { version = "0.9", default-features = false, features = ["std"] }
 jpeg-encoder = { version = "0.6", default-features = false, features = ["std"] }
 gif = { version = "0.14", default-features = false, features = ["std", "raii_no_panic"] }
-# CMYK image samples (vectorcraft-doc's cmyk module): the image crate's own TIFF and JPEG
+# CMYK image samples (logocraft-doc's cmyk module): the image crate's own TIFF and JPEG
 # decoders, read directly (the image crate converts CMYK to RGB).
 tiff = "0.11"
 zune-jpeg = "0.5"
@@ -78,7 +78,7 @@ unsafe_code = "deny"
 
 [workspace.lints.clippy]
 dbg_macro = "warn"
-# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# LogoCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
 # AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
 unwrap_used = "deny"
 expect_used = "deny"

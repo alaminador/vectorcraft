@@ -5,9 +5,9 @@
 use std::io::Cursor;
 
 use image::{DynamicImage, ImageFormat};
+use logocraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
+use logocraft_geom::Affine;
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
-use vectorcraft_geom::Affine;
 
 use crate::*;
 

@@ -1,6 +1,6 @@
 //! Affinity documents (`.af`, `.afdesign`, `.afphoto`, `.afpub`): the native layers, curves,
-//! shapes, artboards, text and images that `vectorcraft-affinity` reads, mapped to editable
-//! VectorCraft art. Whatever the reader could not map is listed in the warnings. A file whose
+//! shapes, artboards, text and images that `logocraft-affinity` reads, mapped to editable
+//! LogoCraft art. Whatever the reader could not map is listed in the warnings. A file whose
 //! native document can't be read opens as its embedded preview instead, with a warning that says
 //! why, and can't be placed.
 
@@ -8,13 +8,13 @@ use std::io::Cursor;
 use std::sync::Arc;
 
 use kurbo::{Affine, BezPath, Point, Rect, Vec2};
-use vectorcraft_affinity::model::{self as af, Align as AfAlign, Blend, Kind, Pixels};
-use vectorcraft_affinity::paint::{self as ap, Cap, GradientKind as AfKind, Join};
-use vectorcraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
-use vectorcraft_doc::appearance::{Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeAlign, StrokeLayer};
-use vectorcraft_doc::geom::{FillRule, PathData, shapes};
-use vectorcraft_doc::text::{CharStyle, Justify, TextKind, TextObject, TextRun};
-use vectorcraft_doc::{Artboard, Document, ImageObject, LayerColor, Node, NodeKind, OpacityMask};
+use logocraft_affinity::model::{self as af, Align as AfAlign, Blend, Kind, Pixels};
+use logocraft_affinity::paint::{self as ap, Cap, GradientKind as AfKind, Join};
+use logocraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
+use logocraft_doc::appearance::{Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeAlign, StrokeLayer};
+use logocraft_doc::geom::{FillRule, PathData, shapes};
+use logocraft_doc::text::{CharStyle, Justify, TextKind, TextObject, TextRun};
+use logocraft_doc::{Artboard, Document, ImageObject, LayerColor, Node, NodeKind, OpacityMask};
 
 use super::load::{err, raster_doc};
 use crate::Result;
@@ -28,7 +28,7 @@ pub(super) struct Imported {
 }
 
 pub(super) fn import(name: &str, bytes: &[u8]) -> Result<Imported> {
-    match vectorcraft_affinity::read(bytes, vectorcraft_affinity::Limits::default()) {
+    match logocraft_affinity::read(bytes, logocraft_affinity::Limits::default()) {
         Ok(d) => {
             let mut b = Builder { doc: Document::new(0.0, 0.0), warnings: Vec::new(), k: 72.0 / d.dpi, layer: 0 };
             b.document(&d)?;
@@ -44,8 +44,8 @@ pub(super) fn import(name: &str, bytes: &[u8]) -> Result<Imported> {
 }
 
 /// The embedded preview, for files whose native document can't be read.
-fn preview(name: &str, bytes: &[u8], native: &vectorcraft_affinity::Error) -> Result<(Document, String)> {
-    let p = vectorcraft_affinity::preview(bytes).map_err(|e| err(format!("{native}; its embedded preview can't be read either ({e})")))?;
+fn preview(name: &str, bytes: &[u8], native: &logocraft_affinity::Error) -> Result<(Document, String)> {
+    let p = logocraft_affinity::preview(bytes).map_err(|e| err(format!("{native}; its embedded preview can't be read either ({e})")))?;
     // `raster_doc` normally probes PNG dimensions and keeps its encoded bytes. Verify this
     // untrusted preview's complete pixels first, so corrupt data cannot create a blank image.
     let mut reader = image::ImageReader::with_format(Cursor::new(p.png), image::ImageFormat::Png);
@@ -197,13 +197,13 @@ impl Builder {
             Blend::Color => BlendMode::Color,
             Blend::Luminosity => BlendMode::Luminosity,
             _ => {
-                self.warn("blend modes VectorCraft doesn't have (Add, Linear Light, Vivid Light, Pin Light, Hard Mix, Subtract, Darker/Lighter Colour, Average, Negation, Reflect, Glow, Erase) import as Normal");
+                self.warn("blend modes LogoCraft doesn't have (Add, Linear Light, Vivid Light, Pin Light, Hard Mix, Subtract, Darker/Lighter Colour, Average, Negation, Reflect, Glow, Erase) import as Normal");
                 BlendMode::Normal
             }
         }
     }
 
-    /// One Affinity node (and its subtree) as VectorCraft art; `to_doc` maps document pixels to
+    /// One Affinity node (and its subtree) as LogoCraft art; `to_doc` maps document pixels to
     /// points. `layer_level`: the node is directly in a spread or a layer, so a layer stays a layer.
     fn node(&mut self, n: &af::Node, to_doc: Affine, boards: &mut Vec<(String, Rect)>, layer_level: bool) -> Option<Arc<Node>> {
         // Register before descending so nested artboards keep their document order.
@@ -239,7 +239,7 @@ impl Builder {
                     p.appearance = appearance.into();
                     p
                 } else {
-                    // A shape clips its children: VectorCraft's clipping path keeps its paint, its
+                    // A shape clips its children: LogoCraft's clipping path keeps its paint, its
                     // fill behind the clipped art and its stroke over it, as Affinity draws it.
                     let mut clip = Node::new(self.doc.alloc_id(), NodeKind::Path { path: data, rule, live: None, clipping: true, guide: false });
                     clip.appearance = appearance.into();
@@ -453,14 +453,14 @@ impl Builder {
                 }
                 // A family/weight pair cannot identify width variants such as Arial Narrow.
                 // Resolve a known PostScript identity to the exact installed family and style.
-                if let Some((family, face_style)) = vectorcraft_text::FontDb::global().by_postscript_name(&r.postscript) {
+                if let Some((family, face_style)) = logocraft_text::FontDb::global().by_postscript_name(&r.postscript) {
                     style.font_family = family;
                     style.font_style = face_style;
                 } else {
                     style.font_style = font_style(r.weight, r.italic);
                 }
                 style.features = r.features.clone();
-                if r.features.iter().any(|feature| !vectorcraft_text::OtFeatures::known_tag(feature)) {
+                if r.features.iter().any(|feature| !logocraft_text::OtFeatures::known_tag(feature)) {
                     self.warn("unsupported text OpenType features (retained but not rendered)");
                 }
                 style.all_caps = r.all_caps;

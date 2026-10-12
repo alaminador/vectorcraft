@@ -7,10 +7,10 @@ use unicode_bidi::Level;
 use unicode_script::{Script, UnicodeScript};
 
 use harfrust::{Direction, Feature, ShapeOptions, UnicodeBuffer};
+use logocraft_doc::text::INLINE_CHAR;
+use logocraft_doc::{CharStyle, InlineArt};
 use skrifa::MetadataProvider;
 use skrifa::instance::Size;
-use vectorcraft_doc::text::INLINE_CHAR;
-use vectorcraft_doc::{CharStyle, InlineArt};
 
 use crate::features::OtFeatures;
 use crate::fontdb::{FontDb, FontFace};
@@ -57,7 +57,7 @@ pub(crate) struct SGlyph {
     pub vpal: Option<VAdjust>,
     /// Resolved Unicode bidi embedding level (logical source order).
     pub level: Level,
-    /// An inline graphic ([`vectorcraft_doc::TextRun::inline`]) standing in for a glyph.
+    /// An inline graphic ([`logocraft_doc::TextRun::inline`]) standing in for a glyph.
     pub inline: Option<InlineBox>,
     /// A word of a script written without spaces (Thai, Lao, Khmer, Myanmar) ends after the
     /// glyph's cluster, so a line may break there ([`mark_word_ends`]).

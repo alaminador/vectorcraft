@@ -5,13 +5,13 @@
 //! Fields: `hyphenate`, `wordsLongerThan`, `afterFirst`, `beforeLast`, `limit`, `zone` (points),
 //! `capitalized`.
 
+use logocraft_doc::ParaStyle;
 use serde_json::{Value, json};
-use vectorcraft_doc::ParaStyle;
 
 use super::DialogSpec;
 use super::swatch_options::{grid, label};
 use crate::state::Dialog;
-use crate::{VectorcraftApp, widgets};
+use crate::{LogocraftApp, widgets};
 
 /// The dialog kind of Hyphenation.
 pub const KIND: &str = "hyphenation";
@@ -33,13 +33,13 @@ pub fn fields(p: &ParaStyle) -> Value {
 }
 
 /// Open Hyphenation on the selected paragraphs (the first one's values).
-pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp) -> Result<Value, String> {
     let (_, para) = crate::panels::character::text_style(app).ok_or("select some type first")?;
     app.ui.dialog = Some(Dialog::new(KIND, fields(&para)));
     Ok(Value::Null)
 }
 
-fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let on = d.bool("hyphenate");
     if widgets::check(ui, tl!("Hyphenation"), on, true) {
         d.fields.insert("hyphenate".into(), json!(!on));
@@ -94,7 +94,7 @@ pub fn params(d: &Dialog) -> Value {
     })
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     crate::panels::paragraph::para_cmd(app, "text.setFormat", params(d))?;
     app.ui.dialog = None;
     Ok(Value::Null)

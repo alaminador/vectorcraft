@@ -2,9 +2,9 @@
 //! and `file.place` read ([`LoadOptions`]), the pages they import and `document.pdfInfo` (pages,
 //! boxes, a thumbnail) for the Import PDF dialog.
 
+use logocraft_doc::{ColorMode, Document};
+use logocraft_pdf::{Choice, CropTo, ImportOptions, PdfError, TextAs};
 use serde_json::{Value, json};
-use vectorcraft_doc::{ColorMode, Document};
-use vectorcraft_pdf::{Choice, CropTo, ImportOptions, PdfError, TextAs};
 
 use super::super::colormgmt::Grays;
 use super::super::*;
@@ -98,11 +98,11 @@ impl LoadOptions {
         let pages = match &self.pages {
             None => None,
             Some(range) => {
-                let count = vectorcraft_pdf::info(bytes, self.password.as_deref()).map_err(err)?.pages.len();
+                let count = logocraft_pdf::info(bytes, self.password.as_deref()).map_err(err)?.pages.len();
                 Some(parse_range(range, count).map_err(|e| err(format!("pages: {e}")))?)
             }
         };
-        let is_ai = self.crop == CropTo::Crop && vectorcraft_pdf::has_illustrator_data(bytes, self.password.as_deref());
+        let is_ai = self.crop == CropTo::Crop && logocraft_pdf::has_illustrator_data(bytes, self.password.as_deref());
         Ok(ImportOptions {
             pages,
             crop: if is_ai { CropTo::Trim } else { self.crop },
@@ -126,8 +126,8 @@ fn choice<T: Choice + Default>(cmd: &str, key: &str, id: Option<&str>) -> Result
 }
 
 /// Import the pages `o` pick → the document, import notes and what else the import tells.
-pub(super) fn import(bytes: &[u8], o: &LoadOptions) -> Result<vectorcraft_pdf::ImportReport> {
-    vectorcraft_pdf::import_with_report(bytes, &o.import_options(bytes)?).map_err(err)
+pub(super) fn import(bytes: &[u8], o: &LoadOptions) -> Result<logocraft_pdf::ImportReport> {
+    logocraft_pdf::import_with_report(bytes, &o.import_options(bytes)?).map_err(err)
 }
 
 /// Page `page` (0-based) of a PDF as a document of one artboard (its `o.crop` box) and one
@@ -141,7 +141,7 @@ pub fn page_document(bytes: &[u8], page: usize, o: &LoadOptions) -> Result<(Docu
         layers: false,
         ..Default::default()
     };
-    vectorcraft_pdf::import_with_report(bytes, &opts).map(|r| (r.document, r.warnings)).map_err(err)
+    logocraft_pdf::import_with_report(bytes, &opts).map(|r| (r.document, r.warnings)).map_err(err)
 }
 
 const INFO: &str = "document.pdfInfo";
@@ -150,14 +150,14 @@ const INFO: &str = "document.pdfInfo";
 pub(super) fn pdf_info(_: &mut Session, p: &Value) -> Result<Value> {
     let bytes = source(p, INFO)?.bytes;
     let o = LoadOptions::from_params(INFO, p)?;
-    let info = match vectorcraft_pdf::info(&bytes, o.password.as_deref()) {
+    let info = match logocraft_pdf::info(&bytes, o.password.as_deref()) {
         Ok(i) => i,
         Err(e @ (PdfError::NeedsPassword | PdfError::WrongPassword)) => {
             return Ok(json!({"pages": 0, "needsPassword": true, "wrongPassword": e == PdfError::WrongPassword, "pageInfo": []}));
         }
         Err(e) => return Err(err(e)),
     };
-    let r4 = |r: vectorcraft_geom::Rect| json!([r.x0, r.y0, r.x1, r.y1]);
+    let r4 = |r: logocraft_geom::Rect| json!([r.x0, r.y0, r.x1, r.y1]);
     let pages: Vec<Value> = info
         .pages
         .iter()
@@ -174,7 +174,7 @@ pub(super) fn pdf_info(_: &mut Session, p: &Value) -> Result<Value> {
         let size = f64_or(p, "thumbnailSize", 160.0).clamp(16.0, 1024.0);
         let r = doc.artboards.first().map(|a| a.rect).ok_or_else(|| err("the page has no area"))?;
         let png = super::encode(&doc, "png", &json!({"scale": size / r.width().max(r.height()).max(1.0)}))?;
-        out["thumbnail"] = json!(vectorcraft_format::base64_encode(&png));
+        out["thumbnail"] = json!(logocraft_format::base64_encode(&png));
     }
     Ok(out)
 }

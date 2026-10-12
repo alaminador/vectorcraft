@@ -4,7 +4,7 @@
 use serde_json::{Value, json};
 
 use super::{DialogSpec, form, run_and_close};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::state::Dialog;
 
 pub(super) const SPEC: DialogSpec = DialogSpec { heading: |d| title(&d.kind).into(), body, confirm, ..DialogSpec::FORM };
@@ -19,7 +19,7 @@ fn title(kind: &str) -> &'static str {
     }
 }
 
-fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     form::grid(ui, d, app.session.general_unit());
     ui.add_space(6.0);
     if d.kind == "scale" {
@@ -33,7 +33,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 }
 
 /// Transform Patterns: the dialog's field, else General › Transform Pattern Tiles.
-fn transform_patterns(app: &VectorcraftApp, d: &Dialog) -> bool {
+fn transform_patterns(app: &LogocraftApp, d: &Dialog) -> bool {
     d.fields.get("patterns").and_then(Value::as_bool).unwrap_or(app.session.prefs.transform_pattern_tiles)
 }
 
@@ -41,14 +41,14 @@ fn transform_patterns(app: &VectorcraftApp, d: &Dialog) -> bool {
 const SCALE_OPTIONS: [(&str, &str, &str); 2] = [("corners", "scaleCorners", "Scale Corners"), ("strokes", "scaleStrokes", "Scale Strokes & Effects")];
 
 /// A scale option's value: the dialog's field, else the preference.
-fn scale_option(app: &VectorcraftApp, d: &Dialog, field: &str) -> bool {
+fn scale_option(app: &LogocraftApp, d: &Dialog, field: &str) -> bool {
     let prefs = &app.session.prefs;
     d.fields.get(field).and_then(Value::as_bool).unwrap_or(if field == "corners" { prefs.scale_corners } else { prefs.scale_strokes })
 }
 
 /// The Scale Corners and Scale Strokes & Effects checkboxes (fields `corners` and `strokes`),
 /// starting from the preferences.
-pub(super) fn scale_options(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
+pub(super) fn scale_options(app: &LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     for (field, _, label) in SCALE_OPTIONS {
         let on = scale_option(app, d, field);
         d.fields.insert(field.into(), Value::Bool(on));
@@ -57,7 +57,7 @@ pub(super) fn scale_options(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dia
 }
 
 /// Add the dialog's scale options to command `params`.
-pub(super) fn add_scale_options(app: &VectorcraftApp, d: &Dialog, params: &mut Value) {
+pub(super) fn add_scale_options(app: &LogocraftApp, d: &Dialog, params: &mut Value) {
     for (field, _, _) in SCALE_OPTIONS {
         params[field] = json!(scale_option(app, d, field));
     }
@@ -65,7 +65,7 @@ pub(super) fn add_scale_options(app: &VectorcraftApp, d: &Dialog, params: &mut V
 
 /// `params` with the dialog's scale options, which also become the preferences (they are shared
 /// with the Transform panel and Preferences, as in the reference app).
-pub(super) fn with_scale_options(app: &mut VectorcraftApp, d: &Dialog, mut params: Value) -> Result<Value, String> {
+pub(super) fn with_scale_options(app: &mut LogocraftApp, d: &Dialog, mut params: Value) -> Result<Value, String> {
     add_scale_options(app, d, &mut params);
     let prefs: serde_json::Map<String, Value> = SCALE_OPTIONS.iter().map(|(field, pref, _)| (pref.to_string(), params[*field].clone())).collect();
     app.run("prefs.set", json!({ "values": prefs }))?;
@@ -80,7 +80,7 @@ fn origin_params(d: &Dialog, mut p: Value) -> Value {
     p
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let (copy, patterns) = (d.bool("copy"), transform_patterns(app, d));
     let (id, params) = match d.kind.as_str() {
         "move" => {
@@ -102,14 +102,14 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 
 #[cfg(test)]
 mod tests {
+    use logocraft_engine::Session;
     use serde_json::json;
-    use vectorcraft_engine::Session;
 
-    use crate::VectorcraftApp;
+    use crate::LogocraftApp;
 
     #[test]
     fn scale_options_start_from_and_update_the_preferences() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
         app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 50, "height": 50, "radius": 5})).unwrap();
         app.run("select.all", json!({})).unwrap();
@@ -137,7 +137,7 @@ mod tests {
     /// command.
     #[test]
     fn transform_patterns_starts_from_the_preference() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
         app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 50, "height": 50})).unwrap();
         let ctx = egui::Context::default();

@@ -1,6 +1,6 @@
 # Contributors in the About window
 
-**About ▸ Contributors** credits everyone who contributed to VectorCraft, and **About ▸ Models** credits
+**About ▸ Contributors** credits everyone who contributed to LogoCraft, and **About ▸ Models** credits
 the AI models named in `Co-Authored-By` trailers. This follows the shared craftrules standard
 [`standards/contributors.md`](https://github.com/storytold/craftrules/blob/main/standards/contributors.md);
 this page is the local copy of the decision.
@@ -21,9 +21,9 @@ this page is the local copy of the decision.
   first or last commit date. The name toggle cycles **Username → Display name → Real name**; a
   missing name falls back to `@username`. Alphabetical sorting is case-insensitive and ignores the `@`.
 
-## In VectorCraft
+## In LogoCraft
 
-- The About window is `crates/ui-egui/src/dialogs/about.rs` (Help ▸ About VectorCraft). The labels are
+- The About window is `crates/ui-egui/src/dialogs/about.rs` (Help ▸ About LogoCraft). The labels are
   translated like the rest of the UI (`tl!`, `crates/ui-egui/src/i18n`); names and numbers are data.
 
 ## Credit yourself

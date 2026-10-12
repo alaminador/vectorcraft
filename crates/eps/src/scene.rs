@@ -7,12 +7,12 @@ use std::fmt::Write;
 use std::sync::Arc;
 
 use kurbo::Shape;
-use vectorcraft_color::{BlendMode, Color, GradientKind, GradientPaint, Paint};
-use vectorcraft_doc::{
+use logocraft_color::{BlendMode, Color, GradientKind, GradientPaint, Paint};
+use logocraft_doc::{
     AppearanceItem, ColorMode, Document, Effect, ImageObject, LineCap, LineJoin, Node, NodeKind, StrokeAlign, StrokeLayer, TextObject,
 };
-use vectorcraft_effects::stroke::{self, WrittenShape};
-use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect, Vec2};
+use logocraft_effects::stroke::{self, WrittenShape};
+use logocraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect, Vec2};
 
 use crate::ps::{self, clip_op, fill_op, push_nums, push_path};
 use crate::{EpsOptions, Level, Overprint};
@@ -97,13 +97,13 @@ pub(crate) struct Scene<'a> {
     o: &'a EpsOptions,
     /// RGB and Lab colours are written as CMYK.
     cmyk: bool,
-    cms: Arc<vectorcraft_color::cms::Cms>,
+    cms: Arc<logocraft_color::cms::Cms>,
     body: String,
     setup: String,
     /// Spot colour spaces defined in the setup (`VCsp<i>`): swatch name and CMYK equivalent.
     spots: Vec<(String, [f32; 4])>,
     warnings: Vec<String>,
-    brushes: Option<Vec<vectorcraft_brush::Brush>>,
+    brushes: Option<Vec<logocraft_brush::Brush>>,
     /// Image keys → what draws them (`None`: left out).
     images: HashMap<String, Option<Arc<String>>>,
     /// Symbols and brush art being written inside one another.
@@ -116,7 +116,7 @@ impl<'a> Scene<'a> {
             doc,
             o,
             cmyk: o.cmyk || doc.color_mode == ColorMode::Cmyk,
-            cms: vectorcraft_color::cms::active(),
+            cms: logocraft_color::cms::active(),
             body: String::new(),
             setup: String::new(),
             spots: vec![],
@@ -142,7 +142,7 @@ impl<'a> Scene<'a> {
     }
 
     fn page(self) -> Page {
-        let custom = self.spots.iter().filter(|(n, _)| n != vectorcraft_color::swatch::REGISTRATION).cloned().collect();
+        let custom = self.spots.iter().filter(|(n, _)| n != logocraft_color::swatch::REGISTRATION).cloned().collect();
         Page { setup: self.setup, body: self.body, custom, warnings: self.warnings }
     }
 
@@ -189,7 +189,7 @@ impl<'a> Scene<'a> {
         if let Some(i) = self.spots.iter().position(|(n, _)| n == name) {
             return Some(i);
         }
-        let registration = name == vectorcraft_color::swatch::REGISTRATION;
+        let registration = name == logocraft_color::swatch::REGISTRATION;
         let cmyk = if registration {
             [1.0; 4]
         } else {
@@ -292,7 +292,7 @@ impl<'a> Scene<'a> {
             }
             // Live blends, envelopes, meshes and repeats are written as their evaluated art.
             NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Mesh(_) | NodeKind::Repeat(_) | NodeKind::PlacedDocument(_) => {
-                let g = vectorcraft_effects::expand_live_deep(Some(self.doc), n);
+                let g = logocraft_effects::expand_live_deep(Some(self.doc), n);
                 for c in g.children().into_iter().flatten() {
                     self.node(c, false);
                 }
@@ -305,7 +305,7 @@ impl<'a> Scene<'a> {
     fn clip_group(&mut self, children: &[Arc<Node>]) {
         let Some((clip, rest)) = children.split_first() else { return };
         // Nothing to clip by hides the clipped art.
-        let Some((outline, rule)) = vectorcraft_effects::clip_outline(clip) else { return };
+        let Some((outline, rule)) = logocraft_effects::clip_outline(clip) else { return };
         let paint = clip.clip_paint();
         self.line("q");
         push_path(&mut self.body, &outline);
@@ -325,7 +325,7 @@ impl<'a> Scene<'a> {
         if n.opacity < 1.0 || n.blend != BlendMode::Normal || n.extras().mask.as_ref().is_some_and(|m| !m.disabled) {
             self.warn(TRANSPARENCY);
         }
-        let raster = |fx: &[Effect]| fx.iter().any(|e| e.visible && vectorcraft_effects::is_raster(&e.id));
+        let raster = |fx: &[Effect]| fx.iter().any(|e| e.visible && logocraft_effects::is_raster(&e.id));
         if raster(&n.appearance.effects) || n.appearance.items.iter().any(|i| raster(i.effects())) {
             self.warn(RASTER_FX);
         }
@@ -534,9 +534,9 @@ impl<'a> Scene<'a> {
             return false;
         }
         let doc = self.doc;
-        let brushes = self.brushes.get_or_insert_with(|| vectorcraft_brush::library(doc));
+        let brushes = self.brushes.get_or_insert_with(|| logocraft_brush::library(doc));
         let Some(b) = st.brush.as_deref().and_then(|name| brushes.iter().find(|b| b.name == name)) else { return false };
-        let art = vectorcraft_brush::stroke_pieces(b, bp, st);
+        let art = logocraft_brush::stroke_pieces(b, bp, st);
         self.note_item(st.opacity, st.blend);
         self.nest += 1;
         for piece in &art {
@@ -554,7 +554,7 @@ impl<'a> Scene<'a> {
         if !invertible(t.xf) {
             return;
         }
-        let layout = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+        let layout = logocraft_text::layout(logocraft_text::FontDb::global(), t);
         let tb = t.xf.transform_rect_bbox(layout.bounds);
         let (below, above) = n.appearance.split_contents();
         let all = (!n.appearance.items.is_empty()).then(|| {
@@ -607,7 +607,7 @@ impl<'a> Scene<'a> {
 
     /// The colour space a gradient's stops are written in, and its stops in it from offset 0 to 1
     /// (midpoints as stops of their own).
-    fn gradient_stops(&mut self, g: &vectorcraft_color::Gradient) -> (Space, Vec<(f64, [f32; 4])>) {
+    fn gradient_stops(&mut self, g: &logocraft_color::Gradient) -> (Space, Vec<(f64, [f32; 4])>) {
         if g.stops.iter().any(|s| s.opacity < 1.0) {
             self.warn(TRANSPARENCY);
         }
@@ -806,7 +806,7 @@ impl<'a> Scene<'a> {
     /// Paint all of `area` with an image of freeform gradient `g` placed on `bounds`, sampled at
     /// the document's raster effects resolution (at most [`MAX_FIELD_PX`] a side).
     fn field_image(&mut self, g: &GradientPaint, bounds: Rect, area: Rect) {
-        use vectorcraft_color::freeform::{painted_box, spread_scale};
+        use logocraft_color::freeform::{painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
         let area = area.abs();
         let long = area.width().max(area.height());

@@ -1,16 +1,16 @@
 [package]
-name = "vectorcraft-text"
+name = "logocraft-text"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "VectorCraft text: font database, shaping, layout, glyph outlines"
+description = "LogoCraft text: font database, shaping, layout, glyph outlines"
 
 [lints]
 workspace = true
 
 [dependencies]
-vectorcraft-geom = { workspace = true }
-vectorcraft-doc = { workspace = true }
+logocraft-geom = { workspace = true }
+logocraft-doc = { workspace = true }
 kurbo = { workspace = true }
 skrifa = { workspace = true }
 harfrust = { workspace = true }
@@ -33,7 +33,7 @@ unicode-segmentation = "1.13"
 write-fonts = { version = "0.48", optional = true }
 
 [features]
-# `vectorcraft_text::test_fonts` for other crates' tests (dev-dependencies only).
+# `logocraft_text::test_fonts` for other crates' tests (dev-dependencies only).
 test-fonts = ["dep:write-fonts"]
 
 [dev-dependencies]

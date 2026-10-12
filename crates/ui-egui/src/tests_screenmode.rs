@@ -1,13 +1,13 @@
 //! Screen modes and Presentation Mode (#472): Escape leaves Presentation Mode, F cycles the three
 //! screen modes, and no screen mode is saved with the preferences.
 
+use logocraft_engine::Session;
 use serde_json::json;
-use vectorcraft_engine::Session;
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 
 /// One headless frame of the whole window with `events`.
-fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) {
+fn frame(app: &mut LogocraftApp, ctx: &egui::Context, events: Vec<egui::Event>) {
     let raw =
         egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0))), events, ..Default::default() };
     let mut out = ctx.run_ui(raw, |ui| {
@@ -25,7 +25,7 @@ fn escape() -> Vec<egui::Event> {
 
 #[test]
 fn escape_leaves_presentation_mode() {
-    let mut app = VectorcraftApp::new(Session::new(), crate::Services::default());
+    let mut app = LogocraftApp::new(Session::new(), crate::Services::default());
     app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
     let ctx = egui::Context::default();
     frame(&mut app, &ctx, vec![]);
@@ -41,7 +41,7 @@ fn escape_leaves_presentation_mode() {
 
 #[test]
 fn f_cycles_the_screen_modes_and_leaves_presentation_mode() {
-    let mut app = VectorcraftApp::new(Session::new(), crate::Services::default());
+    let mut app = LogocraftApp::new(Session::new(), crate::Services::default());
     let modes: Vec<u64> = (0..4).map(|_| app.run("view.screenMode", json!({})).unwrap().as_u64().unwrap()).collect();
     assert_eq!(modes, [1, 2, 0, 1]);
     app.run("view.presentation", json!({})).unwrap();
@@ -50,7 +50,7 @@ fn f_cycles_the_screen_modes_and_leaves_presentation_mode() {
 
 #[test]
 fn the_screen_mode_is_not_saved() {
-    let mut app = VectorcraftApp::new(Session::new(), crate::Services::default());
+    let mut app = LogocraftApp::new(Session::new(), crate::Services::default());
     app.run("view.presentation", json!({})).unwrap();
     let saved = serde_json::to_value(&app.ui).unwrap();
     assert!(saved.get("screen_mode").is_none(), "{saved}");

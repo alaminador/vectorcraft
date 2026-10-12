@@ -8,8 +8,8 @@
 //! ruler, a moved guide is deleted. Hidden or locked guides (View › Guides), and guides on a hidden
 //! or locked layer, can't be picked.
 
+use logocraft_geom::Point;
 use serde_json::json;
-use vectorcraft_geom::Point;
 
 use crate::guides::Targets;
 use crate::{Action, Cursor, Overlay, PointerEvent, PointerKind, ToolContext};
@@ -88,7 +88,7 @@ impl GuideSnap {
             return v.round();
         }
         if cx.snap_to_grid {
-            return vectorcraft_geom::snap::snap_to_grid(v, cx.grid_step(), 0.0);
+            return logocraft_geom::snap::snap_to_grid(v, cx.grid_step(), 0.0);
         }
         let Some((t, tol)) = &self.targets else { return v };
         let (at, snapped) = t.snap_guide(vertical, v, cx.tol(*tol));
@@ -280,14 +280,14 @@ mod tests {
     use super::*;
     use crate::testutil::*;
     use crate::{Mods, ScreenFrame};
-    use vectorcraft_doc::{Guide, Selection};
-    use vectorcraft_geom::Vec2;
+    use logocraft_doc::{Guide, Selection};
+    use logocraft_geom::Vec2;
 
     fn ev(kind: PointerKind, x: f64, y: f64, mods: Mods) -> PointerEvent {
         PointerEvent::new(kind, x, y).with_mods(mods)
     }
 
-    fn guides_doc() -> vectorcraft_doc::Document {
+    fn guides_doc() -> logocraft_doc::Document {
         let (mut d, _) = doc_with_rect();
         d.guides = vec![Guide::new(true, 300.0), Guide::new(false, 400.0)];
         d
@@ -459,10 +459,10 @@ mod tests {
     fn an_artboard_guide_is_picked_and_snapped_to_across_its_artboard_only() {
         let (mut d, _) = doc_with_rect();
         let id = d.next_artboard_id();
-        d.artboards.push(vectorcraft_doc::Artboard {
+        d.artboards.push(logocraft_doc::Artboard {
             id,
             name: "B".into(),
-            rect: vectorcraft_geom::Rect::new(600.0, 0.0, 900.0, 300.0),
+            rect: logocraft_geom::Rect::new(600.0, 0.0, 900.0, 300.0),
             show_center_mark: false,
             show_cross_hairs: false,
         });

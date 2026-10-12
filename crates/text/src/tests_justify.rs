@@ -4,8 +4,8 @@
 
 use super::*;
 use kurbo::{Affine, Shape};
-use vectorcraft_doc::{CharStyle, Justify, SingleWord, TextKind};
-use vectorcraft_geom::PathData;
+use logocraft_doc::{CharStyle, Justify, SingleWord, TextKind};
+use logocraft_geom::PathData;
 
 fn db() -> &'static FontDb {
     FontDb::global()

@@ -1,7 +1,7 @@
 //! Width points: commands and the Width tool.
 
+use logocraft_tools::{Mods, PointerEvent, PointerKind, ToolKey};
 use serde_json::json;
-use vectorcraft_tools::{Mods, PointerEvent, PointerKind, ToolKey};
 
 use super::*;
 

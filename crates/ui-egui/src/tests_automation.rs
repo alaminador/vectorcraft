@@ -1,19 +1,19 @@
-//! `vectorcraft --control <port> --automation-read-root <dir> --automation-write-root <dir>` (#832):
+//! `logocraft --control <port> --automation-read-root <dir> --automation-write-root <dir>` (#832):
 //! control requests read and write only inside the roots; the person at the keyboard is not
 //! confined.
 
 use std::path::{Path, PathBuf};
 
+use logocraft_engine::Session;
+use logocraft_engine::file_access::AutomationRoots;
 use serde_json::{Value, json};
-use vectorcraft_engine::Session;
-use vectorcraft_engine::file_access::AutomationRoots;
 
 use crate::control::ControlRequest;
-use crate::{Services, VectorcraftApp};
+use crate::{LogocraftApp, Services};
 
 /// A folder holding `in` (the read root, with `a.svg`), `out` (the write root) and `outside`
 /// (with `b.svg`), and an app with the desktop's file services confined to `in` and `out`.
-fn confined(tag: &str) -> (VectorcraftApp, std::sync::mpsc::Sender<ControlRequest>, PathBuf) {
+fn confined(tag: &str) -> (LogocraftApp, std::sync::mpsc::Sender<ControlRequest>, PathBuf) {
     let base = std::env::temp_dir().join(format!("vc-ui-roots-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
     for d in ["in", "out", "outside"] {
@@ -24,12 +24,12 @@ fn confined(tag: &str) -> (VectorcraftApp, std::sync::mpsc::Sender<ControlReques
     std::fs::write(base.join("outside/b.svg"), svg).unwrap();
     let services = Services {
         read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
-        write: Some(Box::new(|p: &str, b: &[u8]| vectorcraft_format::write_atomic(Path::new(p), b).map_err(|e| e.to_string()))),
+        write: Some(Box::new(|p: &str, b: &[u8]| logocraft_format::write_atomic(Path::new(p), b).map_err(|e| e.to_string()))),
         ..Default::default()
     };
     let roots = AutomationRoots::new(Some(&base.join("in")), Some(&base.join("out"))).unwrap();
     let (tx, rx) = std::sync::mpsc::channel();
-    let app = VectorcraftApp::new(Session::new(), services).with_control(rx).with_automation_roots(roots);
+    let app = LogocraftApp::new(Session::new(), services).with_control(rx).with_automation_roots(roots);
     (app, tx, base)
 }
 
@@ -38,7 +38,7 @@ fn s(p: PathBuf) -> String {
 }
 
 /// One request through the control channel, as the app's frame drains it.
-fn request(app: &mut VectorcraftApp, tx: &std::sync::mpsc::Sender<ControlRequest>, method: &str, params: Value) -> Value {
+fn request(app: &mut LogocraftApp, tx: &std::sync::mpsc::Sender<ControlRequest>, method: &str, params: Value) -> Value {
     let (req, reply) = ControlRequest::new(method, params);
     tx.send(req).unwrap();
     app.drain_control(&egui::Context::default());
@@ -60,7 +60,7 @@ fn control_requests_stay_inside_the_roots() {
     assert!(base.join("out/a.png").is_file());
     for (method, params) in [
         ("app.export", json!({"path": s(base.join("outside/a.png")), "format": "png"})),
-        ("app.save", json!({"path": s(base.join("outside/a.vectorcraft"))})),
+        ("app.save", json!({"path": s(base.join("outside/a.logocraft"))})),
         ("ui.render", json!({"path": s(base.join("outside/r.png"))})),
         // Refused at once, not when the frame comes.
         ("ui.screenshot", json!({"path": s(base.join("outside/w.png"))})),

@@ -2,8 +2,8 @@ use super::*;
 use egui::{Event, Modifiers, PointerButton, Pos2, vec2};
 use egui_kittest::{Harness, kittest::Queryable};
 
-fn app() -> VectorcraftApp {
-    VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default())
+fn app() -> LogocraftApp {
+    LogocraftApp::new(logocraft_engine::Session::new(), Default::default())
 }
 
 #[test]
@@ -49,10 +49,10 @@ fn invalid_panel_requests_are_atomic_and_do_not_enter_a_custom_workspace() {
     }
 }
 
-fn harness(app: VectorcraftApp, size: egui::Vec2) -> Harness<'static, VectorcraftApp> {
+fn harness(app: LogocraftApp, size: egui::Vec2) -> Harness<'static, LogocraftApp> {
     let mut ready = false;
     let mut harness = Harness::builder().with_size(size).with_step_dt(1.0 / 60.0).build_ui_state(
-        move |ui, app: &mut VectorcraftApp| {
+        move |ui, app: &mut LogocraftApp| {
             if !ready {
                 crate::theme::install_fonts(ui.ctx());
                 egui_extras::install_image_loaders(ui.ctx());
@@ -71,7 +71,7 @@ fn harness(app: VectorcraftApp, size: egui::Vec2) -> Harness<'static, Vectorcraf
     harness
 }
 
-fn drag(h: &mut Harness<'static, VectorcraftApp>, from: Pos2, to: Pos2) {
+fn drag(h: &mut Harness<'static, LogocraftApp>, from: Pos2, to: Pos2) {
     h.event(Event::PointerMoved(from));
     h.run_steps(1);
     h.event(Event::PointerButton { pos: from, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
@@ -91,8 +91,8 @@ fn ordinary_panel_tab_drag_enters_shared_docking_and_can_redock_into_another_tab
     drag(&mut h, source, egui::pos2(160.0, 140.0));
     let layout = h.state().ui.docking.as_ref().expect("ordinary tab drag starts shared docking");
     assert!(layout.floating.iter().any(|g| g.panels.contains(&"layers".into())), "{layout:?}");
-    let source = h.ctx.read_response(egui::Id::new("vectorcraft-panel-docking").with(("tab", &"layers".to_string()))).unwrap().rect.center();
-    let destination = h.ctx.read_response(egui::Id::new("vectorcraft-panel-docking").with(("tab", &"properties".to_string()))).unwrap().rect.center();
+    let source = h.ctx.read_response(egui::Id::new("logocraft-panel-docking").with(("tab", &"layers".to_string()))).unwrap().rect.center();
+    let destination = h.ctx.read_response(egui::Id::new("logocraft-panel-docking").with(("tab", &"properties".to_string()))).unwrap().rect.center();
     drag(&mut h, source, destination);
     let layout = h.state().ui.docking.as_ref().unwrap();
     assert!(!layout.floating.iter().any(|g| g.panels.contains(&"layers".into())));
@@ -147,7 +147,7 @@ fn capture_custom_panel_docking_visual_fixtures() {
                 app.run("window.panel.float", json!({"panel":"properties","x":30,"y":90,"width":300,"height":440})).unwrap();
                 let mut ready = false;
                 let mut harness = Harness::builder().with_size(vec2(width, 800.0)).with_pixels_per_point(scale).wgpu().build_ui_state(
-                    move |ui, app: &mut VectorcraftApp| {
+                    move |ui, app: &mut LogocraftApp| {
                         if !ready {
                             egui_extras::install_image_loaders(ui.ctx());
                             crate::theme::install_fonts(ui.ctx());
@@ -165,7 +165,7 @@ fn capture_custom_panel_docking_visual_fixtures() {
                 harness.input_mut().max_texture_side = Some(8192);
                 harness.run_steps(5);
                 assert!(valid(harness.state().ui.docking.as_ref().unwrap()));
-                harness.render().unwrap().save(directory.join(format!("vectorcraft-shared-docking-{}-{width}-{scale}x.png", theme.id()))).unwrap();
+                harness.render().unwrap().save(directory.join(format!("logocraft-shared-docking-{}-{width}-{scale}x.png", theme.id()))).unwrap();
             }
         }
     }
@@ -255,7 +255,7 @@ fn populated_canvas_keeps_a_real_stroke_edit_after_floating_and_redocking() {
     let builder = Harness::builder().with_size(vec2(1280.0, 800.0));
     let builder = if directory.is_some() { builder.wgpu() } else { builder };
     let mut h = builder.build_ui_state(
-        |ui, app: &mut VectorcraftApp| {
+        |ui, app: &mut LogocraftApp| {
             app.logic(ui.ctx());
             app.ui(ui);
         },
@@ -287,15 +287,15 @@ fn populated_canvas_keeps_a_real_stroke_edit_after_floating_and_redocking() {
     assert_eq!(dash.pattern, [12.0, 12.0]);
     if let Some(directory) = &directory {
         std::fs::create_dir_all(directory).unwrap();
-        h.render().unwrap().save(directory.join("vectorcraft-populated-stroke-floating.png")).unwrap();
+        h.render().unwrap().save(directory.join("logocraft-populated-stroke-floating.png")).unwrap();
     }
-    let from = h.ctx.read_response(egui::Id::new("vectorcraft-panel-docking").with(("tab", &"stroke".to_string()))).unwrap().rect.center();
-    let to = h.ctx.read_response(egui::Id::new("vectorcraft-panel-docking").with(("tab", &"properties".to_string()))).unwrap().rect.center();
+    let from = h.ctx.read_response(egui::Id::new("logocraft-panel-docking").with(("tab", &"stroke".to_string()))).unwrap().rect.center();
+    let to = h.ctx.read_response(egui::Id::new("logocraft-panel-docking").with(("tab", &"properties".to_string()))).unwrap().rect.center();
     drag(&mut h, from, to);
     assert!(h.state().ui.docking.as_ref().unwrap().floating.is_empty());
     assert_eq!(crate::panels::current_stroke(h.state()).unwrap().dash.unwrap(), dash);
     if let Some(directory) = &directory {
-        h.render().unwrap().save(directory.join("vectorcraft-populated-stroke-redocked.png")).unwrap();
+        h.render().unwrap().save(directory.join("logocraft-populated-stroke-redocked.png")).unwrap();
     }
 }
 
@@ -467,7 +467,7 @@ fn native_set_close_pointer_restores_shared_split_ownership() {
     if let Some(directory) = std::env::var_os("CRAFT_UI_DOCKING_SNAPSHOT_DIR") {
         let directory = std::path::PathBuf::from(directory);
         std::fs::create_dir_all(&directory).unwrap();
-        h.render().unwrap().save(directory.join("vectorcraft-native-set-shared-split.png")).unwrap();
+        h.render().unwrap().save(directory.join("logocraft-native-set-shared-split.png")).unwrap();
     }
     let area = h.ctx.memory(|m| m.area_rect(crate::floating::area_id("stroke"))).unwrap();
     let at = egui::pos2(area.right() - 10.0, area.top() + 1.0 + crate::floating::TITLE / 2.0);

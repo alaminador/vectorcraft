@@ -7,10 +7,10 @@
 //! corner, of which each page shows one tile.
 
 use kurbo::{Affine, Rect};
+use logocraft_doc::marks::outset;
+use logocraft_doc::range::parse_range;
+use logocraft_doc::{Document, Node, NodeKind};
 use serde::Serialize;
-use vectorcraft_doc::marks::outset;
-use vectorcraft_doc::range::parse_range;
-use vectorcraft_doc::{Document, Node, NodeKind};
 
 use super::{Emulsion, Orientation, PrintArtboards, PrintScaling, PrintSettings};
 use crate::PdfError;

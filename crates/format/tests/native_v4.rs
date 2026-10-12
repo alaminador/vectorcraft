@@ -1,14 +1,14 @@
-//! `.vectorcraft` v4: large data after the JSON (images, the PDF, profiles), small files still plain
+//! `.logocraft` v4: large data after the JSON (images, the PDF, profiles), small files still plain
 //! JSON, older versions inline, damaged offsets refused.
 // Integration tests: unwrapping and panicking on failure is fine here, unlike in shipped code (AGENTS.md › Robustness).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use std::sync::Arc;
 
+use logocraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
+use logocraft_format::{BLOB_MAGIC, FormatError, INLINE_MAX, SaveOptions, load, load_file, pdf_content, save_with};
+use logocraft_geom::Affine;
 use serde_json::Value;
-use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
-use vectorcraft_format::{BLOB_MAGIC, FormatError, INLINE_MAX, SaveOptions, load, load_file, pdf_content, save_with};
-use vectorcraft_geom::Affine;
 
 /// A document showing image `key` of `len` bytes.
 fn doc_with_image(key: &str, len: usize) -> Document {
@@ -54,7 +54,7 @@ fn small_files_stay_plain_json_and_older_versions_inline() {
     let v3 = save_with(&big, &SaveOptions { version: 3, ..SaveOptions::default() }).unwrap();
     assert!(!has_tail(&v3), "version 3 keeps everything in the JSON");
     let v: Value = serde_json::from_slice(&v3).unwrap();
-    assert_eq!((v["format"].as_str(), v["version"].as_u64()), (Some("vectorcraft"), Some(3)));
+    assert_eq!((v["format"].as_str(), v["version"].as_u64()), (Some("logocraft"), Some(3)));
     assert_eq!(load(&v3).unwrap().images["big"].bytes, big.images["big"].bytes);
 }
 

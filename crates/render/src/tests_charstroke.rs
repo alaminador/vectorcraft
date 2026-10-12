@@ -1,10 +1,10 @@
 //! Strokes on type: character strokes take their join, cap and dashes, and object strokes on type
 //! take every stroke option, as path strokes do.
 
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::text::{CharStyle, TextObject};
-use vectorcraft_doc::{AppearanceItem, Dash, LineJoin, Node, NodeKind};
-use vectorcraft_geom::Point;
+use logocraft_color::{Color, Paint};
+use logocraft_doc::text::{CharStyle, TextObject};
+use logocraft_doc::{AppearanceItem, Dash, LineJoin, Node, NodeKind};
+use logocraft_geom::Point;
 
 use super::*;
 
@@ -69,7 +69,7 @@ fn character_and_object_strokes_on_type_are_dashed() {
     assert!(transitions(&render_text("I", solid.clone(), vec![])) <= 2, "a solid stroke is continuous");
     let chars = CharStyle { stroke_dash: dash.clone(), ..solid };
     assert!(transitions(&render_text("I", chars, vec![])) >= 6, "character dashes");
-    let mut st = vectorcraft_doc::StrokeLayer::new(Paint::solid(Color::BLACK), 3.0);
+    let mut st = logocraft_doc::StrokeLayer::new(Paint::solid(Color::BLACK), 3.0);
     st.dash = dash;
     let object = render_text("I", none, vec![AppearanceItem::Stroke(st.clone())]);
     assert!(transitions(&object) >= 6, "object dashes");

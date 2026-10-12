@@ -1,4 +1,4 @@
-//! VectorCraft brushes: definitions (calligraphic, scatter, art, pattern, bristle), the default
+//! LogoCraft brushes: definitions (calligraphic, scatter, art, pattern, bristle), the default
 //! library, and the geometry that turns a brushed stroke into filled art.
 //!
 //! Brush definitions live in the document under `Document::unknown["brushes"]` (a JSON array of
@@ -18,10 +18,10 @@ mod warp;
 
 use std::sync::Arc;
 
+use logocraft_color::Paint;
+use logocraft_doc::{Appearance, AppearanceItem, Document, FillLayer, Node, NodeId, NodeKind, StrokeLayer};
+use logocraft_geom::{BezPath, Rect};
 use serde::{Deserialize, Serialize};
-use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, AppearanceItem, Document, FillLayer, Node, NodeId, NodeKind, StrokeLayer};
-use vectorcraft_geom::{BezPath, Rect};
 
 pub use colorize::{art_colors, colorize, instance_art, stain, tint_node};
 pub use defaults::defaults;
@@ -94,7 +94,7 @@ pub enum Colorization {
     /// Black and white stay; mid tones become the stroke colour, darker ones shades of it.
     TintsAndShades,
     /// The key colour becomes the stroke colour; other colours rotate by the same hue offset.
-    HueShift { key: vectorcraft_color::Color },
+    HueShift { key: logocraft_color::Color },
 }
 
 impl Colorization {
@@ -109,7 +109,7 @@ impl Colorization {
         }
     }
     /// The method named `id` (`key`: the key colour of Hue Shift).
-    pub fn parse(id: &str, key: vectorcraft_color::Color) -> Option<Self> {
+    pub fn parse(id: &str, key: logocraft_color::Color) -> Option<Self> {
         Some(match id {
             "none" => Colorization::None,
             "tints" => Colorization::Tints,
@@ -434,7 +434,7 @@ impl Colorization {
         if let Colorization::HueShift { key } = self
             && !key.to_rgb().iter().all(|c| c.is_finite())
         {
-            *key = vectorcraft_color::Color::BLACK;
+            *key = logocraft_color::Color::BLACK;
         }
     }
 }
@@ -593,7 +593,7 @@ pub fn node_pieces(doc: &Document, n: &Node) -> Option<Vec<Node>> {
         any = true;
         for mut p in stroke_pieces(b, &bp, st) {
             p.opacity *= st.opacity;
-            if st.blend != vectorcraft_color::BlendMode::Normal {
+            if st.blend != logocraft_color::BlendMode::Normal {
                 p.blend = st.blend;
             }
             out.push(p);
@@ -648,7 +648,7 @@ pub fn expand(doc: &Document, n: &Node) -> Option<Node> {
 }
 
 /// A filled path node painted with `paint` (brush output).
-pub(crate) fn filled(path: vectorcraft_geom::PathData, paint: &Paint) -> Node {
+pub(crate) fn filled(path: logocraft_geom::PathData, paint: &Paint) -> Node {
     Node::path(NodeId(0), path, Appearance { items: vec![AppearanceItem::Fill(FillLayer::new(paint.clone()))], ..Default::default() })
 }
 
@@ -663,7 +663,7 @@ pub fn preview_path(w: f64, h: f64) -> BezPath {
 
 /// Union of the geometric bounds of `nodes`.
 pub fn pieces_bounds(nodes: &[Node]) -> Option<Rect> {
-    nodes.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds()))
+    nodes.iter().fold(None, |acc, n| logocraft_geom::union_opt(acc, n.visual_bounds()))
 }
 
 #[cfg(test)]

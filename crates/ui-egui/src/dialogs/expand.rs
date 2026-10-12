@@ -6,12 +6,12 @@
 //! Fields: `object`, `fill`, `stroke`, `gradient` (`objects` | `mesh`), `steps` (1..1000), and
 //! `__object`, `__fill`, `__stroke` (that option has something to expand: `object.expand.info`).
 
+use logocraft_engine::cmd::expand::{DEFAULT_STEPS, MAX_STEPS};
 use serde_json::{Value, json};
-use vectorcraft_engine::cmd::expand::{DEFAULT_STEPS, MAX_STEPS};
 
 use super::{DialogSpec, run_and_close};
 use crate::state::Dialog;
-use crate::{VectorcraftApp, widgets};
+use crate::{LogocraftApp, widgets};
 
 /// The dialog kind of Expand.
 pub const KIND: &str = "expand";
@@ -24,7 +24,7 @@ const OPTIONS: [(&str, &str); 3] = [("object", "Object"), ("fill", "Fill"), ("st
 pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("Expand").into(), body, confirm, min_width: 260.0, ..DialogSpec::FORM };
 
 /// Open Expand for the selection, every option on (as `object.expand {}` does).
-pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp) -> Result<Value, String> {
     let info = app.session.execute("object.expand.info", &json!({})).map_err(|e| e.to_string())?;
     let mut fields = json!({"object": true, "fill": true, "stroke": true, "gradient": "objects", "steps": DEFAULT_STEPS});
     for (key, _) in OPTIONS {
@@ -34,7 +34,7 @@ pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     Ok(Value::Null)
 }
 
-fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(_: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let set = |d: &mut Dialog, key: &str, v: Value| {
         d.fields.insert(key.into(), v);
     };
@@ -85,23 +85,23 @@ fn params(d: &Dialog) -> Value {
     })
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     run_and_close(app, CMD, params(d))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_engine::Session;
-    use vectorcraft_engine::doc::NodeKind;
+    use logocraft_engine::Session;
+    use logocraft_engine::doc::NodeKind;
 
-    fn frame(app: &mut VectorcraftApp) -> String {
+    fn frame(app: &mut LogocraftApp) -> String {
         crate::tests_labels::painted_text(app, |app, ui| super::super::show(app, ui.ctx()))
     }
 
     #[test]
     fn opens_with_what_applies_and_ok_expands_the_gradient_to_a_mesh() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
         app.run("shape.rectangle", json!({"x": 20, "y": 20, "width": 100, "height": 60})).unwrap();
         app.run("paint.setFill", json!({"gradient": {"kind": "linear"}})).unwrap();
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn the_command_palette_opens_it_and_ui_expand_dialog_too() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
         app.run("shape.rectangle", json!({"x": 20, "y": 20, "width": 100, "height": 60})).unwrap();
         app.run("ui.expandDialog", json!({})).unwrap();

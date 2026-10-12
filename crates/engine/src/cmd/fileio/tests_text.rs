@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use super::*;
 
 fn b64(v: &Value) -> Vec<u8> {
-    vectorcraft_format::base64_decode(v["dataBase64"].as_str().expect("dataBase64")).unwrap()
+    logocraft_format::base64_decode(v["dataBase64"].as_str().expect("dataBase64")).unwrap()
 }
 
 #[test]

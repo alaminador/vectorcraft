@@ -1,8 +1,8 @@
 use serde_json::json;
 
 use super::*;
-use vectorcraft_geom::Point;
-use vectorcraft_tools::{PointerEvent, PointerKind, ToolKey};
+use logocraft_geom::Point;
+use logocraft_tools::{PointerEvent, PointerKind, ToolKey};
 
 fn session() -> Session {
     let mut s = Session::new();
@@ -187,7 +187,7 @@ fn fill_and_stroke_commands() {
     assert_eq!(n.appearance.fill_paint().color().unwrap().to_hex(), "#ff0000");
     let st = n.appearance.stroke().unwrap();
     assert_eq!(st.width, 4.0);
-    assert_eq!(st.cap, vectorcraft_doc::LineCap::Round);
+    assert_eq!(st.cap, logocraft_doc::LineCap::Round);
     assert_eq!(st.dash.as_ref().unwrap().pattern, vec![3.0, 2.0]);
     s.execute("paint.swap", &json!({})).unwrap();
     assert_eq!(s.doc().unwrap().doc.node(a).unwrap().appearance.stroke_paint().color().unwrap().to_hex(), "#ff0000");
@@ -981,10 +981,10 @@ fn live_shape_properties_already_set_record_no_undo_step() {
         let d = std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().doc);
         let NodeKind::Path { path, live: Some(live), .. } = &mut d.node_mut(r).unwrap().kind else { panic!("not a live rectangle") };
         let xf = Affine::scale_non_uniform(2.0, 1.0);
-        **live = vectorcraft_doc::LiveShape::Rectangle { w: 50.0, h: 60.0, radii: [10.0; 4], kinds: Default::default(), xf };
+        **live = logocraft_doc::LiveShape::Rectangle { w: 50.0, h: 60.0, radii: [10.0; 4], kinds: Default::default(), xf };
         *path = live.to_path();
     }
-    let shown = vectorcraft_doc::LiveCorners::of(s.doc().unwrap().doc.node(r).unwrap()).unwrap().radius(0);
+    let shown = logocraft_doc::LiveCorners::of(s.doc().unwrap().doc.node(r).unwrap()).unwrap().radius(0);
     let undo = history(&s).0;
     s.execute("object.setLiveShape", &json!({"id": r.0, "radius": shown})).unwrap();
     assert_eq!(history(&s).0, undo + 1, "a stretched rectangle");
@@ -1054,8 +1054,8 @@ fn pen_click_on_a_selected_path_adds_an_anchor_unless_disabled() {
 /// Pen interactions exercised through the real preview/commit and undo machinery.
 mod pen_interactions {
     use super::*;
-    use vectorcraft_geom::{AnchorKind, PathData, Point};
-    use vectorcraft_tools::{Cursor, Mods};
+    use logocraft_geom::{AnchorKind, PathData, Point};
+    use logocraft_tools::{Cursor, Mods};
 
     fn gesture(s: &mut Session, pts: &[(f64, f64)], mods: Mods, v: ViewInfo) {
         let (first, last) = (pts[0], pts[pts.len() - 1]);
@@ -1205,7 +1205,7 @@ mod pen_interactions {
         let moved = path(&s, id);
         let last = moved.subpaths[0].anchors[1];
         assert_eq!(last.h_in, before.subpaths[0].anchors[1].h_in);
-        assert_eq!(last.h_out, last.p + vectorcraft_geom::constrain_angle(Point::new(243.0, 353.0) - last.p, 45.0));
+        assert_eq!(last.h_out, last.p + logocraft_geom::constrain_angle(Point::new(243.0, 353.0) - last.p, 45.0));
         assert_eq!(moved.to_bezpath(), before.to_bezpath());
         assert_eq!(s.doc().unwrap().history.undo.len(), steps + 1, "all previews are one undo step");
         s.execute("edit.undo", &json!({})).unwrap();
@@ -1254,7 +1254,7 @@ mod pen_interactions {
         let a = extended.subpaths[0].anchors[2];
         assert_eq!(a.p, Point::new(320.0, 450.0));
         assert_eq!(a.h_in, Point::new(290.0, 430.0), "Alt freezes the incoming handle and Space translates it");
-        assert_eq!(a.h_out, a.p + vectorcraft_geom::constrain_angle(Point::new(380.0, 490.0) - a.p, 45.0));
+        assert_eq!(a.h_out, a.p + logocraft_geom::constrain_angle(Point::new(380.0, 490.0) - a.p, 45.0));
         assert_eq!(a.kind, AnchorKind::Corner);
         assert!(!s.in_interaction());
         assert_eq!(s.doc().unwrap().history.undo.len(), steps + 1);
@@ -1419,8 +1419,8 @@ fn direct_selection_moves_one_anchor() {
     s.pointer(&PointerEvent::new(PointerKind::Drag, 90.0, 90.0), v).unwrap();
     s.pointer(&PointerEvent::new(PointerKind::Up, 90.0, 90.0), v).unwrap();
     let p = s.doc().unwrap().doc.node(a).unwrap().path_data().unwrap().clone();
-    assert_eq!(p.subpaths[0].anchors[0].p, vectorcraft_geom::Point::new(90.0, 90.0));
-    assert_eq!(p.subpaths[0].anchors[1].p, vectorcraft_geom::Point::new(200.0, 100.0));
+    assert_eq!(p.subpaths[0].anchors[0].p, logocraft_geom::Point::new(90.0, 90.0));
+    assert_eq!(p.subpaths[0].anchors[1].p, logocraft_geom::Point::new(200.0, 100.0));
 }
 
 /// Follow-up to #1254: toggling or adding anchors of a path selected as a whole starts from all
@@ -1454,7 +1454,7 @@ fn direct_selection_shift_click_deselects_one_anchor_of_a_whole_path() {
     assert_eq!(s.doc().unwrap().selection.objects, vec![a]);
     assert!(s.doc().unwrap().selection.partial(a).is_none(), "selected whole");
     s.select_tool("directSelection", v).unwrap();
-    let shift = vectorcraft_tools::Mods { shift: true, ..Default::default() };
+    let shift = logocraft_tools::Mods { shift: true, ..Default::default() };
     for kind in [PointerKind::Down, PointerKind::Up] {
         s.pointer(&PointerEvent::new(kind, 100.0, 100.0).with_mods(shift), v).unwrap();
     }
@@ -1485,7 +1485,7 @@ fn direct_selection_drags_segments() {
     drag(&mut s, (200.0, 125.0), (200.0, 85.0));
     let sp = s.doc().unwrap().doc.node(arch).unwrap().path_data().unwrap().subpaths[0].clone();
     let (a, b) = (sp.anchors[0], sp.anchors[1]);
-    assert_eq!((a.p, b.p), (vectorcraft_geom::Point::new(100.0, 200.0), vectorcraft_geom::Point::new(300.0, 200.0)), "the anchors stay");
+    assert_eq!((a.p, b.p), (logocraft_geom::Point::new(100.0, 200.0), logocraft_geom::Point::new(300.0, 200.0)), "the anchors stay");
     assert!(a.h_out.y < 100.0 && b.h_in.y < 100.0, "the curve bent up: {a:?} {b:?}");
     assert_eq!(steps(&s), before + 1);
     // The square's top edge, 40 up: its two anchors move, the bottom two stay.
@@ -1502,7 +1502,7 @@ fn direct_selection_drags_segments() {
 #[test]
 fn text_create_has_bounds() {
     let mut s = session();
-    let r = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "Hello VectorCraft", "size": 24})).unwrap();
+    let r = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "Hello LogoCraft", "size": 24})).unwrap();
     let n = s.doc().unwrap().doc.node(NodeId(r["id"].as_u64().unwrap())).unwrap().clone();
     let b = n.geometric_bounds().unwrap();
     assert!(b.width() > 100.0, "{b:?}");
@@ -2055,8 +2055,7 @@ fn a_compound_path_has_holes_where_its_paths_overlap() {
     let diamond = NodeId(s.execute("path.create", &json!({"d": "M50 -20 L120 50 L50 120 L-20 50 Z"})).unwrap()["id"].as_u64().unwrap());
     s.execute("select.set", &json!({"ids": [square.0, diamond.0]})).unwrap();
     let c = NodeId(s.execute("object.compoundPath.make", &json!({})).unwrap()["id"].as_u64().unwrap());
-    let hit =
-        |x: f64, y: f64| vectorcraft_doc::hit::hit_test(&s.doc().unwrap().doc, Point::new(x, y), Default::default()).map(|h| h.top_object(None));
+    let hit = |x: f64, y: f64| logocraft_doc::hit::hit_test(&s.doc().unwrap().doc, Point::new(x, y), Default::default()).map(|h| h.top_object(None));
     assert_eq!(hit(50.0, 50.0), None, "the overlap is a hole");
     assert_eq!(hit(3.0, 3.0), Some(c), "the square's corner is filled");
     assert_eq!(hit(110.0, 50.0), Some(c), "the diamond's point outside the square is filled");

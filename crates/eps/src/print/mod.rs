@@ -5,8 +5,8 @@
 use std::fmt::Write;
 
 use kurbo::Shape;
-use vectorcraft_doc::{Document, Node};
-use vectorcraft_geom::{Affine, Rect};
+use logocraft_doc::{Document, Node};
+use logocraft_geom::{Affine, Rect};
 
 use crate::scene::{Page, Scene};
 use crate::{EpsOptions, EpsOutput, Level, comments, ps};

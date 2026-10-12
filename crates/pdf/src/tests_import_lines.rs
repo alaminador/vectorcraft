@@ -3,11 +3,11 @@
 //! read from wide gaps, and lines wrapped in a frame rebuilt as area type.
 
 use kurbo::{BezPath, PathEl, Point, Shape};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{AppearanceItem, CharStyle, Document, Justify, Node, NodeKind, TextKind, TextObject};
+use logocraft_geom::{Affine, Rect, shapes};
+use logocraft_testkit::pdf::{PdfPage, first_extra, pdf_with_catalog};
 use serde_json::json;
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{AppearanceItem, CharStyle, Document, Justify, Node, NodeKind, TextKind, TextObject};
-use vectorcraft_geom::{Affine, Rect, shapes};
-use vectorcraft_testkit::pdf::{PdfPage, first_extra, pdf_with_catalog};
 
 use crate::*;
 
@@ -79,7 +79,7 @@ fn layers_stack_as_the_pages_mark_them_when_one_first_paints_on_a_later_page() {
 
 /// A 100 × 100 pt page drawing `content` in Helvetica.
 fn page(content: &str) -> Vec<u8> {
-    vectorcraft_testkit::pdf::pdf(&[PdfPage { resources: HELVETICA.into(), ..PdfPage::new(100.0, 100.0, content) }], None)
+    logocraft_testkit::pdf::pdf(&[PdfPage { resources: HELVETICA.into(), ..PdfPage::new(100.0, 100.0, content) }], None)
 }
 
 /// The outline of glyph `c` drawn at 24 pt from (x, 50), in PDF operators (y up), stroked.
@@ -144,7 +144,7 @@ fn spaces_read_from_wide_gaps_keep_the_glyphs_after_them_in_place() {
     let t = texts(&import(&bytes).unwrap());
     assert_eq!(t.len(), 1);
     assert_eq!(t[0].plain_text(), "3 533121 010629");
-    let laid = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t[0]);
+    let laid = logocraft_text::layout(logocraft_text::FontDb::global(), &t[0]);
     let at = |byte: usize| (t[0].xf * laid.glyphs.iter().find(|g| g.byte == byte).unwrap().origin).x;
     assert!((at(2) - f64::from(x1)).abs() < 0.05, "the second group starts where the file has it: {} vs {x1}", at(2));
     assert!((at(9) - f64::from(x2)).abs() < 0.05, "the third group starts where the file has it: {} vs {x2}", at(9));

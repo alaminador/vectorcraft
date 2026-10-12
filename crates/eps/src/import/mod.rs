@@ -57,10 +57,10 @@ mod tests_native;
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use vectorcraft_color::Paint;
-use vectorcraft_color::swatch::{REGISTRATION, Swatch};
-use vectorcraft_doc::{ColorMode, Document, LayerColor, Node};
-use vectorcraft_geom::{Affine, Rect};
+use logocraft_color::Paint;
+use logocraft_color::swatch::{REGISTRATION, Swatch};
+use logocraft_doc::{ColorMode, Document, LayerColor, Node};
+use logocraft_geom::{Affine, Rect};
 
 use graphics::{GState, Out};
 use interp::{Fault, Interp};
@@ -151,7 +151,7 @@ impl Dsc {
 /// operator that raised it and the procedure it ran in (`fault`).
 fn reason(e: &PsError, fault: Option<&Fault>) -> String {
     let what = match e {
-        PsError::Ps("undefined", at) => format!("it uses `{at}`, which VectorCraft's PostScript reader doesn't know"),
+        PsError::Ps("undefined", at) => format!("it uses `{at}`, which LogoCraft's PostScript reader doesn't know"),
         PsError::Ps(name, at) => match fault.and_then(|f| f.op) {
             Some(op) if at.is_empty() || at == op => format!("a PostScript error ({name} in `{op}`)"),
             Some(op) => format!("a PostScript error ({name} in `{op}`: {at})"),
@@ -203,7 +203,7 @@ pub fn import_with(bytes: &[u8], editing_data: bool) -> Result<Imported, String>
     let why = match (&result, drew) {
         (Ok(()), true) if editing_data => return Ok(native::layered(ps, finish(out))),
         (Ok(()), true) => return Ok(finish(out)),
-        (Ok(()), false) => "it draws nothing VectorCraft's PostScript reader can show".to_string(),
+        (Ok(()), false) => "it draws nothing LogoCraft's PostScript reader can show".to_string(),
         (Err(e), _) => reason(e, fault.as_ref()),
     };
     // A file in the legacy Illustrator format whose program can't be run (a `.ai` that names the
@@ -234,7 +234,7 @@ pub fn import_with(bytes: &[u8], editing_data: bool) -> Result<Imported, String>
 /// groups), the spot inks as spot swatches, in CMYK when most process colours were.
 fn finish(mut out: Out) -> Imported {
     let drawn = std::mem::take(&mut out.drawn);
-    let mut children = vectorcraft_doc::clipnest::nest(&mut out.doc, drawn);
+    let mut children = logocraft_doc::clipnest::nest(&mut out.doc, drawn);
     if !out.shadings.is_empty() {
         graphics::collapse(&mut children, &out.shadings);
     }
@@ -251,7 +251,7 @@ fn finish_with(out: Out, layers: Vec<Arc<Node>>) -> Imported {
     let mut doc = out.doc;
     if out.cmyk > out.rgb {
         doc.color_mode = ColorMode::Cmyk;
-        let (swatches, groups) = vectorcraft_color::default_swatches(ColorMode::Cmyk.model());
+        let (swatches, groups) = logocraft_color::default_swatches(ColorMode::Cmyk.model());
         (doc.swatches, doc.swatch_groups) = (swatches.into(), groups.into());
     }
     // `taken` holds the names `Document::swatch` finds: each swatch's name, and Registration.

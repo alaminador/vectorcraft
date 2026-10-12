@@ -7,13 +7,13 @@
 //! widths, points), `linked`, `adjustAdjoining`; Delete sets `discard: true` and confirms.
 
 use egui::vec2;
+use logocraft_engine::doc::NodeId;
 use serde_json::{Value, json};
-use vectorcraft_engine::doc::NodeId;
 
 use super::swatch_options::{grid, label};
 use super::{DialogSpec, run_and_close};
 use crate::state::Dialog;
-use crate::{VectorcraftApp, widgets};
+use crate::{LogocraftApp, widgets};
 
 /// The dialog kind of Width Point Edit.
 pub const KIND: &str = "widthPoint";
@@ -22,7 +22,7 @@ pub(super) const SPEC: DialogSpec =
     DialogSpec { heading: |_| tl!("Width Point Edit").into(), body, confirm, discard: Some("Delete"), min_width: 300.0, ..DialogSpec::FORM };
 
 /// Width point `index` of `id`: its place and side widths (points).
-fn point(app: &VectorcraftApp, id: u64, index: usize) -> Option<(f64, f64, f64)> {
+fn point(app: &LogocraftApp, id: u64, index: usize) -> Option<(f64, f64, f64)> {
     let st = app.session.active()?.doc.node(NodeId(id))?.appearance.stroke()?;
     let half = st.width / 2.0;
     st.profile.as_ref()?.points.get(index).map(|&(t, l, r)| (t, l * half, r * half))
@@ -30,7 +30,7 @@ fn point(app: &VectorcraftApp, id: u64, index: usize) -> Option<(f64, f64, f64)>
 
 /// Open Width Point Edit on width point `index` of path `id` (`{id, index}`), filled in with its
 /// widths.
-pub fn open(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp, p: &Value) -> Result<Value, String> {
     let (id, index) = (p.get("id").and_then(Value::as_u64), p.get("index").and_then(Value::as_u64));
     let (Some(id), Some(index)) = (id, index) else { return Err("give the path `id` and the width point `index`".into()) };
     let (t, l, r) = point(app, id, index as usize).ok_or("no such width point")?;
@@ -39,7 +39,7 @@ pub fn open(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
     Ok(Value::Null)
 }
 
-fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let unit = app.session.stroke_unit();
     let (s1, s2, linked) = (d.f64("side1", 0.0), d.f64("side2", 0.0), d.bool("linked"));
     let mut sides = None;
@@ -83,7 +83,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     false
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let (id, index) = (d.fields.get("id").cloned().unwrap_or_default(), d.fields.get("index").cloned().unwrap_or_default());
     if d.bool("discard") {
         return run_and_close(app, "stroke.widthPoint.remove", json!({"id": id, "index": index}));
@@ -96,12 +96,12 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_engine::Session;
-    use vectorcraft_tools::{PointerEvent, PointerKind};
+    use logocraft_engine::Session;
+    use logocraft_tools::{PointerEvent, PointerKind};
 
     /// A 10 pt line from (100, 150) to (300, 150) with a 4 + 4 pt width point in the middle.
-    fn app() -> (VectorcraftApp, u64) {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    fn app() -> (LogocraftApp, u64) {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
         let id = app.run("shape.line", json!({"x1": 100, "y1": 150, "x2": 300, "y2": 150})).unwrap()["id"].as_u64().unwrap();
         app.run("stroke.set", json!({"ids": [id], "weight": 10})).unwrap();
@@ -109,13 +109,13 @@ mod tests {
         (app, id)
     }
 
-    fn points(app: &VectorcraftApp, id: u64) -> Vec<(f64, f64, f64)> {
+    fn points(app: &LogocraftApp, id: u64) -> Vec<(f64, f64, f64)> {
         let st = app.session.active().unwrap().doc.node(NodeId(id)).unwrap().appearance.stroke().unwrap().clone();
         let round = |v: f64| (v * 1e9).round() / 1e9;
         st.profile.map(|p| p.points.into_iter().map(|(t, l, r)| (round(t), round(l), round(r))).collect()).unwrap_or_default()
     }
 
-    fn frame(app: &mut VectorcraftApp) -> Vec<String> {
+    fn frame(app: &mut LogocraftApp) -> Vec<String> {
         fn texts(s: &egui::Shape, out: &mut Vec<String>) {
             match s {
                 egui::Shape::Text(t) => out.push(t.galley.text().to_string()),

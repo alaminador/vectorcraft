@@ -21,14 +21,14 @@ const INVALID_PARAMS: i64 = -32602;
 const INTERNAL_ERROR: i64 = -32603;
 const RESOURCE_NOT_FOUND: i64 = -32002;
 
-const INSTRUCTIONS: &str = "VectorCraft is a professional vector illustration app. Coordinates are \
+const INSTRUCTIONS: &str = "LogoCraft is a professional vector illustration app. Coordinates are \
 points in document space (y down, origin at the first artboard's top-left; a new document is 612×792). \
 Draw with draw_shape / draw_path, change colours with set_paint, look with render_preview and doc_inspect. \
 Every menu action is a command: find it with command_list and run it with command_run (or command_batch for several). New objects become \
 the selection, and most commands act on the selection (or on explicit `ids`). prompts/list has ready-made \
 workflows, completion/complete finishes a command id, a format, an effect or a swatch name, and \
-vectorcraft://object/{id}, vectorcraft://command/{id}, vectorcraft://effect/{id} and \
-vectorcraft://swatch/{name} read one thing at a time instead of the whole document.";
+logocraft://object/{id}, logocraft://command/{id}, logocraft://effect/{id} and \
+logocraft://swatch/{name} read one thing at a time instead of the whole document.";
 
 /// An MCP server bound to one backend.
 pub struct Server {
@@ -135,7 +135,7 @@ impl Server {
             return Some(error(Value::Null, INVALID_REQUEST, "`id` must be a string or number"));
         }
         // A bug that panics fails this request only; the server keeps serving.
-        let r = vectorcraft_engine::guard::catch_panic(|| self.request(method, &params))
+        let r = logocraft_engine::guard::catch_panic(|| self.request(method, &params))
             .unwrap_or_else(|msg| Err((INTERNAL_ERROR, format!("internal error in `{method}`: {msg} (please report this bug)"))));
         Some(match r {
             Ok(mut r) => {
@@ -185,7 +185,7 @@ impl Server {
                         "completions": {},
                         "logging": {},
                     },
-                    "serverInfo": {"name": "vectorcraft", "title": "VectorCraft", "version": env!("CARGO_PKG_VERSION")},
+                    "serverInfo": {"name": "logocraft", "title": "LogoCraft", "version": env!("CARGO_PKG_VERSION")},
                     "instructions": format!("{INSTRUCTIONS} Backend: {}.", self.backend.describe()),
                 }))
             }

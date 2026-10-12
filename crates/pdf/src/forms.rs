@@ -13,7 +13,7 @@ use krilla::graphic::Graphic;
 use krilla::surface::Surface;
 use std::sync::Arc;
 
-use vectorcraft_doc::{Document, Node, NodeKind};
+use logocraft_doc::{Document, Node, NodeKind};
 
 use crate::encrypt::{Lexer, Obj, StreamSpans, Tok, int, stream_spans};
 use crate::output::{deflate, text_string};

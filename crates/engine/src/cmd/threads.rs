@@ -3,8 +3,8 @@
 //! Frames are ordinary area text objects holding their slice of the story; the document lists the
 //! thread order. After every edit, threads whose frames changed are re-flowed ([`reflow`]).
 
+use logocraft_doc::{Document, Node, NodeId, NodeKind, TextKind, TextObject, TextRun};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind, TextKind, TextObject, TextRun};
 
 use super::edit::selected_roots;
 use super::typecmd::refresh_bounds;
@@ -103,21 +103,21 @@ pub(crate) fn reflow(before: &Document, doc: &mut Document) {
             continue;
         }
         let source_refs: Vec<&TextObject> = sources.iter().collect();
-        let paras = vectorcraft_text::thread::story_paras(&source_refs, &later_wins);
-        vectorcraft_text::edit::normalize(&mut story);
+        let paras = logocraft_text::thread::story_paras(&source_refs, &later_wins);
+        logocraft_text::edit::normalize(&mut story);
         if live.len() >= 2 {
             // Threaded frames keep their size: Auto Size is off for them (as in Illustrator).
             for id in &live {
-                if text_of(doc, *id).is_some_and(|t| t.area.fit == vectorcraft_doc::AreaFit::AutoHeight)
+                if text_of(doc, *id).is_some_and(|t| t.area.fit == logocraft_doc::AreaFit::AutoHeight)
                     && let Some(NodeKind::Text(t)) = doc.node_mut(*id).map(|n| &mut n.kind)
                 {
-                    t.area.fit = vectorcraft_doc::AreaFit::None;
+                    t.area.fit = logocraft_doc::AreaFit::None;
                 }
             }
         }
         let frames: Vec<TextObject> = live.iter().filter_map(|id| text_of(doc, *id).cloned()).collect();
         let refs: Vec<&TextObject> = frames.iter().collect();
-        let parts = vectorcraft_text::thread::distribute(vectorcraft_text::FontDb::global(), &refs, &story, &paras);
+        let parts = logocraft_text::thread::distribute(logocraft_text::FontDb::global(), &refs, &story, &paras);
         for (id, part) in live.iter().zip(parts) {
             if let Some(NodeKind::Text(t)) = doc.node_mut(*id).map(|n| &mut n.kind) {
                 let mut next = (**t).clone();
@@ -139,14 +139,14 @@ pub(crate) fn reflow(before: &Document, doc: &mut Document) {
 }
 
 /// A closed path converted to an empty area-type frame with `style`.
-fn frame_from_path(n: &Node, style: vectorcraft_doc::CharStyle) -> Option<Node> {
+fn frame_from_path(n: &Node, style: logocraft_doc::CharStyle) -> Option<Node> {
     let NodeKind::Path { path, .. } = &n.kind else { return None };
     if !path.subpaths.first().is_some_and(|s| s.closed) {
         return None;
     }
-    let mut t = TextObject::point(vectorcraft_geom::Point::ZERO, "", style);
+    let mut t = TextObject::point(logocraft_geom::Point::ZERO, "", style);
     t.kind = TextKind::Area { frame: path.clone() };
-    t.xf = vectorcraft_geom::Affine::IDENTITY;
+    t.xf = logocraft_geom::Affine::IDENTITY;
     refresh_bounds(&mut t);
     Some(Node::new(n.id, NodeKind::Text(Box::new(t))))
 }
@@ -214,7 +214,7 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
             for t in &sources {
                 story.extend(t.runs.iter().cloned());
             }
-            let paras = vectorcraft_text::thread::story_paras(&sources.iter().collect::<Vec<_>>(), &[]);
+            let paras = logocraft_text::thread::story_paras(&sources.iter().collect::<Vec<_>>(), &[]);
             let style = story.first().map(|r| r.style.clone()).unwrap_or_default();
             let first_para = paras.first().cloned().unwrap_or_default();
             for id in &out {
@@ -227,7 +227,7 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
             if let Some(first) = keep.first()
                 && let Some(NodeKind::Text(t)) = d.node_mut(*first).map(|n| &mut n.kind)
             {
-                vectorcraft_text::edit::normalize(&mut story);
+                logocraft_text::edit::normalize(&mut story);
                 t.runs = story;
                 t.set_paragraph_styles(paras);
             }

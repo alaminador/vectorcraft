@@ -3,7 +3,7 @@
 use craft_ui::docking::{Action, Floating, Layout, Node, Placement, Zone};
 use serde_json::{Value, json};
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 
 #[derive(Clone, Default)]
 struct LegacyDrag {
@@ -21,15 +21,15 @@ struct RootGroupDrag {
     generation: u64,
 }
 
-fn cancel_legacy_drag(app: &mut VectorcraftApp, ctx: &egui::Context) -> bool {
-    let key = egui::Id::new("vectorcraft-panel-docking").with("legacy-origin");
+fn cancel_legacy_drag(app: &mut LogocraftApp, ctx: &egui::Context) -> bool {
+    let key = egui::Id::new("logocraft-panel-docking").with("legacy-origin");
     let previous = ctx.data_mut(|data| data.remove_temp::<LegacyDrag>(key));
     if let Some(previous) = previous {
         app.ui.open_panel = previous.open_panel;
         app.ui.floating_panels = previous.floating;
         app.ui.docking = previous.layout;
         app.ui.docking_icons = previous.icons;
-        craft_ui::docking::cancel_drag::<String>(ctx, egui::Id::new("vectorcraft-panel-docking"));
+        craft_ui::docking::cancel_drag::<String>(ctx, egui::Id::new("logocraft-panel-docking"));
         true
     } else {
         false
@@ -44,7 +44,7 @@ pub(crate) fn valid(layout: &Layout<String>) -> bool {
     layout.validate().is_ok() && layout.panels().iter().all(|id| normalize(id) == Some(id.as_str()))
 }
 
-fn legacy(app: &VectorcraftApp) -> Layout<String> {
+fn legacy(app: &LogocraftApp) -> Layout<String> {
     let panels: Vec<String> = crate::floating::docked_tabs(&app.ui).map(|tab| tab.info().0.to_string()).collect();
     let active = panels.iter().position(|id| id == app.ui.dock_tab.info().0).unwrap_or(0);
     let root = (!panels.is_empty()).then_some(Node::Tabs { panels, active });
@@ -63,7 +63,7 @@ fn legacy(app: &VectorcraftApp) -> Layout<String> {
     layout
 }
 
-fn icon_origins(app: &VectorcraftApp) -> std::collections::BTreeSet<String> {
+fn icon_origins(app: &LogocraftApp) -> std::collections::BTreeSet<String> {
     let mut icons = app.ui.docking_icons.clone();
     if app.ui.docking.is_none() {
         // Legacy workspaces have no custom groups in the dock. Icon-panel floats therefore
@@ -162,7 +162,7 @@ fn placement(params: &Value) -> Result<Placement<String>, String> {
     })
 }
 
-pub(crate) fn command(app: &mut VectorcraftApp, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub(crate) fn command(app: &mut LogocraftApp, id: &str, params: &Value) -> Option<Result<Value, String>> {
     if matches!(id, "window.panel.float" | "window.panel.dock")
         && (params.get("above").is_some()
             || params.get("below").is_some()
@@ -219,7 +219,7 @@ pub(crate) fn command(app: &mut VectorcraftApp, id: &str, params: &Value) -> Opt
 
 // UI output and automation share this atomic dispatcher. The application owns the registry
 // and saved return locations; craft-ui owns tree validation and structural changes.
-fn apply_action(app: &mut VectorcraftApp, action: Action<String>) -> Result<Value, String> {
+fn apply_action(app: &mut LogocraftApp, action: Action<String>) -> Result<Value, String> {
     let registered = |id: &String| normalize(id) == Some(id.as_str());
     let known = match &action {
         Action::Move { panel, anchor, placement } | Action::OpenAt { panel, anchor, placement } => {
@@ -292,7 +292,7 @@ fn apply_action(app: &mut VectorcraftApp, action: Action<String>) -> Result<Valu
     Ok(json!({"layout": app.ui.docking}))
 }
 
-fn change(app: &mut VectorcraftApp, operation: &str, params: &Value) -> Result<Value, String> {
+fn change(app: &mut LogocraftApp, operation: &str, params: &Value) -> Result<Value, String> {
     let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
     if app.ui.docking.as_ref().is_some_and(|layout| !valid(layout)) {
         return Err("saved panel layout is invalid; reset the workspace first".into());
@@ -498,7 +498,7 @@ fn change(app: &mut VectorcraftApp, operation: &str, params: &Value) -> Result<V
 }
 
 struct PanelContent<'a> {
-    app: &'a mut VectorcraftApp,
+    app: &'a mut LogocraftApp,
     commands: Vec<(&'static str, Value)>,
 }
 
@@ -541,7 +541,7 @@ impl craft_ui::docking::DockContent<String> for PanelContent<'_> {
             {
                 ui.ctx().data_mut(|data| {
                     data.insert_temp(
-                        egui::Id::new("vectorcraft-root-group-drag"),
+                        egui::Id::new("logocraft-root-group-drag"),
                         RootGroupDrag {
                             panel: active.clone(),
                             layout: self.app.ui.docking.clone().unwrap_or_else(|| legacy(self.app)),
@@ -557,8 +557,8 @@ impl craft_ui::docking::DockContent<String> for PanelContent<'_> {
     }
 }
 
-pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
-    let root_key = egui::Id::new("vectorcraft-root-group-drag");
+pub(crate) fn show(app: &mut LogocraftApp, ui: &mut egui::Ui) -> bool {
+    let root_key = egui::Id::new("logocraft-root-group-drag");
     if let Some(drag) = ui.ctx().data(|data| data.get_temp::<RootGroupDrag>(root_key)) {
         if drag.generation != app.ui.docking_generation {
             ui.ctx().data_mut(|data| data.remove::<RootGroupDrag>(root_key));
@@ -596,7 +596,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
             }
         }
     }
-    let area = egui::Id::new("vectorcraft-panel-docking");
+    let area = egui::Id::new("logocraft-panel-docking");
     let changed_workspace = ui.ctx().data_mut(|data| {
         let previous = data.get_temp::<u64>(area.with("generation"));
         data.insert_temp(area.with("generation"), app.ui.docking_generation);
@@ -658,7 +658,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         style.resize_label = tl!("Resize panels").to_string();
         style.resize_window_label = tl!("Resize panel window").to_string();
         let mut content = PanelContent { app, commands: Vec::new() };
-        let output = craft_ui::docking::DockArea::new(egui::Id::new("vectorcraft-panel-docking")).show_customized(
+        let output = craft_ui::docking::DockArea::new(egui::Id::new("logocraft-panel-docking")).show_customized(
             ui,
             &display,
             &style,
@@ -721,7 +721,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         {
             return app.ui.docking.is_some();
         }
-        ui.ctx().data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("vectorcraft-panel-docking").with("legacy-origin")));
+        ui.ctx().data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("logocraft-panel-docking").with("legacy-origin")));
     }
     for action in output.actions {
         if tab_drop
@@ -748,7 +748,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         // Shared and native windows have already chosen their render ownership for this
         // frame. Switch representations only after both renderers finish, so a panel's
         // widgets never appear in two layers in the same frame.
-        ui.ctx().data_mut(|data| data.insert_temp(egui::Id::new("vectorcraft-native-panel-drop"), (command, params)));
+        ui.ctx().data_mut(|data| data.insert_temp(egui::Id::new("logocraft-native-panel-drop"), (command, params)));
     }
     for group in &display.floating {
         if let Some(first) = group.panels.first()
@@ -762,7 +762,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
     true
 }
 
-fn icon_rail(app: &mut VectorcraftApp, ui: &mut egui::Ui) {
+fn icon_rail(app: &mut LogocraftApp, ui: &mut egui::Ui) {
     let t = crate::theme::Tokens::get(ui.ctx());
     let column = egui::Panel::right("shared-panel-icons")
         .exact_size(38.0)
@@ -803,7 +803,7 @@ fn icon_rail(app: &mut VectorcraftApp, ui: &mut egui::Ui) {
     });
 }
 
-pub(crate) fn legacy_tab(app: &mut VectorcraftApp, ui: &mut egui::Ui, panel: &str, response: &egui::Response) {
+pub(crate) fn legacy_tab(app: &mut LogocraftApp, ui: &mut egui::Ui, panel: &str, response: &egui::Response) {
     let Some(panel) = normalize(panel) else { return };
     response.context_menu(|ui| {
         if ui.button(tl!("Float Panel")).clicked() {
@@ -837,11 +837,11 @@ pub(crate) fn legacy_tab(app: &mut VectorcraftApp, ui: &mut egui::Ui, panel: &st
             egui::vec2(bounds.width().clamp(240.0, 600.0), bounds.height().clamp(200.0, 600.0)),
         );
         if ensure(&mut layout, id).is_ok()
-            && craft_ui::docking::begin_drag(ui.ctx(), egui::Id::new("vectorcraft-panel-docking"), id.to_string(), source)
+            && craft_ui::docking::begin_drag(ui.ctx(), egui::Id::new("logocraft-panel-docking"), id.to_string(), source)
         {
             ui.ctx().data_mut(|data| {
                 data.insert_temp(
-                    egui::Id::new("vectorcraft-panel-docking").with("legacy-origin"),
+                    egui::Id::new("logocraft-panel-docking").with("legacy-origin"),
                     LegacyDrag {
                         layout: app.ui.docking.clone(),
                         open_panel: app.ui.open_panel.clone(),
@@ -868,7 +868,7 @@ pub(crate) fn decorated(group: &crate::state::FloatingPanels) -> bool {
 
 /// Keep the native set metadata alongside the validated shared ownership tree. Return locations
 /// and root splits survive the mirror update; failed reconciliation restores the whole UI state.
-pub(crate) fn reconcile_native(app: &mut VectorcraftApp, before: crate::state::UiState) -> Result<(), String> {
+pub(crate) fn reconcile_native(app: &mut LogocraftApp, before: crate::state::UiState) -> Result<(), String> {
     if before.docking.is_none() {
         return Ok(());
     }
@@ -918,7 +918,7 @@ pub(crate) fn reconcile_native(app: &mut VectorcraftApp, before: crate::state::U
     result
 }
 
-fn native_change(app: &mut VectorcraftApp, id: &str, params: &Value) -> Result<Value, String> {
+fn native_change(app: &mut LogocraftApp, id: &str, params: &Value) -> Result<Value, String> {
     let before = app.ui.clone();
     let result = (|| {
         let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
@@ -942,7 +942,7 @@ fn native_change(app: &mut VectorcraftApp, id: &str, params: &Value) -> Result<V
     result
 }
 
-fn sync_legacy(app: &mut VectorcraftApp) {
+fn sync_legacy(app: &mut LogocraftApp) {
     if let Some(layout) = &app.ui.docking {
         let old = app.ui.floating_panels.clone();
         let mut pending: Vec<_> = layout.root.iter().collect();
@@ -981,9 +981,9 @@ fn sync_legacy(app: &mut VectorcraftApp) {
 mod tests;
 
 /// Commit a pointer drop after shared and native panel windows have finished rendering.
-pub(crate) fn finish_native_drop(app: &mut VectorcraftApp, ctx: &egui::Context) {
+pub(crate) fn finish_native_drop(app: &mut LogocraftApp, ctx: &egui::Context) {
     if let Some((command, params)) =
-        ctx.data_mut(|data| data.remove_temp::<(&'static str, serde_json::Value)>(egui::Id::new("vectorcraft-native-panel-drop")))
+        ctx.data_mut(|data| data.remove_temp::<(&'static str, serde_json::Value)>(egui::Id::new("logocraft-native-panel-drop")))
         && let Err(error) = app.run(command, params)
     {
         app.ui.status = error;

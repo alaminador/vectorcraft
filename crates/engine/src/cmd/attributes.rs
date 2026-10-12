@@ -4,9 +4,9 @@
 
 use std::collections::BTreeSet;
 
+use logocraft_doc::{Document, Node, NodeKind};
+use logocraft_geom::FillRule;
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeKind};
-use vectorcraft_geom::FillRule;
 
 use super::overprint::{AttributesInfo, edit_counted};
 use super::path::paths_in;

@@ -3,15 +3,15 @@
 
 use std::borrow::Cow;
 
+use logocraft_doc::{Artboard, Document};
+use logocraft_geom::Rect;
+use logocraft_render::AntiAlias;
+use logocraft_render::encode::jpeg::{self, JpegOptions};
+use logocraft_render::encode::quantize::{Dither, PaletteOptions, Reduction};
+use logocraft_render::encode::{RasterExportOptions, RasterFormat};
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use vectorcraft_doc::{Artboard, Document};
-use vectorcraft_geom::Rect;
-use vectorcraft_render::AntiAlias;
-use vectorcraft_render::encode::jpeg::{self, JpegOptions};
-use vectorcraft_render::encode::quantize::{Dither, PaletteOptions, Reduction};
-use vectorcraft_render::encode::{RasterExportOptions, RasterFormat};
 
 use super::super::*;
 use super::Format;
@@ -69,7 +69,7 @@ pub struct Encoded {
     /// `(artboard, bytes)`; the artboard names the file when there are several.
     pub files: Vec<(Option<usize>, Vec<u8>)>,
     /// Images to write next to the file(s) (SVG `images: "link"`).
-    pub linked: Vec<vectorcraft_svg::LinkedImage>,
+    pub linked: Vec<logocraft_svg::LinkedImage>,
     /// Image maps, each written beside its image under the image's name (raster `imageMap`).
     pub maps: Vec<imagemap::Map>,
     /// The encoder's warnings (features approximated or left out, options not applied yet).
@@ -273,7 +273,7 @@ pub(super) fn options<T: DeserializeOwned + Default>(f: &Format, p: &Value) -> R
 const WEBP_SIDE: f64 = 16383.0;
 
 /// Refuse a raster export its format can't store (instead of writing an empty file). The
-/// renderer's own size limits are [`vectorcraft_render::raster_size`]'s.
+/// renderer's own size limits are [`logocraft_render::raster_size`]'s.
 fn check_format_size(f: &Format, w: f64, h: f64) -> Result<()> {
     let max = match f.id {
         "webp" => WEBP_SIDE,
@@ -309,7 +309,7 @@ pub fn encode_all(doc: &Document, format: &str, p: &Value) -> Result<Encoded> {
     let format = super::writable(C, Some(format), None)?.id;
     // Formats with editing data prepare their drawn output separately from their original
     // document. Other formats only need the placed files' art.
-    if !matches!(format, "vectorcraft" | "template" | "ai" | "pdf" | "eps" | "svg" | "svgz") {
+    if !matches!(format, "logocraft" | "template" | "ai" | "pdf" | "eps" | "svg" | "svgz") {
         let (full, warnings) = crate::cmd::place::document::full_documents(doc);
         if !warnings.is_empty() {
             let mut enc = encode_all_of(&full, format, p)?;
@@ -342,7 +342,7 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
     // SVG reads its own `useArtboards` (an SVG option).
     let use_artboards = if f.raster || matches!(f.id, "pdf" | "ai") { use_artboards(p)? } else { None };
     if use_artboards == Some(false) {
-        let bounds = vectorcraft_render::encode::art_bounds(doc).ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
+        let bounds = logocraft_render::encode::art_bounds(doc).ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
         let mut q = super::export::without_artboards(p);
         if let Some(o) = q.as_object_mut() {
             o.remove("useArtboards");
@@ -350,7 +350,7 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
         return encode_files(&single_artboard(doc, bounds, "Art"), f, &q);
     }
     let bytes = match f.id {
-        "vectorcraft" => super::native::encode(C, f, doc, p)?,
+        "logocraft" => super::native::encode(C, f, doc, p)?,
         // A native file flagged so opening it starts a new untitled document.
         "template" => {
             let mut d = doc.clone();
@@ -369,7 +369,7 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
             let o: RasterOptions = options(f, p)?;
             // New Document → Background Contents: White makes the export opaque, unless `background`
             // says otherwise (JPEG has no alpha: white either way).
-            let page = (doc.setup.background == vectorcraft_doc::Background::White).then_some([255; 3]);
+            let page = (doc.setup.background == logocraft_doc::Background::White).then_some([255; 3]);
             let settings = o.settings(page)?;
             let scale = settings.scale();
             let format = match f.id {
@@ -389,16 +389,16 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
                 _ => MapKind::None,
             };
             let mut enc = Encoded::default();
-            let mut renderer = vectorcraft_render::Renderer::new();
+            let mut renderer = logocraft_render::Renderer::new();
             for b in chosen {
                 let region = doc.artboards.get(b).ok_or_else(|| bad(C, format!("no artboard {}", b + 1)))?.rect;
                 check_format_size(f, region.width() * scale, region.height() * scale)?;
-                vectorcraft_render::raster_size(region, scale).map_err(|e| bad(C, e))?;
+                logocraft_render::raster_size(region, scale).map_err(|e| bad(C, e))?;
                 enc.maps.extend(imagemap::build(doc, region, scale, map, enc.files.len()));
                 let bytes = renderer.export_region(doc, region, format, &settings).map_err(EngineError::Other)?;
                 // File Info as PNG text chunks.
                 let bytes = if matches!(format, RasterFormat::Png | RasterFormat::Png8) {
-                    vectorcraft_render::encode::png::with_text(bytes, &doc.metadata.png_text(&doc.title))
+                    logocraft_render::encode::png::with_text(bytes, &doc.metadata.png_text(&doc.title))
                 } else {
                     bytes
                 };

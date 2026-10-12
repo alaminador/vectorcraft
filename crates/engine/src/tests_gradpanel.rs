@@ -2,9 +2,9 @@
 //! copied appearances placing their gradients on the target's own bounds (M3.34) and the
 //! Gradient tool's snapping and Eyedropper Options (M3.35).
 
+use logocraft_color::{GradientGeom, Paint};
+use logocraft_geom::Point;
 use serde_json::json;
-use vectorcraft_color::{GradientGeom, Paint};
-use vectorcraft_geom::Point;
 
 use super::*;
 
@@ -83,7 +83,7 @@ fn the_eyedropper_places_copied_gradients_on_the_target() {
     s.execute("select.set", &json!({"ids": [dst.0]})).unwrap();
     s.execute("paint.setFill", &json!({"color": "#ff0000"})).unwrap();
     s.select_tool("eyedropper", ViewInfo::default()).unwrap();
-    let ev = vectorcraft_tools::PointerEvent::new(vectorcraft_tools::PointerKind::Down, 50.0, 50.0);
+    let ev = logocraft_tools::PointerEvent::new(logocraft_tools::PointerKind::Down, 50.0, 50.0);
     s.pointer(&ev, ViewInfo::default()).unwrap();
     assert!(close(fill_geom(&s, dst).unwrap().start, Point::new(540.0, 60.0)));
 }
@@ -119,8 +119,8 @@ fn the_gradient_tool_reads_the_constrain_angle_preference() {
     rect(&mut s, 100.0, 100.0, 100.0, 100.0);
     s.execute("prefs.set", &json!({"key": "constrainAngle", "value": 30})).unwrap();
     s.select_tool("gradient", ViewInfo::default()).unwrap();
-    let ev = |kind, x, y, shift| vectorcraft_tools::PointerEvent::new(kind, x, y).with_mods(vectorcraft_tools::Mods { shift, ..Default::default() });
-    use vectorcraft_tools::PointerKind::{Down, Drag, Up};
+    let ev = |kind, x, y, shift| logocraft_tools::PointerEvent::new(kind, x, y).with_mods(logocraft_tools::Mods { shift, ..Default::default() });
+    use logocraft_tools::PointerKind::{Down, Drag, Up};
     s.pointer(&ev(Down, 120.0, 180.0, false), ViewInfo::default()).unwrap();
     s.pointer(&ev(Drag, 190.0, 140.0, true), ViewInfo::default()).unwrap();
     s.pointer(&ev(Up, 190.0, 140.0, true), ViewInfo::default()).unwrap();

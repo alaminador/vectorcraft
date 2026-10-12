@@ -1,14 +1,14 @@
 //! `document.open` PDF options `textAs` and `layers`.
 
+use logocraft_doc::NodeKind;
+use logocraft_pdf::TextAs;
+use logocraft_testkit::pdf::{PdfPage, first_extra, pdf, pdf_with_catalog};
 use serde_json::{Value, json};
-use vectorcraft_doc::NodeKind;
-use vectorcraft_pdf::TextAs;
-use vectorcraft_testkit::pdf::{PdfPage, first_extra, pdf, pdf_with_catalog};
 
 use super::*;
 
 fn open(s: &mut Session, bytes: &[u8], extra: Value) -> crate::Result<Value> {
-    let mut p = json!({"name": "art.pdf", "dataBase64": vectorcraft_format::base64_encode(bytes)});
+    let mut p = json!({"name": "art.pdf", "dataBase64": logocraft_format::base64_encode(bytes)});
     if let (Some(o), Value::Object(e)) = (p.as_object_mut(), extra) {
         o.extend(e);
     }
@@ -82,7 +82,7 @@ fn exports_that_draw_type_in_a_missing_font_say_it_is_the_fallback_font() {
     assert!(r["warnings"].to_string().contains(&family), "opening lists it: {r}");
     let warned = |s: &mut Session, p: Value| {
         let w = s.execute("document.serialize", &p).unwrap()["warnings"].to_string();
-        w.contains(&family) && w.contains(vectorcraft_text::FALLBACK_FAMILY)
+        w.contains(&family) && w.contains(logocraft_text::FALLBACK_FAMILY)
     };
     for p in [
         json!({"format": "pdf"}),
@@ -95,7 +95,7 @@ fn exports_that_draw_type_in_a_missing_font_say_it_is_the_fallback_font() {
         assert!(warned(&mut s, p.clone()), "{p}");
     }
     // Live SVG type and the native file name the font itself.
-    for p in [json!({"format": "svg", "outlineText": false}), json!({"format": "vectorcraft"})] {
+    for p in [json!({"format": "svg", "outlineText": false}), json!({"format": "logocraft"})] {
         assert!(!warned(&mut s, p.clone()), "{p}");
     }
     let pdf_export = s.execute("document.exportPdf", &json!({})).unwrap();

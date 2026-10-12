@@ -8,16 +8,16 @@
 
 use std::sync::mpsc::{Receiver, Sender, channel};
 
+use logocraft_engine::file_access::ScopeHandle;
 use serde_json::{Value, json};
-use vectorcraft_engine::file_access::ScopeHandle;
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 
 /// Writes a file; callable from any thread.
 pub type SharedWriteFn = std::sync::Arc<dyn Fn(&str, &[u8]) -> Result<(), String> + Send + Sync>;
 
 /// Writes the file at a path with what the filler it is given writes into it (atomically, as
-/// `vectorcraft_format::write_atomic_with`); callable from any thread.
+/// `logocraft_format::write_atomic_with`); callable from any thread.
 pub type SharedStreamFn =
     std::sync::Arc<dyn Fn(&str, &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>) -> Result<(), String> + Send + Sync>;
 
@@ -29,7 +29,7 @@ pub type Writer<'a> = &'a mut dyn FnMut(&str, &[u8]) -> Result<(), String>;
 type Work = Box<dyn FnOnce(Writer) -> Result<Value, String> + Send>;
 
 /// Applies a result on the UI thread (document state, status, recent files) → the command result.
-type Then = Box<dyn FnOnce(&mut VectorcraftApp, Result<Value, String>) -> Result<Value, String>>;
+type Then = Box<dyn FnOnce(&mut LogocraftApp, Result<Value, String>) -> Result<Value, String>>;
 
 /// A job's id and the work's result, back from the worker.
 type Done = (u64, Result<Value, String>);
@@ -45,7 +45,7 @@ struct Task {
 /// A job in progress.
 pub struct Job {
     id: u64,
-    /// What the status bar shows ("Saving Poster.vectorcraft").
+    /// What the status bar shows ("Saving Poster.logocraft").
     pub label: String,
     /// The document the job reads (`DocState::uid`), if any.
     pub doc: Option<u64>,
@@ -71,11 +71,11 @@ impl Background {
             let (tx, tasks) = channel::<Task>();
             let (done_tx, done) = channel();
             std::thread::Builder::new()
-                .name("vectorcraft-save".into())
+                .name("logocraft-save".into())
                 .spawn(move || {
                     while let Ok(Task { id, work, write, scope }) = tasks.recv() {
                         let r = scope
-                            .run(|| vectorcraft_engine::guard::catch_panic(|| work(&mut |p: &str, b: &[u8]| write(p, b))))
+                            .run(|| logocraft_engine::guard::catch_panic(|| work(&mut |p: &str, b: &[u8]| write(p, b))))
                             .unwrap_or_else(|msg| Err(format!("internal error: {msg} (please report this bug)")));
                         if done_tx.send((id, r)).is_err() {
                             break;
@@ -98,12 +98,12 @@ impl Background {
 /// gets its result on the UI thread. → `then`'s result, or `{background: true, status}` while the
 /// work runs (the status bar shows `label`).
 pub fn run(
-    app: &mut VectorcraftApp,
+    app: &mut LogocraftApp,
     enabled: bool,
     label: String,
     doc: Option<u64>,
     work: impl FnOnce(Writer) -> Result<Value, String> + Send + 'static,
-    then: impl FnOnce(&mut VectorcraftApp, Result<Value, String>) -> Result<Value, String> + 'static,
+    then: impl FnOnce(&mut LogocraftApp, Result<Value, String>) -> Result<Value, String> + 'static,
 ) -> Result<Value, String> {
     let mut work: Work = Box::new(work);
     let shared = app.services.write_shared.clone().filter(|_| enabled && app.services.download.is_none());
@@ -133,7 +133,7 @@ pub fn run(
 }
 
 /// Apply the results that arrived (each frame).
-pub fn poll(app: &mut VectorcraftApp) {
+pub fn poll(app: &mut LogocraftApp) {
     while let Some(done) = app.background.worker.as_ref().and_then(|(_, rx)| rx.try_recv().ok()) {
         finish(app, done);
     }
@@ -141,7 +141,7 @@ pub fn poll(app: &mut VectorcraftApp) {
 
 /// Wait for every job and apply its result (before quitting, closing a document, or another save
 /// of a document a job is reading).
-pub fn wait_all(app: &mut VectorcraftApp) {
+pub fn wait_all(app: &mut LogocraftApp) {
     while !app.background.jobs.is_empty() {
         let Some(done) = app.background.worker.as_ref().and_then(|(_, rx)| rx.recv().ok()) else {
             // The worker is gone: its jobs can't finish.
@@ -155,14 +155,14 @@ pub fn wait_all(app: &mut VectorcraftApp) {
     }
 }
 
-fn finish(app: &mut VectorcraftApp, (id, r): Done) {
+fn finish(app: &mut LogocraftApp, (id, r): Done) {
     let Some(i) = app.background.jobs.iter().position(|j| j.id == id) else { return };
     let job = app.background.jobs.remove(i);
     apply(app, job, r);
 }
 
 /// Hand a job its result; a failure goes to the status bar (the call that started it returned).
-fn apply(app: &mut VectorcraftApp, job: Job, r: Result<Value, String>) {
+fn apply(app: &mut LogocraftApp, job: Job, r: Result<Value, String>) {
     if let Err(e) = (job.then)(app, r) {
         app.status(format!("{} failed: {e}", job.label));
     }

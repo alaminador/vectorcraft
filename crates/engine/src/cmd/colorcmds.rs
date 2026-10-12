@@ -7,14 +7,14 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use logocraft_color::cms::Model;
+use logocraft_color::{Color, Paint, keep_model};
+use logocraft_doc::live::lerp_color;
+use logocraft_doc::pattern::PatternDef;
+pub(crate) use logocraft_doc::recolor::map_paint;
+use logocraft_doc::recolor::{ColorVisitor, Reach, map_links, recolor_node};
+use logocraft_doc::{Document, ImageBlob, Node, NodeId, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_color::cms::Model;
-use vectorcraft_color::{Color, Paint, keep_model};
-use vectorcraft_doc::live::lerp_color;
-use vectorcraft_doc::pattern::PatternDef;
-pub(crate) use vectorcraft_doc::recolor::map_paint;
-use vectorcraft_doc::recolor::{ColorVisitor, Reach, map_links, recolor_node};
-use vectorcraft_doc::{Document, ImageBlob, Node, NodeId, NodeKind};
 
 use super::edit::selected_roots;
 use super::*;

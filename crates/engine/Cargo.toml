@@ -1,28 +1,28 @@
 [package]
-name = "vectorcraft-engine"
+name = "logocraft-engine"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "VectorCraft engine: sessions, history, selection, the command registry"
+description = "LogoCraft engine: sessions, history, selection, the command registry"
 
 [lints]
 workspace = true
 
 [dependencies]
-vectorcraft-geom = { workspace = true }
-vectorcraft-color = { workspace = true }
-vectorcraft-doc = { workspace = true }
-vectorcraft-tools = { workspace = true }
-vectorcraft-text = { workspace = true }
-vectorcraft-render = { workspace = true }
-vectorcraft-pathops = { workspace = true }
-vectorcraft-brush = { workspace = true }
-vectorcraft-trace = { workspace = true }
-vectorcraft-svg = { workspace = true }
-vectorcraft-format = { workspace = true }
-vectorcraft-pdf = { workspace = true }
-vectorcraft-eps = { workspace = true }
-vectorcraft-affinity = { workspace = true }
+logocraft-geom = { workspace = true }
+logocraft-color = { workspace = true }
+logocraft-doc = { workspace = true }
+logocraft-tools = { workspace = true }
+logocraft-text = { workspace = true }
+logocraft-render = { workspace = true }
+logocraft-pathops = { workspace = true }
+logocraft-brush = { workspace = true }
+logocraft-trace = { workspace = true }
+logocraft-svg = { workspace = true }
+logocraft-format = { workspace = true }
+logocraft-pdf = { workspace = true }
+logocraft-eps = { workspace = true }
+logocraft-affinity = { workspace = true }
 image = { workspace = true }
 flate2 = { workspace = true }
 kurbo = { workspace = true }
@@ -33,8 +33,8 @@ log = { workspace = true }
 
 [dev-dependencies]
 crc32fast = { workspace = true }
-vectorcraft-affinity = { workspace = true, features = ["synth"] }
-vectorcraft-testkit = { workspace = true }
+logocraft-affinity = { workspace = true, features = ["synth"] }
+logocraft-testkit = { workspace = true }
 proptest = { workspace = true }
 # Zstandard streams for the Illustrator editing data fuzz tests.
 ruzstd = { workspace = true }

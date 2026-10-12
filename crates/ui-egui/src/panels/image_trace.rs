@@ -5,12 +5,12 @@
 //! redraws it without tracing again. With an image selected, Trace makes a new Image Trace object.
 
 use egui::Ui;
+use logocraft_doc::{Node, NodeKind, TraceView};
+use logocraft_engine::cmd::swatchlib::DOCUMENT_SWATCHES;
 use serde_json::{Value, json};
-use vectorcraft_doc::{Node, NodeKind, TraceView};
-use vectorcraft_engine::cmd::swatchlib::DOCUMENT_SWATCHES;
 
 use super::{first_selected, library_panel, pstate, set_pstate, swatches};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::widgets::{self, menu_item};
 
 const MODES: [(&str, &str); 4] = [("blackAndWhite", "Black and White"), ("grayscale", "Grayscale"), ("color", "Color"), ("logo", "Flat Logo")];
@@ -30,7 +30,7 @@ fn palette_label(id: &str) -> &'static str {
 
 /// The name of Document Library's library `key` (the document's swatches or a swatch library); a
 /// library that is gone shows its key.
-fn library_label(app: &VectorcraftApp, key: &str) -> String {
+fn library_label(app: &LogocraftApp, key: &str) -> String {
     match swatches::limit_name(app, key) {
         Some(_) if key == DOCUMENT_SWATCHES => tl!(swatches::DOCUMENT_SWATCHES).to_string(),
         Some(name) => library_panel::library_name(key, &name).to_string(),
@@ -40,7 +40,7 @@ fn library_label(app: &VectorcraftApp, key: &str) -> String {
 
 /// Document Library's choices: the document's swatches, then the colour libraries (`current`
 /// checked) → the key chosen.
-fn library_list(app: &VectorcraftApp, ui: &mut Ui, current: &str) -> Option<String> {
+fn library_list(app: &LogocraftApp, ui: &mut Ui, current: &str) -> Option<String> {
     let document = menu_item(ui, swatches::DOCUMENT_SWATCHES, true, current == DOCUMENT_SWATCHES).then(|| DOCUMENT_SWATCHES.to_string());
     ui.separator();
     library_panel::library_items(ui, &swatches::colour_libraries(app), Some(current)).or(document)
@@ -58,7 +58,7 @@ struct TraceUi {
     synced: Value,
 }
 
-fn presets(app: &mut VectorcraftApp) -> Vec<(String, Value)> {
+fn presets(app: &mut LogocraftApp) -> Vec<(String, Value)> {
     let v = app.session.execute("imageTrace.presets", &json!({})).unwrap_or_default();
     v["presets"]
         .as_array()
@@ -74,13 +74,13 @@ pub(crate) fn is_trace(n: &Node) -> bool {
 }
 
 /// What the selection is: an Image Trace object (with its stored settings), a plain image, or neither.
-fn target(app: &VectorcraftApp) -> (bool, bool, Option<Value>) {
+fn target(app: &LogocraftApp) -> (bool, bool, Option<Value>) {
     let Some(n) = first_selected(app) else { return (false, false, None) };
     (is_trace(&n), matches!(n.kind, NodeKind::Image(_)), n.extras().trace.as_deref().cloned())
 }
 
 /// The one selected Image Trace object's preset ("Custom" once its settings were changed) and view.
-pub(crate) fn selected_trace(app: &VectorcraftApp) -> Option<(String, TraceView)> {
+pub(crate) fn selected_trace(app: &LogocraftApp) -> Option<(String, TraceView)> {
     let st = app.session.active()?;
     let [id] = st.selection.objects[..] else { return None };
     let n = st.doc.node(id).filter(|n| is_trace(n))?;
@@ -105,14 +105,14 @@ fn view_dropdown(ui: &mut Ui, current: TraceView, width: f32) -> Option<TraceVie
 }
 
 /// Show the selected Image Trace objects with `view` (no new trace).
-fn set_view(app: &mut VectorcraftApp, view: TraceView) {
+fn set_view(app: &mut LogocraftApp, view: TraceView) {
     if let Err(e) = app.run("imageTrace.setView", json!({ "view": view.id() })) {
         app.ui.status = e;
     }
 }
 
 /// The selected Image Trace object's View row (Control bar, Properties).
-pub(crate) fn view_row(app: &mut VectorcraftApp, ui: &mut Ui, current: TraceView, width: f32) {
+pub(crate) fn view_row(app: &mut LogocraftApp, ui: &mut Ui, current: TraceView, width: f32) {
     widgets::dim_label(ui, tl!("View:"));
     // No wider than what the label leaves of the row (#1358).
     if let Some(v) = view_dropdown(ui, current, width.min(ui.available_width())) {
@@ -121,14 +121,14 @@ pub(crate) fn view_row(app: &mut VectorcraftApp, ui: &mut Ui, current: TraceView
 }
 
 /// Trace the selected image, or trace the selected Image Trace object again, with built-in `preset`.
-fn trace_with(app: &mut VectorcraftApp, preset: &str) {
+fn trace_with(app: &mut LogocraftApp, preset: &str) {
     // A failure is reported in the status bar.
     let _ = app.run("imageTrace.make", json!({ "preset": preset }));
 }
 
 /// The built-in presets to choose from (`current` highlighted) → the one chosen. Listed only
 /// while the menu is open.
-fn preset_list(app: &mut VectorcraftApp, ui: &mut Ui, current: &str) -> Option<String> {
+fn preset_list(app: &mut LogocraftApp, ui: &mut Ui, current: &str) -> Option<String> {
     let mut chosen = None;
     for (name, _) in presets(app) {
         if ui.add(egui::Button::selectable(name == current, tl!(&name))).clicked() {
@@ -143,7 +143,7 @@ pub(crate) const TRACE_BUTTON_W: f32 = 104.0;
 
 /// The Image Trace button for a selected image (Control bar, Properties): a click traces it with
 /// the Default preset, its arrow lists the presets to trace it with.
-pub(crate) fn trace_button(app: &mut VectorcraftApp, ui: &mut Ui, width: f32) {
+pub(crate) fn trace_button(app: &mut LogocraftApp, ui: &mut Ui, width: f32) {
     let (main, arrow) = widgets::split_button(ui, tl!("Image Trace"), width);
     if main.on_hover_text(tl!("Trace the image with the Default preset")).clicked() {
         trace_with(app, "Default");
@@ -156,7 +156,7 @@ pub(crate) fn trace_button(app: &mut VectorcraftApp, ui: &mut Ui, width: f32) {
 
 /// The selected Image Trace object's preset (Control bar, Properties): choosing another traces it
 /// again with that preset.
-pub(crate) fn preset_dropdown(app: &mut VectorcraftApp, ui: &mut Ui, current: &str, width: f32) {
+pub(crate) fn preset_dropdown(app: &mut LogocraftApp, ui: &mut Ui, current: &str, width: f32) {
     if let Some(p) = widgets::combo(ui, "trace-preset", tl!(current), width, false, |ui| preset_list(app, ui, current)) {
         trace_with(app, &p);
     }
@@ -164,7 +164,7 @@ pub(crate) fn preset_dropdown(app: &mut VectorcraftApp, ui: &mut Ui, current: &s
 
 /// The Control bar for one selected Image Trace object: its preset, view, the Image Trace panel
 /// and Expand. Whether it is one.
-pub fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) -> bool {
+pub fn control_bar(app: &mut LogocraftApp, ui: &mut Ui) -> bool {
     let Some((preset, view)) = selected_trace(app) else { return false };
     widgets::dim_label(ui, tl!("Preset:"));
     preset_dropdown(app, ui, &preset, 150.0);
@@ -179,7 +179,7 @@ pub fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) -> bool {
     true
 }
 
-fn trace(app: &mut VectorcraftApp, st: &mut TraceUi) {
+fn trace(app: &mut LogocraftApp, st: &mut TraceUi) {
     let preset = if st.preset == "Custom" { "Default" } else { st.preset.as_str() };
     match app.run("imageTrace.make", json!({ "preset": preset, "params": st.params, "view": st.view.id() })) {
         Ok(r) => st.info = Some((r["paths"].as_u64().unwrap_or(0), r["anchors"].as_u64().unwrap_or(0), r["colors"].as_u64().unwrap_or(0))),
@@ -201,7 +201,7 @@ fn slider(ui: &mut Ui, label: &str, v: &mut f64, range: std::ops::RangeInclusive
     out
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let all = presets(app);
     let mut st: TraceUi = pstate(ui.ctx(), "image-trace");
     if st.params.is_null() {
@@ -372,7 +372,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     set_pstate(ui.ctx(), "image-trace", st);
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let (is_trace, _, _) = target(app);
     if menu_item(ui, tl!("Release"), is_trace, false) {
         app.run("imageTrace.release", json!({})).ok();
@@ -392,7 +392,7 @@ mod tests {
     use egui::{Event, PointerButton, Pos2, Rect, vec2};
 
     /// One headless frame of the panel (and its menu) with `events`: the texts drawn, with where.
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<Event>) -> Vec<(String, Rect)> {
+    fn frame(app: &mut LogocraftApp, ctx: &egui::Context, events: Vec<Event>) -> Vec<(String, Rect)> {
         let screen = Rect::from_min_size(Pos2::ZERO, vec2(280.0, 700.0));
         let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| show(app, ui));
         out.textures_delta.clear();
@@ -400,7 +400,7 @@ mod tests {
     }
 
     /// Click the panel's `label` (the first one drawn).
-    fn click(app: &mut VectorcraftApp, ctx: &egui::Context, label: &str) {
+    fn click(app: &mut LogocraftApp, ctx: &egui::Context, label: &str) {
         let texts = frame(app, ctx, vec![]);
         let at = texts.iter().find(|(t, _)| t == label).map(|(_, r)| r.center()).unwrap_or_else(|| panic!("no `{label}` in {texts:?}"));
         let press = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
@@ -408,13 +408,13 @@ mod tests {
         frame(app, ctx, vec![press(false)]);
     }
 
-    fn traced_app() -> VectorcraftApp {
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+    fn traced_app() -> LogocraftApp {
+        let mut app = LogocraftApp::new(logocraft_engine::Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
         let img = image::RgbaImage::from_fn(20, 20, |x, _| image::Rgba(if x < 10 { [0, 0, 0, 255] } else { [255, 255, 255, 255] }));
         let mut png = vec![];
         img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
-        let data = vectorcraft_format::base64_encode(&png);
+        let data = logocraft_format::base64_encode(&png);
         app.run("file.place", json!({"name": "half.png", "dataBase64": data, "link": false})).unwrap();
         app.run("imageTrace.make", json!({"preset": "Default"})).unwrap();
         app
@@ -428,7 +428,7 @@ mod tests {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         // Where the panel's content ends after a few frames.
-        let right = |app: &mut VectorcraftApp| {
+        let right = |app: &mut LogocraftApp| {
             let mut right = 0.0;
             for _ in 0..3 {
                 let screen = Rect::from_min_size(Pos2::ZERO, vec2(280.0, 700.0));
@@ -488,7 +488,7 @@ mod tests {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         let has = |texts: &[(String, Rect)], s: &str| texts.iter().any(|(t, _)| t == s);
-        let palette = |app: &VectorcraftApp| target(app).2.map(|t| t["params"]["palette"].clone());
+        let palette = |app: &LogocraftApp| target(app).2.map(|t| t["params"]["palette"].clone());
         assert!(!has(&frame(&mut app, &ctx, vec![]), "Palette:"), "Black and White has no palette");
         app.run("imageTrace.make", json!({"preset": "6 Colors"})).unwrap();
         let texts = frame(&mut app, &ctx, vec![]);
@@ -512,7 +512,7 @@ mod tests {
         let mut app = traced_app();
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        let create = |app: &VectorcraftApp| target(app).2.map(|t| (t["params"]["fills"].clone(), t["params"]["strokes"].clone()));
+        let create = |app: &LogocraftApp| target(app).2.map(|t| (t["params"]["fills"].clone(), t["params"]["strokes"].clone()));
         let texts = frame(&mut app, &ctx, vec![]);
         for s in ["Create:", "Fills", "Strokes", "Stroke", "10"] {
             assert!(texts.iter().any(|(t, _)| t == s), "{s}: {texts:?}");
@@ -530,7 +530,7 @@ mod tests {
 
     #[test]
     fn panel_and_menu_draw_headless() {
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        let mut app = LogocraftApp::new(logocraft_engine::Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
         app.session.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
         for _ in 0..2 {

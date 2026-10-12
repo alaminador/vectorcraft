@@ -1,14 +1,14 @@
-# Releasing VectorCraft
+# Releasing LogoCraft
 
 > **Last updated:** 2026-10-12 · **Change:** minor (RPM runtime capabilities and metadata checks, #1275)
 
 Every push to the `release` branch runs `.github/workflows/release.yml`. The workflow builds
 installers for macOS, Windows, Linux (including Flatpak bundles and a RISC-V tarball) and FreeBSD, plus the web build, and creates or updates a
-**draft** GitHub Release named `VectorCraft v<version>`. Nobody sees a draft until a maintainer
+**draft** GitHub Release named `LogoCraft v<version>`. Nobody sees a draft until a maintainer
 publishes it.
 
-User-facing names say **VectorCraft**. Files, binaries and ids stay lowercase
-(`vectorcraft-<version>-<platform>-<arch>.<ext>`, `ai.storyteller.vectorcraft`).
+User-facing names say **LogoCraft**. Files, binaries and ids stay lowercase
+(`logocraft-<version>-<platform>-<arch>.<ext>`, `io.github.alaminador.logocraft`).
 
 ## Cutting a release
 
@@ -21,10 +21,10 @@ User-facing names say **VectorCraft**. Files, binaries and ids stay lowercase
    ```
 
    Commit the change (`Cargo.toml` + `Cargo.lock`) through the normal review flow, as a
-   `Release: VectorCraft v0.4.0` commit whose message says what changed for users.
+   `Release: LogoCraft v0.4.0` commit whose message says what changed for users.
 2. **Merge `main` into `release`** (or fast-forward it) and push. The workflow starts by itself.
 3. **Wait for the draft.** When every job is done (macOS notarization is the slow part), the
-   Releases page has a draft `VectorCraft v0.4.0`, targeting the pushed commit, with every
+   Releases page has a draft `LogoCraft v0.4.0`, targeting the pushed commit, with every
    artifact and `SHA256SUMS.txt`. The notes are generated from the merged pull requests.
 4. **Check it.** Download an installer or two and read the job summaries. A `::warning::` there
    means a signing secret was missing and that artifact is unsigned.
@@ -46,19 +46,19 @@ and no draft release is created.
 
 | Platform | Artifacts | Built on |
 |---|---|---|
-| macOS 11+ (universal: Apple silicon and Intel) | `vectorcraft-<v>-macos-universal.dmg`, `vectorcraft-cli-<v>-macos-universal.zip` | `macos-15` |
-| Windows x64 | `vectorcraft-<v>-windows-x64.msi`, `vectorcraft-<v>-windows-x64-portable.zip` | `windows-latest` |
-| Windows x86 (32-bit) | `vectorcraft-<v>-windows-x86.msi`, `vectorcraft-<v>-windows-x86-portable.zip` | `windows-latest` |
-| Windows on ARM64 | `vectorcraft-<v>-windows-arm64.msi`, `vectorcraft-<v>-windows-arm64-portable.zip` | `windows-latest` (cross-compiled) |
-| Linux x86_64 | `vectorcraft-<v>-linux-x86_64.{AppImage,deb,rpm,tar.gz}` | `ubuntu-22.04` |
-| Linux aarch64 | `vectorcraft-<v>-linux-aarch64.{AppImage,deb,rpm,tar.gz}` | `ubuntu-22.04-arm` |
-| Linux riscv64 | `vectorcraft-<v>-linux-riscv64.tar.gz` (cross-compiled, glibc >= 2.39; CLI smoke-tested under QEMU) | `ubuntu-24.04` |
-| Linux AppImage updates | `vectorcraft-<v>-linux-{x86_64,aarch64}.AppImage.zsync` | with the AppImages |
-| Flatpak x86_64, aarch64 | `vectorcraft-<v>-linux-{x86_64,aarch64}.flatpak` | `ubuntu-24.04`, `ubuntu-24.04-arm` (repackages the Linux tarball) |
-| FreeBSD 14 x86_64 | `vectorcraft-<v>-freebsd-x86_64.tar.gz` | a FreeBSD 14.3 VM on `ubuntu-latest` |
-| Web | `vectorcraft-web-<v>.zip`, a static site (see [`packaging/web/README.md`](../packaging/web/README.md)) | `ubuntu-latest` |
+| macOS 11+ (universal: Apple silicon and Intel) | `logocraft-<v>-macos-universal.dmg`, `logocraft-cli-<v>-macos-universal.zip` | `macos-15` |
+| Windows x64 | `logocraft-<v>-windows-x64.msi`, `logocraft-<v>-windows-x64-portable.zip` | `windows-latest` |
+| Windows x86 (32-bit) | `logocraft-<v>-windows-x86.msi`, `logocraft-<v>-windows-x86-portable.zip` | `windows-latest` |
+| Windows on ARM64 | `logocraft-<v>-windows-arm64.msi`, `logocraft-<v>-windows-arm64-portable.zip` | `windows-latest` (cross-compiled) |
+| Linux x86_64 | `logocraft-<v>-linux-x86_64.{AppImage,deb,rpm,tar.gz}` | `ubuntu-22.04` |
+| Linux aarch64 | `logocraft-<v>-linux-aarch64.{AppImage,deb,rpm,tar.gz}` | `ubuntu-22.04-arm` |
+| Linux riscv64 | `logocraft-<v>-linux-riscv64.tar.gz` (cross-compiled, glibc >= 2.39; CLI smoke-tested under QEMU) | `ubuntu-24.04` |
+| Linux AppImage updates | `logocraft-<v>-linux-{x86_64,aarch64}.AppImage.zsync` | with the AppImages |
+| Flatpak x86_64, aarch64 | `logocraft-<v>-linux-{x86_64,aarch64}.flatpak` | `ubuntu-24.04`, `ubuntu-24.04-arm` (repackages the Linux tarball) |
+| FreeBSD 14 x86_64 | `logocraft-<v>-freebsd-x86_64.tar.gz` | a FreeBSD 14.3 VM on `ubuntu-latest` |
+| Web | `logocraft-web-<v>.zip`, a static site (see [`packaging/web/README.md`](../packaging/web/README.md)) | `ubuntu-latest` |
 
-`vectorcraft --version` and `vectorcraft-cli --version` print the version from `Cargo.toml`.
+`logocraft --version` and `logocraft-cli --version` print the version from `Cargo.toml`.
 
 **Fonts.** Every build job checks out [craft-fonts](https://github.com/storytold/craft-fonts) at a
 pinned commit (the `ref:` of its craft-fonts checkout step) and builds with `CRAFT_FONTS_DIR` and
@@ -71,17 +71,17 @@ The rules are in craftrules `standards/fonts.md`, the build option in
 ### macOS
 
 `packaging/macos/package.sh` builds `aarch64-apple-darwin` and `x86_64-apple-darwin` with
-`MACOSX_DEPLOYMENT_TARGET=11.0`, joins them with `lipo` and assembles `VectorCraft.app`:
+`MACOSX_DEPLOYMENT_TARGET=11.0`, joins them with `lipo` and assembles `LogoCraft.app`:
 
-- `Info.plist` is generated from `Info.plist.in` (bundle id `ai.storyteller.vectorcraft`,
+- `Info.plist` is generated from `Info.plist.in` (bundle id `io.github.alaminador.logocraft`,
   `LSMinimumSystemVersion` 11.0, the version and the build commit). The icon is
-  `assets/app-icon/vectorcraft.icns`. `cargo xtask bundle` fills in the same template for its
+  `assets/app-icon/logocraft.icns`. `cargo xtask bundle` fills in the same template for its
   development app.
 - **Document types:** `Info.plist.in` declares every format File › Open reads, so Finder opens
-  them with VectorCraft (double-click, Open With, a drop on the Dock icon). VectorCraft owns its own
+  them with LogoCraft (double-click, Open With, a drop on the Dock icon). LogoCraft owns its own
   formats and is an alternate for the others. A test keeps the list in step with the engine's
   `OPEN_EXTS`. AppKit hands the files to the app as open-document events, which
-  `apps/vectorcraft/src/open_documents.rs` opens like files named on the command line.
+  `apps/logocraft/src/open_documents.rs` opens like files named on the command line.
 - **Signing** goes inside-out with the hardened runtime and a secure timestamp: the executable
   first, then the bundle, with no `--deep` on the final signature. The entitlements
   (`entitlements.plist`) are deliberately empty.
@@ -90,9 +90,9 @@ The rules are in craftrules `standards/fonts.md`, the build option in
   (`hdiutil create -srcfolder`, retried when a CI runner's device is busy, with an `Applications` link
   to drag onto), which is signed, notarized and stapled too; the app mounted from it must pass
   `codesign --verify --strict --deep` (#1085). Its Finder window (background, icon size and positions) comes from
-  [`packaging/macos/dmg/`](../packaging/macos/dmg/README.md), and its volume is named `VectorCraft`
+  [`packaging/macos/dmg/`](../packaging/macos/dmg/README.md), and its volume is named `LogoCraft`
   without the version, which the window's background needs; the DMG file name keeps the version.
-- **CLI:** the universal `vectorcraft-cli` is signed the same way, zipped, and the zip is
+- **CLI:** the universal `logocraft-cli` is signed the same way, zipped, and the zip is
   notarized. A bare executable can't hold a stapled ticket, so Gatekeeper looks the CLI's ticket up
   online the first time a downloaded copy runs.
 
@@ -111,22 +111,22 @@ so neither the MSI nor the portable zip needs the Visual C++ redistributable. Th
 to the target triple, so host build scripts aren't affected.
 
 - Before packaging, the script checks each binary's PE machine type against `-Arch` (an x64 build
-  can never ship labelled arm64), that `vectorcraft.exe` is a GUI program (no console window) and
-  that `vectorcraft-cli.exe` is a console program.
-- `vectorcraft.wxs` (WiX) is a per-machine install into Program Files with a Start Menu shortcut
-  and an App Paths entry (Win+R `vectorcraft`). Same-version upgrades are allowed, so release
+  can never ship labelled arm64), that `logocraft.exe` is a GUI program (no console window) and
+  that `logocraft-cli.exe` is a console program.
+- `logocraft.wxs` (WiX) is a per-machine install into Program Files with a Start Menu shortcut
+  and an App Paths entry (Win+R `logocraft`). Same-version upgrades are allowed, so release
   candidates replace each other.
 - Double-clicking the MSI opens a setup wizard (WixUI_InstallDir without the licence page):
-  Welcome, install folder (remembered for upgrades in `HKLM\Software\VectorCraft\InstallDir`),
+  Welcome, install folder (remembered for upgrades in `HKLM\Software\LogoCraft\InstallDir`),
   Shortcuts (a ticked "Create a desktop shortcut" box), Ready, a progress page, and a Finish page
-  that says where to find the app, with a ticked "Launch VectorCraft" box. The pages name the full
-  version (`vectorcraft.en-us.wxl`). `package.ps1` draws the wizard's banner and side bitmaps from
+  that says where to find the app, with a ticked "Launch LogoCraft" box. The pages name the full
+  version (`logocraft.en-us.wxl`). `package.ps1` draws the wizard's banner and side bitmaps from
   the app icon, so no WiX stock art ships. `msiexec /qn` still installs silently, with the desktop
   shortcut unless `INSTALLDESKTOPSHORTCUT=""` is passed. Building needs the WiX UI and Util
   extensions: `wix extension add -g WixToolset.UI.wixext/5.0.2 WixToolset.Util.wixext/5.0.2`.
 - The ARM64 build is cross-compiled on the x64 runner. `.github/workflows/windows-arm64.yml`
   installs that MSI on a Windows 11 ARM64 runner, checks that both installed programs are ARM64,
-  runs `vectorcraft-cli --version` natively and uninstalls.
+  runs `logocraft-cli --version` natively and uninstalls.
 - **Signing:** `packaging/windows/sign.ps1` signs both `.exe` files and then the `.msi` with
   `signtool` (SHA-256, RFC 3161 timestamp), using whichever material is present:
   1. a `.pfx` certificate (`WINDOWS_CERTIFICATE`, base64, and `WINDOWS_CERTIFICATE_PASSWORD`), or
@@ -142,7 +142,7 @@ to the target triple, so host build scripts aren't affected.
 `packaging/linux/package.sh` builds the release binaries and packages them as an AppImage, a
 `.deb` and an `.rpm` (with [nfpm](https://nfpm.goreleaser.com), from `nfpm.yaml`) and a plain
 `.tar.gz` tree (`bin/`, `share/`). The packages install both programs, the desktop entry, the
-AppStream metainfo, the MIME type for VectorCraft documents, the icons and the licence files.
+AppStream metainfo, the MIME type for LogoCraft documents, the icons and the licence files.
 
 The jobs run on `ubuntu-22.04`, the oldest GitHub-hosted image, so the binaries only need
 glibc 2.35 or newer: Ubuntu 22.04+, Debian 12+, Fedora 36+ and RHEL 10. Moving the job to a newer
@@ -167,10 +167,10 @@ Before publishing a Linux release:
 **RISC-V.** The `linux-riscv64` job cross-compiles `riscv64gc-unknown-linux-gnu` on `ubuntu-24.04`
 against riscv64 libraries from ports.ubuntu.com (so the floor there is glibc 2.39) and runs
 `package.sh --formats tar` with `CROSS_ARCH`, `CROSS_TARGET`, `CROSS_COMPILE` and
-`EMULATOR=qemu-riscv64` set: a `.tar.gz` only, with `vectorcraft-cli --version` run under QEMU.
+`EMULATOR=qemu-riscv64` set: a `.tar.gz` only, with `logocraft-cli --version` run under QEMU.
 
 **AppImage updates.** Each AppImage embeds the update information
-`gh-releases-zsync|storytold|vectorcraft|latest|vectorcraft-*-linux-<arch>.AppImage.zsync`
+`gh-releases-zsync|storytold|logocraft|latest|logocraft-*-linux-<arch>.AppImage.zsync`
 (appimagetool `-u`), and `package.sh` writes the matching `.zsync` beside it when `zsyncmake` (the
 `zsync` package) is installed. [AppImageUpdate](https://github.com/AppImageCommunity/AppImageUpdate)
 and AppImageLauncher then download only the changed blocks from the newest published,
@@ -178,10 +178,10 @@ non-pre-release release. The job checks both are there.
 
 **Flatpak.** The `flatpak` jobs (x86_64 on `ubuntu-24.04`, aarch64 on `ubuntu-24.04-arm`) take the
 Linux job's tarball and repackage it with `packaging/linux/flatpak-bundle.sh` and
-`packaging/linux/flatpak/ai.storyteller.vectorcraft.bundle.yml` into a single-file bundle
-(`flatpak install --user vectorcraft-<v>-linux-<arch>.flatpak`), then install it and run
-`vectorcraft-cli --version` in the sandbox. No Rust build happens there, so the bundle carries the
-same binaries as the AppImage. `packaging/linux/flatpak/ai.storyteller.vectorcraft.yml` is the
+`packaging/linux/flatpak/io.github.alaminador.logocraft.bundle.yml` into a single-file bundle
+(`flatpak install --user logocraft-<v>-linux-<arch>.flatpak`), then install it and run
+`logocraft-cli --version` in the sandbox. No Rust build happens there, so the bundle carries the
+same binaries as the AppImage. `packaging/linux/flatpak/io.github.alaminador.logocraft.yml` is the
 from-source manifest for a Flathub submission (its header says how to build it); packaging-lint
 keeps the runtime and sandbox permissions of the two manifests identical.
 
@@ -190,11 +190,11 @@ keeps the runtime and sandbox permissions of the two manifests identical.
 GitHub has no FreeBSD runners, so the job builds in a FreeBSD 14.3 VM on `ubuntu-latest` (the same
 image as `.github/workflows/freebsd.yml`). `packaging/freebsd/package.sh` writes a
 `/usr/local`-style tree; users install it with
-`tar -xzf vectorcraft-*-freebsd-x86_64.tar.gz --strip-components 1 -C /usr/local`.
+`tar -xzf logocraft-*-freebsd-x86_64.tar.gz --strip-components 1 -C /usr/local`.
 
 ### Web
 
-The web job builds `apps/vectorcraft-web` with trunk and zips the static site
+The web job builds `apps/logocraft-web` with trunk and zips the static site
 (`packaging/web/package.sh`). [`packaging/web/README.md`](../packaging/web/README.md) covers
 hosting: any path works, `.wasm` must be served as `application/wasm`, and the sample header
 files for common hosts.
@@ -202,7 +202,7 @@ files for common hosts.
 ## The draft release
 
 The last job waits for every build, downloads their artifacts, writes `SHA256SUMS.txt` and creates
-the draft `VectorCraft v<version>` with notes generated from the merged pull requests. If the draft
+the draft `LogoCraft v<version>` with notes generated from the merged pull requests. If the draft
 already exists, it replaces its assets and keeps it a draft. If that version is already published,
 the job fails and asks for a version bump (`cargo xtask version set`).
 

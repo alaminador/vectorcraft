@@ -4,12 +4,12 @@
 use std::sync::{Mutex, OnceLock};
 
 use egui::{Key, Ui, vec2};
+use logocraft_doc::{CharPosition, CharStyle, NodeId, NodeKind};
+use logocraft_tools::{Mods, ToolKey};
 use serde_json::{Value, json};
-use vectorcraft_doc::{CharPosition, CharStyle, NodeId, NodeKind};
-use vectorcraft_tools::{Mods, ToolKey};
 
 use super::{pstate, set_pstate};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::theme::Tokens;
 use crate::widgets::{self, SpinPick, menu_item};
 
@@ -24,18 +24,18 @@ pub const SCALE_PRESETS: [f64; 8] = [25.0, 50.0, 75.0, 90.0, 100.0, 110.0, 125.0
 /// tool edits text, else the first selected text object's first run (including groups). With it, the paragraph
 /// attributes of the paragraph the selection starts in (else of the first paragraph).
 /// Font/paragraph controls and named-style capture use this; dimensional fields use `shared_effective`.
-pub(crate) fn text_style(app: &VectorcraftApp) -> Option<(CharStyle, vectorcraft_doc::ParaStyle)> {
+pub(crate) fn text_style(app: &LogocraftApp) -> Option<(CharStyle, logocraft_doc::ParaStyle)> {
     if let Some((id, a, b)) = text_editing(app)
         && let Some(NodeKind::Text(t)) = app.session.active().and_then(|d| d.doc.node(id)).map(|n| &n.kind)
     {
-        return Some((vectorcraft_text::edit::insertion_style(&t.runs, a, b), t.para_at(t.paragraphs_in(a, a).start).clone()));
+        return Some((logocraft_text::edit::insertion_style(&t.runs, a, b), t.para_at(t.paragraphs_in(a, a).start).clone()));
     }
     let t = first_selected_text(app)?;
     Some((t.first_style(), t.para_at(0).clone()))
 }
 
 /// The first selected text descendant, shared by Character and Paragraph controls.
-pub(crate) fn first_selected_text(app: &VectorcraftApp) -> Option<&vectorcraft_doc::TextObject> {
+pub(crate) fn first_selected_text(app: &LogocraftApp) -> Option<&logocraft_doc::TextObject> {
     let st = app.session.active()?;
     for node in st.selection.objects.iter().filter_map(|id| st.doc.node(*id)) {
         let mut text = None;
@@ -56,14 +56,14 @@ pub(crate) fn first_selected_text(app: &VectorcraftApp) -> Option<&vectorcraft_d
 /// `f` of the character styles the panels act on: the runs the Type tool's selection covers (the
 /// caret's style at a caret), else every run of the selected type, groups' included. `None` (a
 /// blank field) where they differ, or with no type.
-pub(crate) fn shared<T: PartialEq>(app: &VectorcraftApp, f: impl Fn(&CharStyle) -> T) -> Option<T> {
+pub(crate) fn shared<T: PartialEq>(app: &LogocraftApp, f: impl Fn(&CharStyle) -> T) -> Option<T> {
     shared_styles(app, |_, style| Some(f(style)))
 }
 
 /// Dimensional controls use document units and tolerate arithmetic roundoff when comparing
 /// compensated runs. Keep raw styles available to font/paragraph controls and style definitions,
 /// even if a collapsed affine prevents editing dimensions.
-fn shared_effective(app: &VectorcraftApp, f: impl Fn(&CharStyle) -> f64) -> Option<f64> {
+fn shared_effective(app: &LogocraftApp, f: impl Fn(&CharStyle) -> f64) -> Option<f64> {
     shared_styles(app, |t, style| t.effective_char_style(style).map(|s| Metric(f(&s)))).map(|v| v.0)
 }
 
@@ -75,7 +75,7 @@ impl PartialEq for Metric {
     }
 }
 
-fn shared_styles<T: PartialEq>(app: &VectorcraftApp, f: impl Fn(&vectorcraft_doc::TextObject, &CharStyle) -> Option<T>) -> Option<T> {
+fn shared_styles<T: PartialEq>(app: &LogocraftApp, f: impl Fn(&logocraft_doc::TextObject, &CharStyle) -> Option<T>) -> Option<T> {
     let st = app.session.active()?;
     let text = |id: NodeId| match st.doc.node(id).map(|n| &n.kind) {
         Some(NodeKind::Text(t)) => Some(t),
@@ -85,7 +85,7 @@ fn shared_styles<T: PartialEq>(app: &VectorcraftApp, f: impl Fn(&vectorcraft_doc
     if let Some((id, a, b)) = text_editing(app) {
         let t = text(id)?;
         if b <= a {
-            return f(t, &vectorcraft_text::edit::insertion_style(&t.runs, a, b));
+            return f(t, &logocraft_text::edit::insertion_style(&t.runs, a, b));
         }
         let mut end = 0;
         for r in &t.runs {
@@ -130,16 +130,16 @@ impl<T: PartialEq> Shared<T> {
     }
 }
 
-fn style(app: &mut VectorcraftApp, p: Value) {
+fn style(app: &mut LogocraftApp, p: Value) {
     char_cmd(app, "text.setStyle", p);
 }
-fn format(app: &mut VectorcraftApp, p: Value) {
+fn format(app: &mut LogocraftApp, p: Value) {
     char_cmd(app, "text.setFormat", p);
 }
 
 /// Apply character attributes: to the selected range while the Type tool edits text (the whole
 /// object when nothing is selected), else to the selected text objects.
-fn char_cmd(app: &mut VectorcraftApp, cmd: &str, p: Value) {
+fn char_cmd(app: &mut LogocraftApp, cmd: &str, p: Value) {
     if text_editing(app).is_none() {
         app.run(cmd, p).ok();
         return;
@@ -209,9 +209,9 @@ fn pick_face<'a>(styles: &'a [String], bold: bool, italic: bool, like: &str) -> 
 /// page layout apps): the family's own Bold or Italic face for the text the panels act on, or back
 /// to its regular weight (upright) when it already is bold (italic). No fake bold or slant: a family
 /// without that face is left as it is, and the message says so (#724).
-pub(crate) fn toggle_face(app: &mut VectorcraftApp, face: Face) -> Result<Value, String> {
+pub(crate) fn toggle_face(app: &mut LogocraftApp, face: Face) -> Result<Value, String> {
     let (s, _) = text_style(app).ok_or("select some type first")?;
-    let styles = vectorcraft_text::FontDb::global().styles(&s.font_family);
+    let styles = logocraft_text::FontDb::global().styles(&s.font_family);
     let (bold, _, italic, _) = face_of(&s.font_style);
     let (want_bold, want_italic) = match face {
         Face::Bold => (!bold, italic),
@@ -233,7 +233,7 @@ pub(crate) fn toggle_face(app: &mut VectorcraftApp, face: Face) -> Result<Value,
 
 /// `text.setRangeStyle` with `p` on the range the Type tool has selected (the whole text when
 /// nothing is selected). Does nothing unless the Type tool edits text.
-pub(crate) fn range_style(app: &mut VectorcraftApp, p: Value) {
+pub(crate) fn range_style(app: &mut LogocraftApp, p: Value) {
     let Some((id, a, b)) = text_editing(app) else { return };
     end_typing(app);
     let mut q = p;
@@ -248,7 +248,7 @@ pub(crate) fn range_style(app: &mut VectorcraftApp, p: Value) {
 // ---------- Type tool editing glue (selection, clipboard, keys) ----------
 
 /// The text object the Type tool is editing and its selection (clamped to the text).
-pub(crate) fn text_editing(app: &VectorcraftApp) -> Option<(NodeId, usize, usize)> {
+pub(crate) fn text_editing(app: &LogocraftApp) -> Option<(NodeId, usize, usize)> {
     let o = app.session.tool_options();
     let id = NodeId(o.get("editing")?.as_u64()?);
     let len = match &app.session.active()?.doc.node(id)?.kind {
@@ -260,7 +260,7 @@ pub(crate) fn text_editing(app: &VectorcraftApp) -> Option<(NodeId, usize, usize
 }
 
 /// Close the Type tool's typing session (one undo step) before another command edits the text.
-pub(crate) fn end_typing(app: &mut VectorcraftApp) {
+pub(crate) fn end_typing(app: &mut LogocraftApp) {
     if app.session.tool_options().get("typing").and_then(Value::as_bool) == Some(true) {
         app.session.set_tool_option("commitTyping", &json!(true));
         app.session.commit_interaction().ok();
@@ -273,7 +273,7 @@ static CTX: OnceLock<egui::Context> = OnceLock::new();
 /// can't read the system clipboard).
 static CLIP: Mutex<String> = Mutex::new(String::new());
 
-fn text_copy(app: &mut VectorcraftApp) -> bool {
+fn text_copy(app: &mut LogocraftApp) -> bool {
     let Some((id, a, b)) = text_editing(app) else { return false };
     if a == b {
         return false;
@@ -288,14 +288,14 @@ fn text_copy(app: &mut VectorcraftApp) -> bool {
     true
 }
 
-fn text_key(app: &mut VectorcraftApp, k: ToolKey, m: Mods) {
+fn text_key(app: &mut LogocraftApp, k: ToolKey, m: Mods) {
     let v = app.view_info();
     if let Err(e) = app.session.tool_key(k, m, v) {
         app.status(e.to_string());
     }
 }
 
-fn text_paste(app: &mut VectorcraftApp, s: Option<String>) {
+fn text_paste(app: &mut LogocraftApp, s: Option<String>) {
     let s = s.unwrap_or_else(|| CLIP.lock().unwrap_or_else(|e| e.into_inner()).clone());
     if !s.is_empty() {
         let v = app.view_info();
@@ -307,7 +307,7 @@ fn text_paste(app: &mut VectorcraftApp, s: Option<String>) {
 
 /// Edit-menu commands while the Type tool edits text act on the text (Cut/Copy/Paste/Clear;
 /// Select All is the engine's `select.all`). `None` = not intercepted.
-pub(crate) fn intercept_text_command(app: &mut VectorcraftApp, id: &str) -> Option<Result<Value, String>> {
+pub(crate) fn intercept_text_command(app: &mut LogocraftApp, id: &str) -> Option<Result<Value, String>> {
     if !app.session.tool_wants_text() {
         return None;
     }
@@ -338,7 +338,7 @@ enum TextInput {
 
 /// Route editing keys (with modifiers), clipboard events and Cmd+C/X/V to the Type tool (Cmd+A is
 /// left to the Select All shortcut, which selects the text being edited).
-pub(crate) fn route_type_input(app: &mut VectorcraftApp, ctx: &egui::Context) {
+pub(crate) fn route_type_input(app: &mut LogocraftApp, ctx: &egui::Context) {
     CTX.get_or_init(|| ctx.clone());
     let mut todo = vec![];
     ctx.input_mut(|i| {
@@ -432,7 +432,7 @@ fn cell(ui: &mut Ui, label: &str, tip: &str, add: impl FnOnce(&mut Ui)) {
 /// The Character panel's grid of numeric fields, `w` wide: Font Size, Leading, Kerning and
 /// Tracking, then with `more` the scales, Baseline Shift and Character Rotation (`s`: the style
 /// shown). The Properties panel shows its first rows.
-pub(crate) fn metrics_grid(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, s: &CharStyle, w: f32, more: bool) {
+pub(crate) fn metrics_grid(app: &mut LogocraftApp, ui: &mut Ui, id: &str, s: &CharStyle, w: f32, more: bool) {
     let fw = ((w - 66.0) / 2.0).clamp(60.0, 100.0);
     let unit = app.session.type_unit();
     egui::Grid::new(id).num_columns(2).spacing([6.0, 4.0]).show(ui, |ui| {
@@ -497,7 +497,7 @@ pub(crate) fn metrics_grid(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, s: &
 
 /// The Font Size combo (Character and Properties panels, Control bar): typed, stepped, scrubbed or
 /// picked from the presets, in the type unit, blank where the selected text's sizes differ.
-pub(crate) fn size_field(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, width: f32) {
+pub(crate) fn size_field(app: &mut LogocraftApp, ui: &mut Ui, id: &str, width: f32) {
     let size = shared_effective(app, |s| s.size);
     if let Some(v) = widgets::spin_field(ui, id, size, app.session.type_unit(), width, 1.0, 0.1, &SIZE_PRESETS) {
         style(app, json!({"size": v}));
@@ -506,12 +506,12 @@ pub(crate) fn size_field(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, width:
 
 /// The font family menu and the font style dropdown of style `s` (Character and Properties panels,
 /// Control bar), with their `ids` and `widths`.
-pub(crate) fn font_pickers(app: &mut VectorcraftApp, ui: &mut Ui, s: &CharStyle, ids: (&str, &str), widths: (f32, f32)) {
+pub(crate) fn font_pickers(app: &mut LogocraftApp, ui: &mut Ui, s: &CharStyle, ids: (&str, &str), widths: (f32, f32)) {
     let sample = crate::font_menu::sample_text(app);
     if let Some(pick) = crate::font_menu::font_menu(ui, ids.0, &s.font_family, widths.0, sample.as_deref(), crate::font_menu::MenuLook::of(app)) {
         crate::font_menu::apply(app, ui.ctx(), pick);
     }
-    let styles = vectorcraft_text::FontDb::global().styles(&s.font_family);
+    let styles = logocraft_text::FontDb::global().styles(&s.font_family);
     let names: Vec<&str> = styles.iter().map(String::as_str).collect();
     if let Some(name) = widgets::dropdown_names(ui, ids.1, &s.font_style, &names, widths.1).and_then(|i| names.get(i)) {
         style(app, json!({"style": name}));
@@ -520,7 +520,7 @@ pub(crate) fn font_pickers(app: &mut VectorcraftApp, ui: &mut Ui, s: &CharStyle,
 
 /// The Control bar's type controls while type is selected or edited: the Character link (the
 /// Character panel in a popover), the font family and style menus and the Font Size combo.
-pub(crate) fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub(crate) fn control_bar(app: &mut LogocraftApp, ui: &mut Ui) {
     let Some((s, _)) = text_style(app) else { return };
     let link = ui
         .link(egui::RichText::new(tl!("Character:")).size(12.0).color(Tokens::get(ui.ctx()).text).underline())
@@ -535,7 +535,7 @@ pub(crate) fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
     ui.separator();
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let Some((s, _)) = text_style(app) else {
         super::empty_state(ui, "type", tl!("No text selected"), tl!("Select a text object to edit its character attributes."));
         return;
@@ -628,7 +628,7 @@ fn style_toggle(ui: &mut Ui, g: Glyph, tip: &str, on: bool, enabled: bool) -> bo
     enabled && resp.clicked()
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let st = text_style(app);
     let has = st.is_some();
     let hidden: bool = pstate(ui.ctx(), "ch-hide-options");
@@ -657,7 +657,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         ui.add_enabled_ui(has, |ui| {
             // Indented like the items beside it (their check column).
             ui.menu_button(format!("   {}", tl!("Character Alignment")), |ui| {
-                use vectorcraft_doc::CharAlign;
+                use logocraft_doc::CharAlign;
                 for (label, a, key) in [
                     (tl!("Roman Baseline"), CharAlign::RomanBaseline, "romanBaseline"),
                     (tl!("Em Box Top/Right"), CharAlign::EmBoxTop, "emBoxTop"),
@@ -685,7 +685,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         let digits = s.as_ref().map(|s| s.digits);
         ui.add_enabled_ui(has, |ui| {
             ui.menu_button(format!("   {}", tl!("Digits")), |ui| {
-                use vectorcraft_doc::Digits;
+                use logocraft_doc::Digits;
                 for (label, d, key) in [
                     (tl!("Default"), Digits::Default, "default"),
                     (tl!("Arabic"), Digits::Arabic, "arabic"),
@@ -726,15 +726,15 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_engine::Session;
+    use logocraft_engine::Session;
 
     /// Small Caps, Superscript and Subscript toggle like All Caps, from the buttons and the menu.
     #[test]
     fn small_caps_superscript_and_subscript_toggle() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
         app.run("text.create", json!({"x": 10, "y": 50, "text": "Logo"})).unwrap();
-        let st = |app: &VectorcraftApp| text_style(app).unwrap().0;
+        let st = |app: &LogocraftApp| text_style(app).unwrap().0;
         format(&mut app, toggle_params("smallCaps", false));
         assert!(st(&app).small_caps.is_some());
         format(&mut app, toggle_params("superscript", false));
@@ -751,7 +751,7 @@ mod tests {
 
     #[test]
     fn scaled_dimensions_do_not_show_false_mixed_values_from_roundoff() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         let a = app.run("text.create", json!({"x": 20, "y": 50, "text": "Axis", "size": 12})).unwrap()["id"].clone();
         app.run("object.scale", json!({"sx": 120, "sy": 110})).unwrap();
@@ -771,7 +771,7 @@ mod tests {
 
     #[test]
     fn scaled_collapsed_text_keeps_nondimensional_controls_available() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         app.run("text.create", json!({"x": 20, "y": 50, "text": "Axis", "size": 12})).unwrap();
         app.run("object.transform", json!({"matrix": [0, 0, 0, 0, 0, 0]})).unwrap();
@@ -789,7 +789,7 @@ mod tests {
 
     #[test]
     fn scaled_character_fields_show_document_sizes_and_mixed_group_values() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         let a = app.run("text.create", json!({"x": 20, "y": 50, "text": "Axis", "size": 12})).unwrap()["id"].clone();
         app.run("object.scale", json!({"sx": 200})).unwrap();
@@ -809,11 +809,11 @@ mod tests {
 
     #[test]
     fn scaled_range_fields_follow_the_type_tool_selection() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         app.session.select_tool("type", Default::default()).unwrap();
         let id = app.run("text.create", json!({"x": 20, "y": 50, "text": "Axis label", "size": 12})).unwrap()["id"].clone();
-        app.session.apply_actions(vec![vectorcraft_tools::Action::Notify("text.editNew".into())]).unwrap();
+        app.session.apply_actions(vec![logocraft_tools::Action::Notify("text.editNew".into())]).unwrap();
         assert!(text_editing(&app).is_some());
         app.run("object.scale", json!({"sx": 200})).unwrap();
         app.run("text.setRangeStyle", json!({"id": id, "start": 0, "end": 4, "size": 10})).unwrap();
@@ -845,7 +845,7 @@ mod tests {
         assert_eq!(face_of("SemiBold"), (false, false, false, vec![]));
         assert_eq!(face_of("Narrow Italic"), (false, true, true, vec!["narrow".to_string()]));
         // No type selected: a message, nothing changed.
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         assert!(toggle_face(&mut app, Face::Bold).is_err());
         assert!(!crate::menus::enabled(&app, "type.bold"));
@@ -855,11 +855,11 @@ mod tests {
     /// options only (as Mojikumi Set and Top-to-Top Leading are in the Paragraph panel).
     #[test]
     fn character_alignment_shows_with_the_east_asian_options() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         let id = app.session.execute("text.create", &json!({"x": 20, "y": 50, "text": "雅楽"})).unwrap()["id"].clone();
         app.session.execute("select.set", &json!({"ids": [id]})).unwrap();
-        let shown = |app: &mut VectorcraftApp| {
+        let shown = |app: &mut LogocraftApp| {
             let text = crate::tests_labels::painted_text(app, menu);
             (text.contains("Character Alignment"), text.contains("Proportional Metrics"))
         };
@@ -872,11 +872,11 @@ mod tests {
     /// Direction is in the Paragraph panel.
     #[test]
     fn digits_show_with_the_indic_options() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         let id = app.session.execute("text.create", &json!({"x": 20, "y": 50, "text": "صفحة 3"})).unwrap()["id"].clone();
         app.session.execute("select.set", &json!({"ids": [id]})).unwrap();
-        let shown = |app: &mut VectorcraftApp| crate::tests_labels::painted_text(app, menu).contains("Digits");
+        let shown = |app: &mut LogocraftApp| crate::tests_labels::painted_text(app, menu).contains("Digits");
         assert!(!shown(&mut app));
         app.session.prefs.show_indic_options = true;
         assert!(shown(&mut app));

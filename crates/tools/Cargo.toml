@@ -1,23 +1,23 @@
 [package]
-name = "vectorcraft-tools"
+name = "logocraft-tools"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "VectorCraft tool state machines: pointer events in, commands and overlays out"
+description = "LogoCraft tool state machines: pointer events in, commands and overlays out"
 
 [lints]
 workspace = true
 
 [dependencies]
-vectorcraft-geom = { workspace = true }
-vectorcraft-color = { workspace = true }
-vectorcraft-doc = { workspace = true }
-vectorcraft-pathops = { workspace = true }
-vectorcraft-text = { workspace = true }
+logocraft-geom = { workspace = true }
+logocraft-color = { workspace = true }
+logocraft-doc = { workspace = true }
+logocraft-pathops = { workspace = true }
+logocraft-text = { workspace = true }
 kurbo = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]
 image = { workspace = true }
-vectorcraft-text = { workspace = true, features = ["test-fonts"] }
+logocraft-text = { workspace = true, features = ["test-fonts"] }

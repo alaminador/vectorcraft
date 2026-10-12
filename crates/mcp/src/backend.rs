@@ -7,7 +7,7 @@ use std::time::Duration;
 use serde_json::{Value, json};
 
 /// Something that answers control-channel methods (`engine.execute`, `document.inspect`,
-/// `ui.pointer`, `ui.render`, `app.export`, …). See `vectorcraft_ui_egui::control` for the list.
+/// `ui.pointer`, `ui.render`, `app.export`, …). See `logocraft_ui_egui::control` for the list.
 pub trait Backend {
     /// Call one method. `Ok` carries the `result`, `Err` the error message.
     fn call(&mut self, method: &str, params: Value) -> Result<Value, String>;
@@ -17,7 +17,7 @@ pub trait Backend {
     fn describe(&self) -> String;
 }
 
-/// A running VectorCraft app, reached through its loopback control port.
+/// A running LogoCraft app, reached through its loopback control port.
 pub struct Remote {
     addr: String,
     conn: Option<(BufReader<TcpStream>, TcpStream)>,
@@ -80,7 +80,7 @@ impl Backend for Remote {
         let line = json!({"id": id, "method": method, "params": params}).to_string();
         let reply = self.roundtrip(&line).map_err(|e| {
             self.conn = None;
-            format!("VectorCraft app at {}: `{method}` failed: {e}; operation may have completed; inspect state before retrying", self.addr)
+            format!("LogoCraft app at {}: `{method}` failed: {e}; operation may have completed; inspect state before retrying", self.addr)
         })?;
         let v: Value = serde_json::from_str(reply.trim()).map_err(|e| format!("bad reply from app: {e}"))?;
         if v.get("ok").and_then(Value::as_bool) == Some(true) {

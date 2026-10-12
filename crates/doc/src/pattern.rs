@@ -13,9 +13,9 @@
 
 use std::sync::Arc;
 
+use logocraft_color::Paint;
+use logocraft_geom::{Affine, Point, Rect, Vec2};
 use serde::{Deserialize, Serialize};
-use vectorcraft_color::Paint;
-use vectorcraft_geom::{Affine, Point, Rect, Vec2};
 
 use crate::appearance::AppearanceItem;
 use crate::node::{Node, NodeId, NodeKind};
@@ -215,7 +215,7 @@ impl PatternDef {
     }
     /// Visual bounds of the art (stroke included).
     pub fn art_bounds(&self) -> Option<Rect> {
-        self.art.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds()))
+        self.art.iter().fold(None, |acc, n| logocraft_geom::union_opt(acc, n.visual_bounds()))
     }
     /// Re-derive the tile from the art (Size Tile to Art).
     pub fn fit_tile_to_art(&mut self) {
@@ -508,7 +508,7 @@ impl RepeatSpec {
     /// Geometric bounds of all instances.
     pub fn bounds(&self) -> Option<Rect> {
         let b = self.source_bounds()?;
-        self.transforms().into_iter().fold(None, |acc, m| vectorcraft_geom::union_opt(acc, Some(m.transform_rect_bbox(b))))
+        self.transforms().into_iter().fold(None, |acc, m| logocraft_geom::union_opt(acc, Some(m.transform_rect_bbox(b))))
     }
     /// Apply a document transform (source + arrangement parameters).
     pub fn transform(&mut self, a: Affine, scaling: impl Into<crate::node::Scaling>) {
@@ -564,7 +564,7 @@ pub fn is_repeat(n: &Node) -> bool {
 mod tests {
     use super::*;
     use crate::Appearance;
-    use vectorcraft_geom::shapes;
+    use logocraft_geom::shapes;
 
     fn sq(x: f64, y: f64, s: f64) -> Arc<Node> {
         Arc::new(Node::path(NodeId(1), shapes::rectangle(Rect::new(x, y, x + s, y + s)), Appearance::default()))

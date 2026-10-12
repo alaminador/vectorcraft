@@ -4,13 +4,13 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use logocraft_doc::{Node, NodeKind};
+use logocraft_engine::Session;
+use logocraft_engine::cmd::clipboard::{BITMAP, Flavour, PDF, PNG, SVG, TEXT};
+use logocraft_geom::Point;
 use serde_json::{Value, json};
-use vectorcraft_doc::{Node, NodeKind};
-use vectorcraft_engine::Session;
-use vectorcraft_engine::cmd::clipboard::{BITMAP, Flavour, PDF, PNG, SVG, TEXT};
-use vectorcraft_geom::Point;
 
-use crate::{Services, SystemClipboard, VectorcraftApp, menus};
+use crate::{LogocraftApp, Services, SystemClipboard, menus};
 
 /// The fake clipboard's contents: what the app wrote, or what "another app" copied.
 #[derive(Default)]
@@ -46,10 +46,10 @@ impl SystemClipboard for Fake {
 }
 
 /// An app with a document and a fake system clipboard, the view centred on (250, 180).
-pub(super) fn app() -> (VectorcraftApp, Rc<RefCell<Board>>) {
+pub(super) fn app() -> (LogocraftApp, Rc<RefCell<Board>>) {
     let board = Rc::new(RefCell::new(Board::default()));
     let services = Services { system_clipboard: Some(Box::new(Fake(board.clone()))), ..Default::default() };
-    let mut app = VectorcraftApp::new(Session::new(), services);
+    let mut app = LogocraftApp::new(Session::new(), services);
     run(&mut app, "file.new", json!({"width": 400, "height": 300}));
     let v = app.view_mut().unwrap();
     (v.center, v.fitted) = (Point::new(250.0, 180.0), true);
@@ -62,11 +62,11 @@ pub(super) fn copy_elsewhere(board: &Rc<RefCell<Board>>, flavours: Vec<(&'static
     *board.borrow_mut() = Board { flavours, ours: false };
 }
 
-pub(super) fn run(app: &mut VectorcraftApp, id: &str, p: Value) -> Value {
+pub(super) fn run(app: &mut LogocraftApp, id: &str, p: Value) -> Value {
     app.run(id, p).unwrap_or_else(|e| panic!("{id}: {e}"))
 }
 
-pub(super) fn copy_rect(app: &mut VectorcraftApp) {
+pub(super) fn copy_rect(app: &mut LogocraftApp) {
     let id = run(app, "shape.rectangle", json!({"x": 10, "y": 10, "width": 40, "height": 20}))["id"].clone();
     run(app, "paint.setFill", json!({"color": "#ff0000"}));
     run(app, "select.set", json!({"ids": [id]}));
@@ -78,12 +78,12 @@ fn written(board: &Rc<RefCell<Board>>) -> Vec<&'static str> {
 }
 
 /// The objects the last paste selected.
-pub(super) fn pasted(app: &VectorcraftApp) -> Vec<Node> {
+pub(super) fn pasted(app: &LogocraftApp) -> Vec<Node> {
     let st = app.session.active().unwrap();
     st.selection.objects.iter().map(|id| st.doc.node(*id).unwrap().clone()).collect()
 }
 
-fn count(app: &VectorcraftApp) -> usize {
+fn count(app: &LogocraftApp) -> usize {
     app.session.active().unwrap().doc.layers[0].children().unwrap().len()
 }
 
@@ -97,7 +97,7 @@ pub(super) fn blue_png() -> Vec<u8> {
 
 /// One headless frame of app logic (shortcuts too, from the second frame on) delivering `events`,
 /// in the test's one context (in a new one the app starts its fonts over).
-fn frame(app: &mut VectorcraftApp, events: Vec<egui::Event>) {
+fn frame(app: &mut LogocraftApp, events: Vec<egui::Event>) {
     thread_local! {
         static CTX: egui::Context = egui::Context::default();
     }
@@ -242,7 +242,7 @@ fn keyboard_paste_of_a_bitmap_without_a_paste_event() {
 #[test]
 fn without_the_service_plain_text_is_still_not_pasted() {
     // The web: SVG text through egui only (see shortcuts' copy_and_paste_events_use_the_system_clipboard).
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     run(&mut app, "file.new", json!({"width": 200, "height": 200}));
     frame(&mut app, vec![]);
     frame(&mut app, vec![key(egui::Key::V, false, egui::Modifiers::COMMAND)]);
@@ -253,7 +253,7 @@ fn without_the_service_plain_text_is_still_not_pasted() {
 #[test]
 fn a_picture_the_host_read_from_a_paste_pastes_without_the_service() {
     // The web: the page's paste event carries the picture, egui's Paste event no text.
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     run(&mut app, "file.new", json!({"width": 400, "height": 300}));
     let v = app.view_mut().unwrap();
     (v.center, v.fitted) = (Point::new(250.0, 180.0), true);

@@ -4,9 +4,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use logocraft_engine::Session;
+use logocraft_engine::cmd::fileio;
 use serde_json::{Value, json};
-use vectorcraft_engine::Session;
-use vectorcraft_engine::cmd::fileio;
 
 use super::tests_export::{frame, kind, set};
 use super::*;
@@ -16,7 +16,7 @@ type Log = Rc<RefCell<Vec<(String, Vec<u8>)>>>;
 
 /// An app with `artboards` 60×40 pt artboards and an ellipse on the first; `web` gives it a
 /// download service (recorded in the log) instead of a file manager (whose reveals are recorded).
-fn app(artboards: usize, web: bool) -> (VectorcraftApp, Log) {
+fn app(artboards: usize, web: bool) -> (LogocraftApp, Log) {
     let log = Log::default();
     let l = log.clone();
     let mut services = Services::default();
@@ -29,17 +29,17 @@ fn app(artboards: usize, web: bool) -> (VectorcraftApp, Log) {
         }));
         services.pick_folder = Some(Box::new(|| None));
     }
-    let mut app = VectorcraftApp::new(Session::new(), services);
+    let mut app = LogocraftApp::new(Session::new(), services);
     app.run("file.new", json!({"width": 60, "height": 40, "artboards": artboards})).unwrap();
     app.run("shape.ellipse", json!({"x": 5, "y": 4, "width": 30, "height": 20})).unwrap();
     (app, log)
 }
 
-fn field(app: &VectorcraftApp, k: &str) -> Value {
+fn field(app: &LogocraftApp, k: &str) -> Value {
     app.ui.dialog.as_ref().expect("a dialog is open").fields.get(k).cloned().unwrap_or(Value::Null)
 }
 
-fn open(app: &mut VectorcraftApp) {
+fn open(app: &mut LogocraftApp) {
     app.run("file.exportForScreens", json!({})).unwrap();
     assert_eq!(kind(app), Some(export_for_screens::KIND));
 }
@@ -151,7 +151,7 @@ fn the_web_downloads_one_zip_or_the_file() {
         let log = log.borrow();
         let [(name, zip)] = log.as_slice() else { panic!("one download: {:?}", log.iter().map(|(n, _)| n).collect::<Vec<_>>()) };
         assert_eq!(name, "Untitled-1.zip");
-        assert_eq!(&vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap(), zip);
+        assert_eq!(&logocraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap(), zip);
     }
     assert_eq!(r["files"], json!(["Artboard-1.png", "Artboard-1@2x.jpg", "Artboard-2.png", "Artboard-2@2x.jpg"]));
     // One file downloads as itself, with the format's settings.

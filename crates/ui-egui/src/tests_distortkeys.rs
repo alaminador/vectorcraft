@@ -3,15 +3,15 @@
 //! selected art as usual.
 
 use egui::{Key, Modifiers};
+use logocraft_engine::Session;
+use logocraft_tools::{PointerEvent, PointerKind};
 use serde_json::{Value, json};
-use vectorcraft_engine::Session;
-use vectorcraft_tools::{PointerEvent, PointerKind};
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 
 /// A 300×300 document with a selected 10 pt line from (100, 200) to (300, 200) → its id.
-fn app_with_line() -> (VectorcraftApp, u64) {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+fn app_with_line() -> (LogocraftApp, u64) {
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 400, "height": 400})).unwrap();
     let id = app.run("shape.line", json!({"x1": 100, "y1": 200, "x2": 300, "y2": 200})).unwrap()["id"].as_u64().unwrap();
     app.run("stroke.set", json!({"weight": 10})).unwrap();
@@ -20,7 +20,7 @@ fn app_with_line() -> (VectorcraftApp, u64) {
 }
 
 /// One frame pressing `key` through the shortcut handler.
-fn press(app: &mut VectorcraftApp, key: Key) {
+fn press(app: &mut LogocraftApp, key: Key) {
     let ctx = egui::Context::default();
     let ev = egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE };
     let mut out = ctx.run_ui(egui::RawInput { events: vec![ev], ..Default::default() }, |ui| crate::shortcuts::handle(app, ui.ctx()));
@@ -29,7 +29,7 @@ fn press(app: &mut VectorcraftApp, key: Key) {
 
 #[test]
 fn escape_leaves_artboard_editing_after_cancelling_an_active_drag() {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 400, "height": 400})).unwrap();
     app.select_tool("artboard");
     press(&mut app, Key::Escape);
@@ -49,19 +49,19 @@ fn escape_leaves_artboard_editing_after_cancelling_an_active_drag() {
     assert_eq!(app.session.tool_id(), "selection", "next Escape leaves artboard editing");
 }
 
-fn click(app: &mut VectorcraftApp, x: f64, y: f64) {
+fn click(app: &mut LogocraftApp, x: f64, y: f64) {
     let v = app.view_info();
     for kind in [PointerKind::Down, PointerKind::Up] {
         app.session.pointer(&PointerEvent::new(kind, x, y), v).unwrap();
     }
 }
 
-fn exists(app: &VectorcraftApp, id: u64) -> bool {
-    app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).is_some()
+fn exists(app: &LogocraftApp, id: u64) -> bool {
+    app.session.doc().unwrap().doc.node(logocraft_doc::NodeId(id)).is_some()
 }
 
-fn width_points(app: &VectorcraftApp, id: u64) -> Value {
-    let n = app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).cloned().unwrap();
+fn width_points(app: &LogocraftApp, id: u64) -> Value {
+    let n = app.session.doc().unwrap().doc.node(logocraft_doc::NodeId(id)).cloned().unwrap();
     json!(n.appearance.stroke().unwrap().profile.as_ref().map(|p| p.points.len()))
 }
 

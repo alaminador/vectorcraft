@@ -5,12 +5,12 @@
 use std::collections::HashMap;
 
 use egui::{Color32, Sense, Ui, vec2};
+use logocraft_geom::{Affine, BezPath, PathEl};
+use logocraft_text::FontDb;
 use serde_json::json;
-use vectorcraft_geom::{Affine, BezPath, PathEl};
-use vectorcraft_text::FontDb;
 
 use super::{pstate, set_pstate};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::theme::Tokens;
 use crate::widgets::{self, menu_item};
 
@@ -35,7 +35,7 @@ thread_local! {
 pub(crate) fn rasterize(path: &BezPath, w: usize, h: usize) -> Vec<u8> {
     let mut edges: Vec<(f64, f64, f64, f64)> = vec![];
     let (mut start, mut last) = (None, (0.0, 0.0));
-    vectorcraft_geom::kurbo::flatten(path, 0.1, |el| match el {
+    logocraft_geom::kurbo::flatten(path, 0.1, |el| match el {
         PathEl::MoveTo(p) => {
             if let Some(s) = start.replace((p.x, p.y)) {
                 edges.push((last.0, last.1, s.0, s.1));
@@ -90,7 +90,7 @@ pub(crate) fn rasterize(path: &BezPath, w: usize, h: usize) -> Vec<u8> {
     acc.into_iter().map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8).collect()
 }
 
-fn glyph_texture(ctx: &egui::Context, face: &vectorcraft_text::FontFace, gid: u32, px: u32) -> egui::TextureHandle {
+fn glyph_texture(ctx: &egui::Context, face: &logocraft_text::FontFace, gid: u32, px: u32) -> egui::TextureHandle {
     let key = (face.id(), gid, px);
     if let Some(t) = TEX.with(|c| c.borrow().get(&key).cloned()) {
         return t;
@@ -118,7 +118,7 @@ fn glyph_texture(ctx: &egui::Context, face: &vectorcraft_text::FontFace, gid: u3
 }
 
 /// Insert `ch` at the Type tool's caret, else append it to the selected text.
-fn insert(app: &mut VectorcraftApp, ch: char) {
+fn insert(app: &mut LogocraftApp, ch: char) {
     let s = ch.to_string();
     if app.session.tool_wants_text() {
         let v = app.view_info();
@@ -133,13 +133,13 @@ fn insert(app: &mut VectorcraftApp, ch: char) {
     }
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let db = FontDb::global();
     let current = super::character::text_style(app).map(|(s, _)| (s.font_family, s.font_style));
     // The panel browses the current text's font unless another font was picked here.
     let picked: Option<(String, String)> = pstate(ui.ctx(), "gl-font");
-    let (family, style) = picked.or(current).unwrap_or_else(|| (vectorcraft_text::FALLBACK_FAMILY.to_string(), "Regular".to_string()));
+    let (family, style) = picked.or(current).unwrap_or_else(|| (logocraft_text::FALLBACK_FAMILY.to_string(), "Regular".to_string()));
     let Some(face) = db.face(&family, &style) else {
         ui.label(egui::RichText::new(tl!("No fonts are available.")).color(t.text_dim));
         return;
@@ -214,7 +214,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     });
 }
 
-pub fn menu(_app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(_app: &mut LogocraftApp, ui: &mut Ui) {
     if menu_item(ui, tl!("Use the Selected Text's Font"), true, false) {
         set_pstate::<Option<(String, String)>>(ui.ctx(), "gl-font", None);
     }

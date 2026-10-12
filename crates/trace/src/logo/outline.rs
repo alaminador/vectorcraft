@@ -3,7 +3,7 @@
 use super::bezier::{fit_cubics, tangent};
 use super::geom::{Cubic, all_within, arc_cubics, circle_fit, find_corners, finite, resample_closed, sample_cubics, smooth_closed, smooth_open};
 use super::restore::{RestoreParams, restore_corners};
-use vectorcraft_geom::Point;
+use logocraft_geom::Point;
 
 /// How an outline is fitted. Lengths are in (working) pixels.
 #[derive(Clone, Copy, Debug)]

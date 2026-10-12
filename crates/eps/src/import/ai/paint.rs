@@ -19,8 +19,8 @@
 use std::collections::HashMap;
 
 use kurbo::{Affine, Point, Vec2};
-use vectorcraft_color::gradient::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
-use vectorcraft_color::{Color, Paint};
+use logocraft_color::gradient::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
+use logocraft_color::{Color, Paint};
 
 use super::obj::V;
 

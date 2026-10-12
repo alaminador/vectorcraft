@@ -7,15 +7,15 @@
 //! `object.pattern.cancel` restores the previous definition. Both remove the layer.
 //!
 //! **Repeat** objects are live nodes (`NodeKind::Repeat`) holding the source art and the
-//! arrangement; `vectorcraft_doc::pattern` evaluates the instances.
+//! arrangement; `logocraft_doc::pattern` evaluates the instances.
 
 use std::sync::Arc;
 
+use logocraft_color::Paint;
+use logocraft_doc::pattern::{self, Overlap, PATTERN_EDIT_LAYER, PatternDef, PatternEdit, RepeatKind, RepeatSpec, TileType, pattern_paint};
+use logocraft_doc::{Document, Node, NodeId, NodeKind, Selection};
+use logocraft_geom::Rect;
 use serde_json::{Value, json};
-use vectorcraft_color::Paint;
-use vectorcraft_doc::pattern::{self, Overlap, PATTERN_EDIT_LAYER, PatternDef, PatternEdit, RepeatKind, RepeatSpec, TileType, pattern_paint};
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind, Selection};
-use vectorcraft_geom::Rect;
 
 use super::edit::selected_roots;
 use super::*;
@@ -221,7 +221,7 @@ fn next_pattern_name(d: &Document) -> String {
 
 /// Add pattern `def` and its swatch.
 pub(crate) fn add_pattern(d: &mut Document, def: PatternDef) {
-    d.swatches.push(vectorcraft_color::Swatch { name: def.name.clone(), paint: pattern_paint(&def.name), global: false, spot: false });
+    d.swatches.push(logocraft_color::Swatch { name: def.name.clone(), paint: pattern_paint(&def.name), global: false, spot: false });
     d.patterns.push(def);
 }
 
@@ -331,8 +331,8 @@ fn pattern_edit(s: &mut Session, p: &Value) -> Result<Value> {
                 .filter_map(|id| st.doc.node(*id))
                 .find_map(|n| {
                     n.appearance.items.iter().find_map(|it| match it {
-                        vectorcraft_doc::AppearanceItem::Fill(f) => pattern_name(&f.paint),
-                        vectorcraft_doc::AppearanceItem::Stroke(sk) => pattern_name(&sk.paint),
+                        logocraft_doc::AppearanceItem::Fill(f) => pattern_name(&f.paint),
+                        logocraft_doc::AppearanceItem::Stroke(sk) => pattern_name(&sk.paint),
                     })
                 })
                 .ok_or_else(|| bad(C, "give a pattern name or select an object painted with a pattern"))?
@@ -503,8 +503,8 @@ fn rename_pattern_uses(d: &mut Document, old: &str, new: &str) {
         if let Some(n) = d.node_mut(id) {
             for it in n.appearance.items.iter_mut() {
                 match it {
-                    vectorcraft_doc::AppearanceItem::Fill(f) => fix(&mut f.paint),
-                    vectorcraft_doc::AppearanceItem::Stroke(s) => fix(&mut s.paint),
+                    logocraft_doc::AppearanceItem::Fill(f) => fix(&mut f.paint),
+                    logocraft_doc::AppearanceItem::Stroke(s) => fix(&mut s.paint),
                 }
             }
         }
@@ -532,7 +532,7 @@ fn pattern_delete(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let n = s.edit("Delete Pattern", |d, _| {
         d.patterns.retain(|p| p.name != name);
-        let is_it = |sw: &vectorcraft_color::Swatch| matches!(&sw.paint, Paint::Pattern { pattern, .. } if *pattern == name);
+        let is_it = |sw: &logocraft_color::Swatch| matches!(&sw.paint, Paint::Pattern { pattern, .. } if *pattern == name);
         d.swatches.retain(|sw| !is_it(sw));
         for g in &mut d.swatch_groups {
             g.swatches.retain(|sw| !is_it(sw));
@@ -542,8 +542,8 @@ fn pattern_delete(s: &mut Session, p: &Value) -> Result<Value> {
             if let Some(n) = d.node_mut(*id) {
                 for it in n.appearance.items.iter_mut() {
                     let p = match it {
-                        vectorcraft_doc::AppearanceItem::Fill(f) => &mut f.paint,
-                        vectorcraft_doc::AppearanceItem::Stroke(s) => &mut s.paint,
+                        logocraft_doc::AppearanceItem::Fill(f) => &mut f.paint,
+                        logocraft_doc::AppearanceItem::Stroke(s) => &mut s.paint,
                     };
                     if matches!(p, Paint::Pattern { pattern, .. } if *pattern == name) {
                         *p = Paint::None;
@@ -662,7 +662,7 @@ fn repeat_grid(s: &mut Session, p: &Value) -> Result<Value> {
     let rows = p.get("rows").and_then(Value::as_u64).map(|v| v.clamp(1, 500) as u32);
     let cols = p.get("cols").and_then(Value::as_u64).map(|v| v.clamp(1, 500) as u32);
     make_repeat(s, p, "Grid Repeat", |src| {
-        let b = vectorcraft_doc::live::nodes_bounds(&src).unwrap_or(Rect::new(0.0, 0.0, 10.0, 10.0));
+        let b = logocraft_doc::live::nodes_bounds(&src).unwrap_or(Rect::new(0.0, 0.0, 10.0, 10.0));
         let mut r = RepeatSpec::grid(src, hs.unwrap_or(b.width() / 4.0), vs.unwrap_or(b.height() / 4.0));
         if let RepeatKind::Grid { rows: rr, cols: cc, .. } = &mut r.kind {
             *rr = rows.unwrap_or(*rr);
@@ -714,7 +714,7 @@ fn repeat_expand(s: &mut Session, _: &Value) -> Result<Value> {
         let mut out = vec![];
         for r in &reps {
             let Some(n) = d.node(*r).cloned() else { continue };
-            let mut g = vectorcraft_doc::live::expanded_group(&n, None);
+            let mut g = logocraft_doc::live::expanded_group(&n, None);
 
             // The group keeps the repeat's id; every generated instance node gets a fresh one.
             if let Some(ch) = g.children_mut() {

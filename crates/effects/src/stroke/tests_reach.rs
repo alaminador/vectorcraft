@@ -1,11 +1,11 @@
-//! The document's stroke bounds and clicks (`vectorcraft_doc` reach) against the geometry the
+//! The document's stroke bounds and clicks (`logocraft_doc` reach) against the geometry the
 //! stroke really paints: every painted point is inside the visual bounds and hits.
 
 use kurbo::{BezPath, Point, Rect, Shape};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{ArrowAlign, Arrowhead, Dash, LineCap, LineJoin, StrokeAlign, StrokeLayer, WidthProfile};
-use vectorcraft_geom::hit::fill_contains;
-use vectorcraft_geom::{FillRule, PathData};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{ArrowAlign, Arrowhead, Dash, LineCap, LineJoin, StrokeAlign, StrokeLayer, WidthProfile};
+use logocraft_geom::hit::fill_contains;
+use logocraft_geom::{FillRule, PathData};
 
 use super::outline_region;
 

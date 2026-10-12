@@ -4,7 +4,7 @@
 use serde_json::Value;
 
 use super::{DialogSpec, form};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::state::Dialog;
 
 pub(super) const SPEC: DialogSpec = DialogSpec {
@@ -55,7 +55,7 @@ const FIRST_BASELINE: form::Choices =
 const VERTICAL_ALIGN: form::Choices = &[("Top", "top"), ("Center", "center"), ("Bottom", "bottom"), ("Justify", "justify")];
 
 /// Closes before running, so a dialog the command opens stays open.
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let cmd = d.str("__command");
     let mut params = form::params(d);
     if let (Some(o), Some(Value::Object(fixed))) = (params.as_object_mut(), d.fields.get("__params")) {
@@ -67,15 +67,15 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 
 #[cfg(test)]
 mod tests {
+    use logocraft_doc::{NodeKind, VerticalAlign};
+    use logocraft_engine::Session;
     use serde_json::json;
-    use vectorcraft_doc::{NodeKind, VerticalAlign};
-    use vectorcraft_engine::Session;
 
     use super::*;
 
     #[test]
     fn area_type_options_choices_match_the_params_doc() {
-        let doc = vectorcraft_engine::find_command("text.areaOptions").unwrap().params;
+        let doc = logocraft_engine::find_command("text.areaOptions").unwrap().params;
         for key in ["firstBaseline", "verticalAlign"] {
             let values: Vec<&str> = choices("text.areaOptions", key).unwrap().iter().map(|(_, v)| *v).collect();
             assert!(doc.contains(&format!("{key}?: {}", values.join("|"))), "{key}: {values:?}");
@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn area_type_options_dialog_sets_the_vertical_alignment() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 400, "height": 400})).unwrap();
         let id = app.run("text.create", json!({"x": 20, "y": 20, "text": "Hello", "area": {"width": 200, "height": 200}})).unwrap()["id"]
             .as_u64()
@@ -100,7 +100,7 @@ mod tests {
         out.textures_delta.clear();
         app.ui.dialog.as_mut().unwrap().fields.insert("verticalAlign".into(), json!("center"));
         crate::dialogs::confirm(&mut app).unwrap();
-        let NodeKind::Text(t) = &app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().kind else { panic!("text") };
+        let NodeKind::Text(t) = &app.session.doc().unwrap().doc.node(logocraft_doc::NodeId(id)).unwrap().kind else { panic!("text") };
         assert_eq!(t.area.vertical_align, VerticalAlign::Center);
     }
 }

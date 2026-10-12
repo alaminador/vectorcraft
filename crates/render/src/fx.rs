@@ -1,7 +1,7 @@
 //! Live effects in the renderer.
 //!
 //! Geometry effects (object-level, then per fill/stroke) rewrite the path before painting via
-//! `vectorcraft-effects`. Raster effects use vello_cpu filter layers. Those only work in
+//! `logocraft-effects`. Raster effects use vello_cpu filter layers. Those only work in
 //! single-threaded contexts, so on the multithreaded pipeline each filter layer is rendered
 //! offscreen on the calling thread (cropped to its reach) and composited back with the same blend
 //! mode and opacity ([`Renderer::with_filters`]):
@@ -31,10 +31,10 @@
 
 use std::sync::Arc;
 
-use vectorcraft_doc::{AppearanceItem, Effect, Node, NodeId, NodeKind};
-use vectorcraft_effects::pixel::{Channels, PixelFx};
-use vectorcraft_effects::{self as effects, GeomContext, RasterFx};
-use vectorcraft_geom::{Affine, BezPath, FillRule, PathEl, Point, Rect, Shape, Size, Vec2};
+use logocraft_doc::{AppearanceItem, Effect, Node, NodeId, NodeKind};
+use logocraft_effects::pixel::{Channels, PixelFx};
+use logocraft_effects::{self as effects, GeomContext, RasterFx};
+use logocraft_geom::{Affine, BezPath, FillRule, PathEl, Point, Rect, Shape, Size, Vec2};
 use vello_common::filter_effects::{EdgeMode, Filter, FilterPrimitive};
 use vello_cpu::RenderContext;
 use vello_cpu::peniko;
@@ -165,13 +165,13 @@ pub(crate) fn cull_bounds(n: &Node) -> Option<Rect> {
             let b = if art.clips() {
                 art.visual_bounds()
             } else {
-                art.children()?.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, cull_bounds(c)))
+                art.children()?.iter().fold(None, |acc, c| logocraft_geom::union_opt(acc, cull_bounds(c)))
             }?;
             let o = effects::outset(&n.appearance.effects, b);
             Some(b.inflate(o, o))
         }
         NodeKind::Layer { children, clip: false, .. } | NodeKind::Group { children, clip: false } => {
-            children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, cull_bounds(c)))
+            children.iter().fold(None, |acc, c| logocraft_geom::union_opt(acc, cull_bounds(c)))
         }
         _ if has_fx(n) => visual_bounds(n),
         // The reshaped art (a symbol's art needs the document: its instance box stands in).
@@ -194,7 +194,7 @@ fn shadow_filter(dx: f64, dy: f64, blur: f64, color: peniko::Color) -> Filter {
     })
 }
 
-fn pcolor(ink: Ink, c: &vectorcraft_doc::color::Color) -> peniko::Color {
+fn pcolor(ink: Ink, c: &logocraft_doc::color::Color) -> peniko::Color {
     let [r, g, b] = ink.rgb(c);
     peniko::Color::new([r, g, b, 1.0])
 }
@@ -224,7 +224,7 @@ fn looks_around(fx: &RasterFx) -> Option<f64> {
 pub(crate) struct PixelEntry {
     node: Drawn,
     linear: [u64; 4],
-    anchor: vectorcraft_geom::Point,
+    anchor: logocraft_geom::Point,
     rel: (f64, f64),
     k: f64,
     image: std::sync::Arc<vello_cpu::Pixmap>,
@@ -266,7 +266,7 @@ fn draw_scaled(ctx: &mut RenderContext, image: std::sync::Arc<vello_cpu::Pixmap>
 pub(crate) struct ShadowEntry {
     node: Drawn,
     linear: [u64; 4],
-    anchor: vectorcraft_geom::Point,
+    anchor: logocraft_geom::Point,
     /// Pixel offset of the raster's top-left from the anchor's view position.
     rel: (f64, f64),
     image: std::sync::Arc<vello_cpu::Pixmap>,
@@ -489,7 +489,7 @@ impl Renderer {
         let sampler = peniko::ImageSampler { quality: peniko::ImageQuality::Low, ..Default::default() };
         ctx.set_paint(vello_cpu::Image { image: vello_cpu::ImageSource::Pixmap(image), sampler });
         ctx.fill_rect(&Rect::new(0.0, 0.0, w, h));
-        ctx.set_blend_mode(blend_mode(vectorcraft_doc::color::BlendMode::Normal));
+        ctx.set_blend_mode(blend_mode(logocraft_doc::color::BlendMode::Normal));
         ctx.set_transform(Affine::IDENTITY);
         true
     }
@@ -600,7 +600,7 @@ impl Renderer {
     /// the art standing for the object's silhouette.
     pub(crate) fn draw_object_fx(&mut self, ctx: &mut RenderContext, f: &Frame, a: &Arc<Node>, cache: bool) {
         let opacity = self.opacity_of(a);
-        if !f.opts.outline && (opacity < 1.0 || a.blend != vectorcraft_doc::color::BlendMode::Normal || a.isolate) {
+        if !f.opts.outline && (opacity < 1.0 || a.blend != logocraft_doc::color::BlendMode::Normal || a.isolate) {
             let blends = self.blends_through(a);
             let bounds = if blends { self.bounds_of(a) } else { None };
             let comp = crate::group::Composite { blend: a.blend, opacity, isolated: a.isolate, blends, bounds, ..Default::default() };
@@ -636,7 +636,7 @@ impl Renderer {
     /// as their evaluated art (groups and layers: [`effects::evaluate_container`], keeping their
     /// knockout setting), recoloured by the colour adjustments in it ([`Self::adjusted_art`]);
     /// without the object's transparency and effects (a path keeps its geometry effects).
-    fn fx_art(&mut self, doc: &vectorcraft_doc::Document, a: &Arc<Node>, cache: bool) -> Arc<Node> {
+    fn fx_art(&mut self, doc: &logocraft_doc::Document, a: &Arc<Node>, cache: bool) -> Arc<Node> {
         let key = Arc::as_ptr(a) as usize;
         if cache
             && let Some((node, art)) = self.fx_arts.get(&key, self.stamp)
@@ -667,7 +667,7 @@ impl Renderer {
         art.isolate = false;
         // One element: its pieces never knock each other out (a group's members still do as its
         // knockout setting says).
-        art.knockout = if container { a.knockout } else { vectorcraft_doc::Knockout::Off };
+        art.knockout = if container { a.knockout } else { logocraft_doc::Knockout::Off };
         let art = Arc::new(art);
         if cache {
             let bytes = crate::lru::node_bytes(&art);
@@ -824,7 +824,7 @@ impl Renderer {
         let channels = match f.ink {
             Ink::Cmy => effects::pixel::Channels::CmyPlane,
             Ink::K => effects::pixel::Channels::KPlane,
-            Ink::Display | Ink::RichBlack if f.doc.color_mode == vectorcraft_doc::ColorMode::Cmyk => effects::pixel::Channels::Cmyk,
+            Ink::Display | Ink::RichBlack if f.doc.color_mode == logocraft_doc::ColorMode::Cmyk => effects::pixel::Channels::Cmyk,
             Ink::Display | Ink::RichBlack => effects::pixel::Channels::Rgb,
         };
         let interacting = f.opts.interacting;
@@ -999,8 +999,8 @@ impl Renderer {
         f: &Frame,
         reach: Rect,
         blur: f64,
-        composite: Option<(vectorcraft_doc::color::BlendMode, f32)>,
-        draw: impl FnOnce(&mut Self, &mut RenderContext, &Frame, Option<(vectorcraft_doc::color::BlendMode, f32)>),
+        composite: Option<(logocraft_doc::color::BlendMode, f32)>,
+        draw: impl FnOnce(&mut Self, &mut RenderContext, &Frame, Option<(logocraft_doc::color::BlendMode, f32)>),
     ) {
         if !f.mt {
             return self.inside_layer(|r| draw(r, ctx, f, composite));
@@ -1021,7 +1021,7 @@ impl Renderer {
         off.flush();
         let mut pm = vello_cpu::Pixmap::new(w, h);
         off.render(&mut pm, &mut self.resources);
-        let layered = composite.is_some_and(|(m, o)| m != vectorcraft_doc::color::BlendMode::Normal || o < 1.0);
+        let layered = composite.is_some_and(|(m, o)| m != logocraft_doc::color::BlendMode::Normal || o < 1.0);
         if let Some((m, o)) = composite.filter(|_| layered) {
             ctx.set_transform(Affine::IDENTITY);
             ctx.push_layer(None, Some(blend_mode(m)), Some(o), None, None);
@@ -1087,7 +1087,7 @@ impl Renderer {
     fn paint_item(&mut self, ctx: &mut RenderContext, f: &Frame, n: &Node, item: &AppearanceItem, ig: &BezPath, rule: FillRule, ib: Rect) {
         match item {
             AppearanceItem::Fill(fl) => {
-                let layered = fl.opacity < 1.0 || fl.blend != vectorcraft_doc::color::BlendMode::Normal;
+                let layered = fl.opacity < 1.0 || fl.blend != logocraft_doc::color::BlendMode::Normal;
                 if layered {
                     ctx.set_transform(Affine::IDENTITY);
                     ctx.push_layer(None, Some(blend_mode(fl.blend)), Some(fl.opacity), None, None);
@@ -1117,10 +1117,10 @@ impl Renderer {
 
 #[cfg(test)]
 mod tests {
+    use logocraft_doc::color::{Color, Paint};
+    use logocraft_doc::{Appearance, Document, Effect, Node};
+    use logocraft_geom::{Affine, Rect, shapes};
     use serde_json::json;
-    use vectorcraft_doc::color::{Color, Paint};
-    use vectorcraft_doc::{Appearance, Document, Effect, Node};
-    use vectorcraft_geom::{Affine, Rect, shapes};
 
     use super::Drawn;
     use crate::{RenderOptions, Rendered, Renderer};
@@ -1265,8 +1265,8 @@ mod tests {
         let id = d.layers[0].children().unwrap()[0].id;
         let mut n = (*d.node(id).unwrap()).clone();
         n.appearance = Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 4.0).into();
-        if let Some(vectorcraft_doc::AppearanceItem::Stroke(s)) =
-            n.appearance.items.iter_mut().find(|i| matches!(i, vectorcraft_doc::AppearanceItem::Stroke(_)))
+        if let Some(logocraft_doc::AppearanceItem::Stroke(s)) =
+            n.appearance.items.iter_mut().find(|i| matches!(i, logocraft_doc::AppearanceItem::Stroke(_)))
         {
             s.effects =
                 vec![Effect { id: "stylize.outerGlow".into(), params: json!({"color": "#ff0000", "opacity": 100, "blur": 6}), visible: true }];
@@ -1493,7 +1493,7 @@ mod tests {
             let mut d = d.clone();
             let id = d.layers[0].children().unwrap()[0].id;
             let n = d.node_mut(id).unwrap();
-            n.transform(Affine::translate((5.0, 3.0)), vectorcraft_doc::Scaling { patterns, ..Default::default() });
+            n.transform(Affine::translate((5.0, 3.0)), logocraft_doc::Scaling { patterns, ..Default::default() });
             edit(n);
             d
         };
@@ -1504,11 +1504,11 @@ mod tests {
         assert_eq!(drag(&base, &moved(&base, false, &recolor)), (0, true), "recolored");
         let spacing = |n: &mut Node| n.appearance.effects[0].params = json!({"crackSpacing": 9});
         assert_eq!(drag(&base, &moved(&base, false, &spacing)), (0, true), "other effect settings");
-        let resize = |n: &mut Node| n.transform(Affine::scale_about(1.5, vectorcraft_geom::Point::new(25.0, 23.0)), false);
+        let resize = |n: &mut Node| n.transform(Affine::scale_about(1.5, logocraft_geom::Point::new(25.0, 23.0)), false);
         assert_eq!(drag(&base, &moved(&base, false, &resize)), (0, true), "resized");
         // A square added beyond the old raster leaves the content inside it as it was.
         let beyond = |n: &mut Node| {
-            if let vectorcraft_doc::NodeKind::Path { path, .. } = &mut n.kind {
+            if let logocraft_doc::NodeKind::Path { path, .. } = &mut n.kind {
                 path.subpaths.extend(shapes::rectangle(Rect::new(75.0, 30.0, 80.0, 35.0)).subpaths);
             }
         };
@@ -1520,15 +1520,15 @@ mod tests {
         // A pattern fill: its tiles stay on the page unless they move with the object.
         let mut tiled = base.clone();
         let red = Node::path(
-            vectorcraft_doc::NodeId(900),
+            logocraft_doc::NodeId(900),
             shapes::rectangle(Rect::new(0.0, 0.0, 3.0, 3.0)),
             Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0),
         );
-        let mut def = vectorcraft_doc::pattern::PatternDef::new("Dots", vec![std::sync::Arc::new(red)]);
+        let mut def = logocraft_doc::pattern::PatternDef::new("Dots", vec![std::sync::Arc::new(red)]);
         def.tile = Rect::new(0.0, 0.0, 7.0, 7.0);
         tiled.patterns.push(def);
         let id = tiled.layers[0].children().unwrap()[0].id;
-        tiled.node_mut(id).unwrap().appearance.fill_mut().unwrap().paint = vectorcraft_doc::pattern::pattern_paint("Dots");
+        tiled.node_mut(id).unwrap().appearance.fill_mut().unwrap().paint = logocraft_doc::pattern::pattern_paint("Dots");
         assert_eq!(drag(&tiled, &moved(&tiled, false, &|_| {})), (0, true), "tiles that stay on the page");
         assert_eq!(drag(&tiled, &moved(&tiled, true, &|_| {})), (1, true), "tiles that move with the object");
         // Feather clips to the outline: a notch in the top edge where the tiles paint nothing
@@ -1538,14 +1538,14 @@ mod tests {
             vec![Effect { id: "stylize.feather".into(), params: json!({"radius": 3}), visible: true }];
         assert_eq!(drag(&feathered, &moved(&feathered, true, &|_| {})), (1, true), "feathered");
         let notch = |n: &mut Node| {
-            let mut bp = vectorcraft_geom::BezPath::new();
+            let mut bp = logocraft_geom::BezPath::new();
             bp.move_to((25.0, 23.0));
             for p in [(30.0, 23.0), (30.5, 23.6), (31.5, 23.6), (32.0, 23.0), (55.0, 23.0), (55.0, 49.0), (25.0, 49.0)] {
                 bp.line_to(p);
             }
             bp.close_path();
-            if let vectorcraft_doc::NodeKind::Path { path, .. } = &mut n.kind {
-                *path = vectorcraft_geom::PathData::from_bezpath(&bp);
+            if let logocraft_doc::NodeKind::Path { path, .. } = &mut n.kind {
+                *path = logocraft_geom::PathData::from_bezpath(&bp);
             }
         };
         assert_eq!(drag(&feathered, &moved(&feathered, true, &notch)), (0, true), "a notch in the feathered outline");
@@ -1590,13 +1590,13 @@ mod tests {
     /// and the next eight render as the canvas renders a drag's frames (`interacting`). Then the
     /// eighth position renders as the canvas renders the frame after the drag, and that frame
     /// renders once more with every raster cached.
-    /// Run with `cargo test -p vectorcraft-render texture_drag_perf -- --ignored --nocapture`.
+    /// Run with `cargo test -p logocraft-render texture_drag_perf -- --ignored --nocapture`.
     #[test]
     #[ignore = "manual timing probe; wall-clock performance depends on machine load"]
     fn texture_drag_perf() {
         for effect in ["texture.craquelure", "texture.mosaicTiles", "texture.stainedGlass"] {
             let mut base = Document::new(600.0, 500.0);
-            base.color_mode = vectorcraft_doc::ColorMode::Cmyk;
+            base.color_mode = logocraft_doc::ColorMode::Cmyk;
             let (layer, id) = (base.layers[0].id, base.alloc_id());
             let mut n = Node::path(
                 id,

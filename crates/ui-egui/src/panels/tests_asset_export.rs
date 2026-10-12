@@ -5,34 +5,34 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use egui::{Pos2, Rect, pos2, vec2};
+use logocraft_doc::NodeId;
+use logocraft_engine::Session;
 use serde_json::{Value, json};
-use vectorcraft_doc::NodeId;
-use vectorcraft_engine::Session;
 
 use super::asset_export::{ID, menu, show};
 use crate::widgets::PanelDrag;
-use crate::{Services, VectorcraftApp};
+use crate::{LogocraftApp, Services};
 
 type Log = Rc<RefCell<Vec<(String, Vec<u8>)>>>;
 
 /// An app with two unstroked squares; `web` gives it a download service (recorded in the log).
-fn app(web: bool) -> (VectorcraftApp, Log, [u64; 2]) {
+fn app(web: bool) -> (LogocraftApp, Log, [u64; 2]) {
     let log = Log::default();
     let l = log.clone();
     let mut services = Services::default();
     if web {
         services.download = Some(Box::new(move |name: &str, bytes: &[u8]| l.borrow_mut().push((name.to_string(), bytes.to_vec()))));
     }
-    let mut app = VectorcraftApp::new(Session::new(), services);
+    let mut app = LogocraftApp::new(Session::new(), services);
     app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-    app.session.paint.stroke = vectorcraft_color::Paint::None;
+    app.session.paint.stroke = logocraft_color::Paint::None;
     let mut rect = |x: f64| app.run("shape.rectangle", json!({"x": x, "y": 10, "width": 30, "height": 20})).unwrap()["id"].as_u64().unwrap();
     let ids = [rect(10.0), rect(100.0)];
     (app, log, ids)
 }
 
 /// One frame of the panel, 236 pt wide as in the dock → its texts and where they are.
-fn frame(ctx: &egui::Context, app: &mut VectorcraftApp, events: Vec<egui::Event>, alt: bool) -> Vec<(String, Rect)> {
+fn frame(ctx: &egui::Context, app: &mut LogocraftApp, events: Vec<egui::Event>, alt: bool) -> Vec<(String, Rect)> {
     fn texts(s: &egui::Shape, out: &mut Vec<(String, Rect)>) {
         match s {
             egui::Shape::Text(t) => out.push((t.galley.text().to_string(), t.visual_bounding_rect())),
@@ -72,7 +72,7 @@ fn at(texts: &[(String, Rect)], label: &str) -> Pos2 {
         .center()
 }
 
-fn assets(app: &mut VectorcraftApp) -> Vec<Value> {
+fn assets(app: &mut LogocraftApp) -> Vec<Value> {
     app.run("assets.list", json!({})).unwrap()["assets"].as_array().unwrap().clone()
 }
 

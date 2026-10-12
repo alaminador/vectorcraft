@@ -1,6 +1,6 @@
+use logocraft_doc::Effect;
+use logocraft_geom::{PathData, Point, Rect, Shape, SubPath, shapes};
 use serde_json::{Value, json};
-use vectorcraft_doc::Effect;
-use vectorcraft_geom::{PathData, Point, Rect, Shape, SubPath, shapes};
 
 use super::*;
 
@@ -254,7 +254,7 @@ fn offset_path_grows_and_shrinks() {
 
 #[test]
 fn outline_stroke_uses_context_stroke() {
-    let st = vectorcraft_doc::StrokeLayer::new(vectorcraft_color::Paint::solid(vectorcraft_color::Color::BLACK), 10.0);
+    let st = logocraft_doc::StrokeLayer::new(logocraft_color::Paint::solid(logocraft_color::Color::BLACK), 10.0);
     let ctx = GeomContext { stroke: Some(&st), ..Default::default() };
     let out = apply_geometry_with(&[fx("path.outlineStroke", json!({}))], &square(), Rect::new(0.0, 0.0, 100.0, 100.0), &ctx);
     let b = out.bounds().unwrap();
@@ -334,7 +334,7 @@ fn raster_effects_parse_and_outset() {
     assert_eq!(r.len(), 5);
     match &r[0] {
         RasterFx::DropShadow { mode, opacity, dx, dy, blur, color } => {
-            assert_eq!(*mode, vectorcraft_doc::color::BlendMode::Multiply);
+            assert_eq!(*mode, logocraft_doc::color::BlendMode::Multiply);
             assert!(close(*opacity as f64, 0.5, 1e-6));
             assert_eq!((*dx, *dy, *blur), (10.0, -4.0, 6.0));
             assert_eq!(color.to_rgb(), [1.0, 0.0, 0.0]);
@@ -342,13 +342,13 @@ fn raster_effects_parse_and_outset() {
         other => panic!("{other:?}"),
     }
     assert!(matches!(r[2], RasterFx::InnerGlow { center: true, .. }));
-    assert!(close(outset(&list, vectorcraft_geom::Rect::ZERO), 10.0 + 9.0, 1e-9));
-    assert_eq!(outset(&[], vectorcraft_geom::Rect::ZERO), 0.0);
+    assert!(close(outset(&list, logocraft_geom::Rect::ZERO), 10.0 + 9.0, 1e-9));
+    assert_eq!(outset(&[], logocraft_geom::Rect::ZERO), 0.0);
 }
 
 #[test]
 fn blend_mode_names() {
-    use vectorcraft_doc::color::BlendMode;
+    use logocraft_doc::color::BlendMode;
     assert_eq!(raster::blend_mode("Color-Burn"), BlendMode::ColorBurn);
     assert_eq!(raster::blend_mode("screen"), BlendMode::Screen);
     assert_eq!(raster::blend_mode("???"), BlendMode::Normal);

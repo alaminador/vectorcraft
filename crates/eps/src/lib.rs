@@ -37,8 +37,8 @@ mod tiff;
 pub use import::{Imported, ai_alone, family_style, import, import_with, is_loss, layered_ai};
 pub use print::{PrintJob, PrintPage, print};
 
-use vectorcraft_doc::Document;
-use vectorcraft_geom::{Point, Rect};
+use logocraft_doc::Document;
+use logocraft_geom::{Point, Rect};
 
 /// The PostScript language level the file needs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -211,7 +211,7 @@ pub fn export(doc: &Document, opts: &EpsOptions, preview: Option<&Raster>, thumb
     if ![r.x0, r.y0, r.x1, r.y1, opts.origin.x, opts.origin.y].iter().all(|v| v.is_finite()) {
         return Err("the export region is not finite".into());
     }
-    let baked = vectorcraft_effects::bake_document(doc);
+    let baked = logocraft_effects::bake_document(doc);
     let doc = baked.as_ref().unwrap_or(doc);
     let page = scene::Scene::new(doc, opts).run();
     let mut warnings = page.warnings;
@@ -237,10 +237,12 @@ pub fn export(doc: &Document, opts: &EpsOptions, preview: Option<&Raster>, thumb
     Ok(EpsOutput { bytes, warnings })
 }
 
-/// Comment lines that start a data section the file carries (`%VectorCraft_BeginData: <name>`)
+/// Comment lines that start a data section the file carries (`%LogoCraft_BeginData: <name>`)
 /// and end it; between them, ASCII85 lines after `% `.
-const BEGIN_DATA: &str = "%VectorCraft_BeginData: ";
-const END_DATA: &str = "%VectorCraft_EndData";
+const BEGIN_DATA: &str = "%LogoCraft_BeginData: ";
+const END_DATA: &str = "%LogoCraft_EndData";
+/// The markers of EPS files VectorCraft (which LogoCraft is based on) wrote: still read.
+const FORMER_MARKERS: [(&str, &str); 1] = [("%VectorCraft_BeginData: ", "%VectorCraft_EndData")];
 /// The data sections.
 const NATIVE: &str = "native";
 const THUMBNAIL: &str = "thumbnail";
@@ -251,10 +253,10 @@ const MAX_NATIVE: u64 = 1 << 30;
 /// language level, data, and the spot colours `custom` with their CMYK equivalents.
 pub(crate) fn comments(s: &mut String, title: &str, created: Option<i64>, level: Level, custom: &[(String, [f32; 4])]) {
     use std::fmt::Write;
-    let _ = writeln!(s, "%%Creator: VectorCraft {}", env!("CARGO_PKG_VERSION"));
+    let _ = writeln!(s, "%%Creator: LogoCraft {}", env!("CARGO_PKG_VERSION"));
     let _ = writeln!(s, "%%Title: {}", ps::string(title));
     if let Some(t) = created {
-        let [y, mo, d, h, mi, se] = vectorcraft_doc::metadata::civil(t);
+        let [y, mo, d, h, mi, se] = logocraft_doc::metadata::civil(t);
         let _ = writeln!(s, "%%CreationDate: ({y:04}-{mo:02}-{d:02} {h:02}:{mi:02}:{se:02} UTC)");
     }
     let _ = writeln!(s, "%%LanguageLevel: {}", level.id());
@@ -318,16 +320,18 @@ fn data_section(s: &mut String, name: &str, bytes: &[u8]) {
 /// The bytes of data section `name` in the PostScript `ps`, when it has one that decodes.
 fn read_data(ps: &[u8], name: &str) -> Option<Vec<u8>> {
     let text = String::from_utf8_lossy(ps);
-    let mut lines = text.lines();
-    lines.find(|l| l.strip_prefix(BEGIN_DATA).is_some_and(|n| n.trim() == name))?;
-    let mut encoded = String::new();
-    for l in lines {
-        if l.starts_with(END_DATA) {
-            return ps::ascii85_decode(&encoded);
+    std::iter::once((BEGIN_DATA, END_DATA)).chain(FORMER_MARKERS).find_map(|(begin, end)| {
+        let mut lines = text.lines();
+        lines.find(|l| l.strip_prefix(begin).is_some_and(|n| n.trim() == name))?;
+        let mut encoded = String::new();
+        for l in lines {
+            if l.starts_with(end) {
+                return ps::ascii85_decode(&encoded);
+            }
+            encoded.push_str(l.strip_prefix('%').unwrap_or(l));
         }
-        encoded.push_str(l.strip_prefix('%').unwrap_or(l));
-    }
-    None
+        None
+    })
 }
 
 /// The magic number of an EPS file with a binary header (a preview).
@@ -385,8 +389,11 @@ pub fn native(bytes: &[u8]) -> Option<Vec<u8>> {
 
 /// Does the EPS file carry a native document (readable or not)?
 pub fn has_native(bytes: &[u8]) -> bool {
-    let marker = format!("{BEGIN_DATA}{NATIVE}");
-    sections(bytes).is_some_and(|(ps, _)| ps.windows(marker.len()).any(|w| w == marker.as_bytes()))
+    let Some((ps, _)) = sections(bytes) else { return false };
+    std::iter::once(BEGIN_DATA).chain(FORMER_MARKERS.map(|m| m.0)).any(|begin| {
+        let marker = format!("{begin}{NATIVE}");
+        ps.windows(marker.len()).any(|w| w == marker.as_bytes())
+    })
 }
 
 /// The PNG thumbnail an EPS file written by [`export`] carries, if any.

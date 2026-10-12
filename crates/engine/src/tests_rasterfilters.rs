@@ -4,10 +4,10 @@
 //! edited as commands, listed in the catalogue, drawn on the canvas, and written to PDF and SVG
 //! as images of the effected object.
 
+use logocraft_doc::NodeKind;
+use logocraft_geom::Rect;
+use logocraft_render::{Rendered, Renderer};
 use serde_json::{Value, json};
-use vectorcraft_doc::NodeKind;
-use vectorcraft_geom::Rect;
-use vectorcraft_render::{Rendered, Renderer};
 
 use super::*;
 
@@ -162,7 +162,7 @@ fn pdf_and_svg_write_the_effected_object_as_an_image() {
         // PDF: an image that reads back as the canvas shows it.
         let r = crate::cmd::rasterfx::export_pdf_with_report(&doc, &Default::default()).unwrap();
         assert!(r.warnings.is_empty(), "{id}: {:?}", r.warnings);
-        let back = vectorcraft_pdf::import(&r.bytes).unwrap();
+        let back = logocraft_pdf::import(&r.bytes).unwrap();
         let diff = mean_diff(&render(&s), &Renderer::new().render_region(&back, Rect::new(0.0, 0.0, 200.0, 200.0), 1.0, true));
         assert!(diff < 0.03, "{id}: PDF reads back {:.2}% off", diff * 100.0);
         // SVG: the object becomes an image; a Gaussian Blur alone stays a live filter.

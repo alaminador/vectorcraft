@@ -1,10 +1,10 @@
 //! Use Preview Bounds: the Transform panel values, the bounding box, Align and Distribute measure
 //! visual bounds (strokes included) when it is on.
 
+use logocraft_doc::NodeId;
+use logocraft_geom::Rect;
+use logocraft_tools::{PointerEvent, PointerKind};
 use serde_json::{Value, json};
-use vectorcraft_doc::NodeId;
-use vectorcraft_geom::Rect;
-use vectorcraft_tools::{PointerEvent, PointerKind};
 
 use super::*;
 

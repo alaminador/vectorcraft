@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 use crate::{Backend, Headless, Remote, call_tool};
 
 fn tmp(name: &str) -> String {
-    let dir = std::env::temp_dir().join(format!("vectorcraft-mcp-fileio-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("logocraft-mcp-fileio-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     dir.join(name).to_string_lossy().to_string()
 }
@@ -31,7 +31,7 @@ fn two_boards() -> Headless {
 fn headless_opens_pdf_ai_and_templates() {
     let mut h = two_boards();
     let pdf = h.call("engine.execute", json!({"command": "document.serialize", "params": {"format": "pdf"}})).unwrap();
-    let pdf = vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap();
+    let pdf = logocraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap();
     for name in ["x.pdf", "x.ai"] {
         let path = tmp(name);
         std::fs::write(&path, &pdf).unwrap();
@@ -43,7 +43,7 @@ fn headless_opens_pdf_ai_and_templates() {
     std::fs::write(&ait, &pdf).unwrap();
     let r = text(&call_tool(&mut h, "open_file", &json!({"path": ait})));
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
-    let tpl = tmp("t.vectorcraft");
+    let tpl = tmp("t.logocraft");
     h.call("engine.execute", json!({"command": "file.saveAsTemplate", "params": {"path": tpl}})).unwrap();
     let r = text(&call_tool(&mut h, "open_file", &json!({"path": tpl})));
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
@@ -82,7 +82,7 @@ fn export_is_the_same_call_in_the_app_and_headless() {
     // Headless runs that very call: artboard 1 (40 pt wide) at scale 2.
     let mut h = two_boards();
     let r = text(&call_tool(&mut h, "export", &args));
-    let png = vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap();
+    let png = logocraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap();
     assert_eq!(&png[16..20], 80u32.to_be_bytes(), "IHDR width");
     let direct = h.call("engine.execute", seen[0]["params"].clone()).unwrap();
     assert_eq!(direct["dataBase64"], r["dataBase64"]);
@@ -91,21 +91,21 @@ fn export_is_the_same_call_in_the_app_and_headless() {
 #[test]
 fn exporting_native_keeps_the_document_path() {
     let mut h = two_boards();
-    let doc = tmp("keep.vectorcraft");
+    let doc = tmp("keep.logocraft");
     h.call("app.save", json!({"path": doc})).unwrap();
-    let copy = tmp("copy.vectorcraft");
+    let copy = tmp("copy.logocraft");
     let r = text(&call_tool(&mut h, "export", &json!({"path": copy})));
-    assert_eq!(r["format"], "vectorcraft");
+    assert_eq!(r["format"], "logocraft");
     assert_eq!(h.session.doc().unwrap().path.as_deref(), Some(doc.as_str()));
     // PDF range through the tool: one page.
     let pdf = text(&call_tool(&mut h, "export", &json!({"format": "pdf", "range": "2"})));
-    let pdf = vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap();
+    let pdf = logocraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap();
     assert_eq!(pdf_pages(&pdf), 1);
 }
 
 fn pdf_pages(pdf: &[u8]) -> usize {
     let mut h = Headless::new();
-    h.call("engine.execute", json!({"command": "document.open", "params": {"name": "p.pdf", "dataBase64": vectorcraft_format::base64_encode(pdf)}}))
+    h.call("engine.execute", json!({"command": "document.open", "params": {"name": "p.pdf", "dataBase64": logocraft_format::base64_encode(pdf)}}))
         .unwrap();
     h.session.doc().unwrap().doc.artboards.len()
 }

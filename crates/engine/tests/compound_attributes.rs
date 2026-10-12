@@ -1,11 +1,11 @@
 //! Compound appearance and fill-rule edits from a directly selected member (#1197).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use logocraft_doc::{NodeId, NodeKind};
+use logocraft_engine::Session;
+use logocraft_geom::{Affine, FillRule, PathData};
+use logocraft_render::{RenderOptions, Renderer};
 use serde_json::{Value, json};
-use vectorcraft_doc::{NodeId, NodeKind};
-use vectorcraft_engine::Session;
-use vectorcraft_geom::{Affine, FillRule, PathData};
-use vectorcraft_render::{RenderOptions, Renderer};
 
 fn run(s: &mut Session, command: &str, params: Value) -> Value {
     s.execute(command, &params).unwrap()

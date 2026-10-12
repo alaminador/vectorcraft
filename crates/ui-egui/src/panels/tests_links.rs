@@ -4,10 +4,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use logocraft_engine::Session;
 use serde_json::json;
-use vectorcraft_engine::Session;
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::tests_labels::painted_text;
 
 /// A fresh folder for one test (removed when dropped).
@@ -15,7 +15,7 @@ struct Folder(std::path::PathBuf);
 
 impl Folder {
     fn new(name: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("vectorcraft-ui-links-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("logocraft-ui-links-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Self(dir)
@@ -42,8 +42,8 @@ fn png(w: u32, h: u32) -> Vec<u8> {
 }
 
 /// A document with a linked `linked.png` and an embedded `embedded.png` (the selection).
-fn app(dir: &Folder) -> (VectorcraftApp, u64, u64) {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+fn app(dir: &Folder) -> (LogocraftApp, u64, u64) {
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
     let a = dir.file("linked.png", &png(300, 200));
     let b = dir.file("embedded.png", &png(40, 20));
@@ -52,7 +52,7 @@ fn app(dir: &Folder) -> (VectorcraftApp, u64, u64) {
     (app, linked, embedded)
 }
 
-fn panel(app: &mut VectorcraftApp) -> String {
+fn panel(app: &mut LogocraftApp) -> String {
     painted_text(app, super::links::show)
 }
 
@@ -77,7 +77,7 @@ fn the_panel_lists_the_images_with_link_info_for_the_selected_one() {
 
 #[test]
 fn an_empty_document_shows_how_to_add_images() {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
     assert!(panel(&mut app).contains("No images"));
 }

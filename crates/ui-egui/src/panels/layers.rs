@@ -34,15 +34,15 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Weak};
 
 use egui::{Color32, Sense, Stroke, StrokeKind, Ui, vec2};
+use logocraft_doc::{Document, Node, NodeId, NodeKind};
+use logocraft_engine::OpenRows;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind};
-use vectorcraft_engine::OpenRows;
 
 use crate::theme::Tokens;
 use crate::thumb_worker::{Settle, ThumbWorker};
 use crate::widgets::{Live, PanelDrag};
-use crate::{VectorcraftApp, icons, widgets};
+use crate::{LogocraftApp, icons, widgets};
 
 /// Width of the eye and the lock columns.
 const COLUMN: f32 = 25.0;
@@ -298,7 +298,7 @@ fn push_rows(
 
 /// The rows of the active document as [`list_rows`] lists them, listed again only when the
 /// document, its open rows, the search or Show Layers Only changed.
-fn rows_of_doc(ui: &Ui, st: &vectorcraft_engine::DocState, opts: &PanelOptions, query: &str) -> Arc<Vec<Row>> {
+fn rows_of_doc(ui: &Ui, st: &logocraft_engine::DocState, opts: &PanelOptions, query: &str) -> Arc<Vec<Row>> {
     let now =
         RowsKey { uid: st.uid, revision: st.revision, open: st.layers_open.generation(), layers_only: opts.layers_only, query: query.to_string() };
     let id = key("rows");
@@ -343,7 +343,7 @@ struct Out {
     toggle: Vec<(NodeId, bool)>,
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some(st) = app.session.active() else { return };
     // A rename belongs to the document it started in (node ids are per document): drop it when
@@ -464,7 +464,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 }
 
 /// The bottom bar: the layer count and the panel's buttons.
-fn bottom_bar(app: &mut VectorcraftApp, ui: &mut Ui, view: &View, doc: &Document, actions: &mut Vec<(String, Value)>) {
+fn bottom_bar(app: &mut LogocraftApp, ui: &mut Ui, view: &View, doc: &Document, actions: &mut Vec<(String, Value)>) {
     let t = &view.t;
     let (bar, _) = ui.allocate_exact_size(vec2(ui.available_width(), 30.0), Sense::hover());
     ui.painter().line_segment([bar.left_top(), bar.right_top()], Stroke::new(1.0, t.divider));
@@ -957,7 +957,7 @@ pub(crate) struct ThumbSource<'a> {
 
 impl<'a> ThumbSource<'a> {
     /// The thumbnails of the document `st` holds (`doc`, its document).
-    pub(crate) fn of(app: &VectorcraftApp, st: &vectorcraft_engine::DocState, doc: &'a Arc<Document>) -> Self {
+    pub(crate) fn of(app: &LogocraftApp, st: &logocraft_engine::DocState, doc: &'a Arc<Document>) -> Self {
         Self { uid: st.uid, revision: st.revision, doc, busy: st.interaction.is_some() || app.session.tool_busy() }
     }
 }
@@ -1020,8 +1020,8 @@ const THUMB_BUDGET_MS: f64 = 8.0;
 const THUMB_BUDGET_COUNT: u32 = 16;
 
 /// How row thumbnails render: images far smaller than they are sample their mip levels.
-pub(crate) fn thumb_options() -> vectorcraft_render::RenderOptions {
-    vectorcraft_render::RenderOptions { image_mips: true, ..Default::default() }
+pub(crate) fn thumb_options() -> logocraft_render::RenderOptions {
+    logocraft_render::RenderOptions { image_mips: true, ..Default::default() }
 }
 
 /// Has `n` at most `limit` objects inside it (counting stops there)?
@@ -1044,7 +1044,7 @@ fn small_node(n: &Node, limit: usize) -> bool {
 
 impl Thumbs {
     /// Keep `img` (None: nothing drawn) as the thumbnail of row `key` showing `node`.
-    fn upload(&mut self, ctx: &egui::Context, key: (u64, NodeId), node: Weak<Node>, px: u32, img: Option<&vectorcraft_render::Rendered>, ms: f64) {
+    fn upload(&mut self, ctx: &egui::Context, key: (u64, NodeId), node: Weak<Node>, px: u32, img: Option<&logocraft_render::Rendered>, ms: f64) {
         let color = img.map(|img| egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels));
         let used = ctx.cumulative_pass_nr();
         let name = format!("layer-thumb-{}", key.1.0);
@@ -1132,7 +1132,7 @@ impl Thumbs {
             return shown;
         }
         thread_local! {
-            static RENDERER: std::cell::RefCell<vectorcraft_render::Renderer> = std::cell::RefCell::new(vectorcraft_render::Renderer::new());
+            static RENDERER: std::cell::RefCell<logocraft_render::Renderer> = std::cell::RefCell::new(logocraft_render::Renderer::new());
         }
         let t0 = crate::now_ms();
         let img = RENDERER.with(|r| r.borrow_mut().render_node_thumbnail_with(src.doc, n, px, None, &thumb_options()));
@@ -1192,7 +1192,7 @@ fn thumb(ui: &Ui, n: &Node, r: egui::Rect) {
 type MenuItem<'a> = (&'a str, &'a str, Value, bool, bool);
 
 /// The Layers panel's (≡) menu.
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let Some(st) = app.session.active() else { return };
     let doc = st.doc.clone();
     let rows = st.highlighted_rows();
@@ -1288,7 +1288,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// `ui.layersExpand {ids?, open?}`: open (or close) rows of the active document's Layers panel;
 /// without `ids`, every row that holds others.
-pub fn expand(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
+pub fn expand(app: &mut LogocraftApp, p: &Value) -> Result<Value, String> {
     let st = app.session.active().ok_or("no document open")?;
     let open = p.get("open").and_then(Value::as_bool).unwrap_or(true);
     let ids: Vec<u64> = match p.get("ids").and_then(Value::as_array) {
@@ -1312,13 +1312,13 @@ pub fn expand(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
 
 #[cfg(test)]
 mod tests {
+    use logocraft_engine::Session;
     use serde_json::json;
-    use vectorcraft_engine::Session;
 
     use super::*;
 
     /// Filled target circles drawn by one headless frame of the panel.
-    fn filled_targets(app: &mut VectorcraftApp, ctx: &egui::Context) -> usize {
+    fn filled_targets(app: &mut LogocraftApp, ctx: &egui::Context) -> usize {
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| show(app, ui));
         out.textures_delta.clear();
         out.shapes.iter().filter(|c| matches!(&c.shape, egui::Shape::Circle(cs) if cs.radius == 3.2 && cs.fill != Color32::TRANSPARENT)).count()
@@ -1326,8 +1326,8 @@ mod tests {
 
     #[test]
     fn target_circle_fills_for_non_default_transparency() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        let run = |app: &mut LogocraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
         run(&mut app, "file.new", json!({"width": 100, "height": 100}));
         let id = run(&mut app, "shape.rectangle", json!({"x": 0, "y": 0, "width": 50, "height": 50}))["id"].clone();
         run(&mut app, "select.set", json!({ "ids": [id] }));
@@ -1344,8 +1344,8 @@ mod tests {
 
     #[test]
     fn a_layer_clipping_mask_underlines_its_clipping_path() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        let run = |app: &mut LogocraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
         run(&mut app, "file.new", json!({"width": 100, "height": 100}));
         run(&mut app, "shape.rectangle", json!({"x": 0, "y": 0, "width": 100, "height": 100}));
         run(&mut app, "shape.rectangle", json!({"x": 25, "y": 25, "width": 50, "height": 50}));
@@ -1353,7 +1353,7 @@ mod tests {
         let ctx = egui::Context::default();
         let text = Tokens::get(&ctx).text;
         // Line segments in the text colour: the underlines.
-        let underlines = |app: &mut VectorcraftApp| {
+        let underlines = |app: &mut LogocraftApp| {
             let mut out = ctx.run_ui(egui::RawInput::default(), |ui| show(app, ui));
             out.textures_delta.clear();
             out.shapes.iter().filter(|c| matches!(&c.shape, egui::Shape::LineSegment { stroke, .. } if stroke.color == text)).count()
@@ -1367,7 +1367,7 @@ mod tests {
 
     /// One headless frame of the panel with `events` (Alt held when `alt`): the centres of the
     /// target circles, top row first, and the text-coloured line segments (underlines) drawn.
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>, alt: bool) -> (Vec<egui::Pos2>, usize) {
+    fn frame(app: &mut LogocraftApp, ctx: &egui::Context, events: Vec<egui::Event>, alt: bool) -> (Vec<egui::Pos2>, usize) {
         let mut events = events;
         events.insert(0, egui::Event::ModifiersChanged(egui::Modifiers { alt, ..Default::default() }));
         let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| show(app, ui));
@@ -1391,7 +1391,7 @@ mod tests {
     }
 
     /// Drag from `a` to `b` over a few frames (Alt held when `alt`).
-    fn drag(app: &mut VectorcraftApp, ctx: &egui::Context, a: egui::Pos2, b: egui::Pos2, alt: bool) {
+    fn drag(app: &mut LogocraftApp, ctx: &egui::Context, a: egui::Pos2, b: egui::Pos2, alt: bool) {
         let steps = [
             vec![egui::Event::PointerMoved(a)],
             vec![button(a, true)],
@@ -1407,8 +1407,8 @@ mod tests {
 
     #[test]
     fn alt_clicking_an_eye_or_lock_toggles_the_other_layers() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        let run = |app: &mut LogocraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
         run(&mut app, "file.new", json!({"width": 200, "height": 200}));
         run(&mut app, "layer.new", json!({}));
         run(&mut app, "layer.new", json!({}));
@@ -1417,14 +1417,14 @@ mod tests {
         let (circles, _) = frame(&mut app, &ctx, vec![], false);
         assert_eq!(circles.len(), 3);
         let state =
-            |app: &VectorcraftApp| -> Vec<(bool, bool)> { app.session.active().unwrap().doc.layers.iter().map(|l| (l.visible, l.locked)).collect() };
-        let click = |app: &mut VectorcraftApp, at: egui::Pos2, alt: bool| {
+            |app: &LogocraftApp| -> Vec<(bool, bool)> { app.session.active().unwrap().doc.layers.iter().map(|l| (l.visible, l.locked)).collect() };
+        let click = |app: &mut LogocraftApp, at: egui::Pos2, alt: bool| {
             frame(app, &ctx, vec![egui::Event::PointerMoved(at)], alt);
             frame(app, &ctx, vec![button(at, true)], alt);
             frame(app, &ctx, vec![button(at, false)], alt);
         };
         let (eye, lock) = (egui::pos2(12.0, circles[1].y), egui::pos2(37.0, circles[1].y));
-        let undo = |app: &VectorcraftApp| app.session.active().unwrap().history.undo.len();
+        let undo = |app: &LogocraftApp| app.session.active().unwrap().history.undo.len();
         let before = undo(&app);
         // Alt-click Layer 2's eye: Layers 1 and 3 hide in one step; again, they show.
         click(&mut app, eye, true);
@@ -1455,9 +1455,9 @@ mod tests {
     }
 
     /// A document with two rectangles on one layer → (app, layer, [bottom, top]).
-    fn two_rects() -> (VectorcraftApp, NodeId, [NodeId; 2]) {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
+    fn two_rects() -> (LogocraftApp, NodeId, [NodeId; 2]) {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        let run = |app: &mut LogocraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
         run(&mut app, "file.new", json!({"width": 200, "height": 200}));
         let a = run(&mut app, "shape.rectangle", json!({"x": 0, "y": 0, "width": 50, "height": 50}))["id"].as_u64().unwrap();
         let b = run(&mut app, "shape.rectangle", json!({"x": 60, "y": 0, "width": 50, "height": 50}))["id"].as_u64().unwrap();
@@ -1532,7 +1532,7 @@ mod tests {
         app.session.execute("transparency.set", &json!({"ids": [a.0], "opacity": 30})).unwrap();
         let ctx = egui::Context::default();
         let (c, _) = frame(&mut app, &ctx, vec![], false);
-        let opacity = |app: &VectorcraftApp, id: NodeId| app.session.active().unwrap().doc.node(id).unwrap().opacity;
+        let opacity = |app: &LogocraftApp, id: NodeId| app.session.active().unwrap().doc.node(id).unwrap().opacity;
         // Alt-drag the bottom rectangle's circle onto the top one's: both have it.
         drag(&mut app, &ctx, c[2], c[1], true);
         assert!((opacity(&app, b) - 0.3).abs() < 1e-6 && (opacity(&app, a) - 0.3).abs() < 1e-6);
@@ -1550,13 +1550,13 @@ mod tests {
     }
 
     /// The trash button: the bottom bar's rightmost button.
-    fn trash_pos(app: &mut VectorcraftApp, ctx: &egui::Context) -> egui::Pos2 {
+    fn trash_pos(app: &mut LogocraftApp, ctx: &egui::Context) -> egui::Pos2 {
         bar_buttons(app, ctx)[0]
     }
 
     #[test]
     fn dragging_rows_onto_the_trash_deletes_them() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
         app.session.execute("layer.new", &json!({})).unwrap();
         let ctx = egui::Context::default();
@@ -1572,16 +1572,16 @@ mod tests {
 
     #[test]
     fn renaming_a_layer_commits_on_enter_and_escape_cancels() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
         let layer = app.session.doc().unwrap().doc.layers[0].id;
-        let name = |app: &VectorcraftApp| app.session.doc().unwrap().doc.layers[0].display_name();
+        let name = |app: &LogocraftApp| app.session.doc().unwrap().doc.layers[0].display_name();
         let ctx = egui::Context::default();
         let key = |key| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::NONE };
         let select_all =
             egui::Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND };
         // What a double-click on the row does: the name field opens with the name.
-        let open = |app: &mut VectorcraftApp| {
+        let open = |app: &mut LogocraftApp| {
             ctx.data_mut(|d| d.insert_temp(egui::Id::new("layers-rename"), (layer.0, name(app))));
             frame(app, &ctx, vec![], false);
             frame(app, &ctx, vec![], false);
@@ -1601,7 +1601,7 @@ mod tests {
 
     #[test]
     fn an_open_rename_does_not_follow_into_another_document() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
         let layer = app.session.doc().unwrap().doc.layers[0].id;
         let ctx = egui::Context::default();
@@ -1642,9 +1642,9 @@ mod tests {
     /// Layer 1 holding rectangle `c` and a sublayer holding rectangle `a` and a group of
     /// rectangle `b`, every row open, nothing selected → (app, [layer, sub, g, b, a, c]): the rows
     /// top down.
-    fn nested() -> (VectorcraftApp, [NodeId; 6]) {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
+    fn nested() -> (LogocraftApp, [NodeId; 6]) {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        let run = |app: &mut LogocraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
         let id = |v: serde_json::Value| NodeId(v["id"].as_u64().unwrap());
         run(&mut app, "file.new", json!({"width": 400, "height": 400}));
         let layer = app.session.active().unwrap().doc.layers[0].id;
@@ -1660,7 +1660,7 @@ mod tests {
     }
 
     /// Press and release at `at` with `mods` held, over three frames.
-    fn click_with(app: &mut VectorcraftApp, ctx: &egui::Context, at: egui::Pos2, mods: egui::Modifiers) {
+    fn click_with(app: &mut LogocraftApp, ctx: &egui::Context, at: egui::Pos2, mods: egui::Modifiers) {
         for e in [egui::Event::PointerMoved(at), button(at, true), button(at, false)] {
             let mut out =
                 ctx.run_ui(egui::RawInput { events: vec![egui::Event::ModifiersChanged(mods), e], ..Default::default() }, |ui| show(app, ui));
@@ -1668,7 +1668,7 @@ mod tests {
         }
     }
 
-    fn rows_of(app: &VectorcraftApp) -> Vec<NodeId> {
+    fn rows_of(app: &LogocraftApp) -> Vec<NodeId> {
         app.session.active().unwrap().highlighted_rows()
     }
 
@@ -1708,8 +1708,8 @@ mod tests {
     /// another layer's row moves it there, and a guide on a locked layer is left alone.
     #[test]
     fn guide_rows_select_and_move_their_guides() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        let run = |app: &mut LogocraftApp, id: &str, p: serde_json::Value| app.session.execute(id, &p).unwrap();
         run(&mut app, "file.new", json!({"width": 200, "height": 200}));
         run(&mut app, "shape.rectangle", json!({"x": 0, "y": 0, "width": 20, "height": 20}));
         run(&mut app, "guide.add", json!({"vertical": true, "pos": 50}));
@@ -1721,7 +1721,7 @@ mod tests {
         let (circles, _) = frame(&mut app, &ctx, vec![], false);
         assert_eq!(circles.len(), 3);
         let guide_row = egui::pos2(150.0, (circles[1].y + circles[2].y) / 2.0);
-        let guides = |app: &VectorcraftApp| app.session.active().unwrap().selection.guides.clone();
+        let guides = |app: &LogocraftApp| app.session.active().unwrap().selection.guides.clone();
         click_with(&mut app, &ctx, guide_row, egui::Modifiers::NONE);
         assert_eq!(guides(&app), [0], "its row selects it");
         // Dragged onto Layer 2's row, it goes on Layer 2, in one undo step.
@@ -1742,7 +1742,7 @@ mod tests {
 
     /// The selection squares drawn: (big ones on rows whose object is selected, small ones on rows
     /// holding selected art).
-    fn squares(app: &mut VectorcraftApp, ctx: &egui::Context) -> (usize, usize) {
+    fn squares(app: &mut LogocraftApp, ctx: &egui::Context) -> (usize, usize) {
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| show(app, ui));
         out.textures_delta.clear();
         let size = |w: f32| {
@@ -1760,7 +1760,7 @@ mod tests {
         assert_eq!(squares(&mut app, &ctx), (1, 2), "the group's square, and small ones on the sublayer and the layer");
         let (circles, _) = frame(&mut app, &ctx, vec![], false);
         let square = |i: usize| circles[i] + vec2(TARGET_X - SQUARE_X, 0.0);
-        let sel = |app: &VectorcraftApp| app.session.active().unwrap().selection.objects.clone();
+        let sel = |app: &LogocraftApp| app.session.active().unwrap().selection.objects.clone();
         click_with(&mut app, &ctx, square(4), egui::Modifiers::NONE);
         assert_eq!(sel(&app), vec![a]);
         click_with(&mut app, &ctx, square(5), egui::Modifiers::SHIFT);
@@ -1778,7 +1778,7 @@ mod tests {
         let ctx = egui::Context::default();
         let (circles, _) = frame(&mut app, &ctx, vec![], false);
         let (eye, lock) = (|i: usize| egui::pos2(12.0, circles[i].y), |i: usize| egui::pos2(37.0, circles[i].y));
-        let node = |app: &VectorcraftApp, id: NodeId| app.session.active().unwrap().doc.node(id).unwrap().clone();
+        let node = |app: &LogocraftApp, id: NodeId| app.session.active().unwrap().doc.node(id).unwrap().clone();
         click_with(&mut app, &ctx, eye(3), egui::Modifiers::NONE);
         assert!(!node(&app, b).visible, "an object in a group in a sublayer hides");
         click_with(&mut app, &ctx, eye(3), egui::Modifiers::NONE);
@@ -1791,7 +1791,7 @@ mod tests {
         click_with(&mut app, &ctx, eye(1), egui::Modifiers::COMMAND);
         assert!(matches!(node(&app, sub).kind, NodeKind::Layer { preview: true, .. }));
         // Drag down the eye column from the group to the rectangle below: all three hide, one step.
-        let undo = |app: &VectorcraftApp| app.session.active().unwrap().history.undo.len();
+        let undo = |app: &LogocraftApp| app.session.active().unwrap().history.undo.len();
         let before = undo(&app);
         let steps = [
             vec![egui::Event::PointerMoved(eye(2))],
@@ -1817,7 +1817,7 @@ mod tests {
     fn triangles_open_and_close_rows_and_alt_does_everything_inside() {
         let (mut app, [layer, sub, ..]) = nested();
         let ctx = egui::Context::default();
-        let count = |app: &mut VectorcraftApp| frame(app, &ctx, vec![], false).0.len();
+        let count = |app: &mut LogocraftApp| frame(app, &ctx, vec![], false).0.len();
         assert_eq!(count(&mut app), 6);
         let (circles, _) = frame(&mut app, &ctx, vec![], false);
         let triangle = |depth: f32, y: f32| egui::pos2(2.0 * COLUMN + 8.0 + depth * INDENT + 7.0, y);
@@ -1847,7 +1847,7 @@ mod tests {
         let (circles, _) = frame(&mut app, &ctx, vec![], false);
         assert_eq!(circles.len(), 7);
         let name = |i: usize| egui::pos2(150.0, circles[i].y);
-        let parent = |app: &VectorcraftApp, id: NodeId| app.session.active().unwrap().doc.parent_of(id);
+        let parent = |app: &LogocraftApp, id: NodeId| app.session.active().unwrap().doc.parent_of(id);
         // Rectangle a onto the middle of the Top layer's row: into it.
         drag(&mut app, &ctx, name(5), name(0), false);
         assert_eq!(parent(&app, a), Some(l2));
@@ -1871,7 +1871,7 @@ mod tests {
 
     /// The centres of the bottom bar's buttons, right to left from under the right end of its top
     /// divider: Delete, New Layer, New Sublayer, Make/Release Clipping Mask, Locate Object.
-    fn bar_buttons(app: &mut VectorcraftApp, ctx: &egui::Context) -> Vec<egui::Pos2> {
+    fn bar_buttons(app: &mut LogocraftApp, ctx: &egui::Context) -> Vec<egui::Pos2> {
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| show(app, ui));
         out.textures_delta.clear();
         let divider = Tokens::get(ctx).divider;
@@ -1889,7 +1889,7 @@ mod tests {
     }
 
     /// How many texts reading `s` the frame after `events` paints.
-    fn texts(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>, s: &str) -> usize {
+    fn texts(app: &mut LogocraftApp, ctx: &egui::Context, events: Vec<egui::Event>, s: &str) -> usize {
         let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| show(app, ui));
         out.textures_delta.clear();
         out.shapes.iter().filter(|c| matches!(&c.shape, egui::Shape::Text(t) if t.galley.text() == s)).count()
@@ -1897,7 +1897,7 @@ mod tests {
 
     /// Drag the row at `a` to `b` and drop it there. Returns how many times its `name` was painted
     /// while it hung over `b`.
-    fn drag_row(app: &mut VectorcraftApp, ctx: &egui::Context, a: egui::Pos2, b: egui::Pos2, name: &str) -> usize {
+    fn drag_row(app: &mut LogocraftApp, ctx: &egui::Context, a: egui::Pos2, b: egui::Pos2, name: &str) -> usize {
         frame(app, ctx, vec![egui::Event::PointerMoved(a)], false);
         frame(app, ctx, vec![button(a, true)], false);
         frame(app, ctx, vec![egui::Event::PointerMoved(a + vec2(0.0, 6.0))], false);
@@ -1913,7 +1913,7 @@ mod tests {
         let second = app.session.execute("layer.new", &json!({"name": "Top"})).unwrap()["id"].as_u64().map(NodeId).unwrap();
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        let layers = |app: &VectorcraftApp| app.session.active().unwrap().doc.layers.iter().map(|l| l.id).collect::<Vec<_>>();
+        let layers = |app: &LogocraftApp| app.session.active().unwrap().doc.layers.iter().map(|l| l.id).collect::<Vec<_>>();
         // Rows top down: Top, Layer 1 (expanded: its two rectangles).
         let (c, _) = frame(&mut app, &ctx, vec![], false);
         let buttons = bar_buttons(&mut app, &ctx);
@@ -1989,7 +1989,7 @@ mod tests {
         crate::theme::install_fonts(&ctx);
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(1600.0, 1000.0));
         let mut time = 0.0;
-        let mut frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+        let mut frame = |app: &mut LogocraftApp, events: Vec<egui::Event>| {
             time += 0.05;
             let input = egui::RawInput { time: Some(time), events, screen_rect: Some(screen), ..Default::default() };
             let mut out = ctx.run_ui(input, |ui| crate::dock::floating_panel(app, ui.ctx()));
@@ -2023,8 +2023,8 @@ mod tests {
     /// in view, and a row highlighted far below them is scrolled to.
     #[test]
     fn only_the_rows_in_view_are_laid_out() {
-        use vectorcraft_doc::Appearance;
-        use vectorcraft_geom::{Rect, shapes};
+        use logocraft_doc::Appearance;
+        use logocraft_geom::{Rect, shapes};
         let mut d = Document::new(1000.0, 1000.0);
         let mut groups = vec![];
         let mut needle = None;
@@ -2043,14 +2043,14 @@ mod tests {
             groups.push(Arc::new(Node::group(d.alloc_id(), kids)));
         }
         *Arc::make_mut(&mut d.layers[0]).children_mut().unwrap() = groups;
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.add_document(d, None);
         expand(&mut app, &json!({})).unwrap();
         let ctx = egui::Context::default();
         // (shapes drawn, whether the needle's name is among them); a second passes per frame, so
         // scrolling ends.
         let mut time = 0.0;
-        let mut frame = |app: &mut VectorcraftApp| {
+        let mut frame = |app: &mut LogocraftApp| {
             time += 1.0;
             let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(300.0, 800.0));
             let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), time: Some(time), ..Default::default() }, |ui| show(app, ui));

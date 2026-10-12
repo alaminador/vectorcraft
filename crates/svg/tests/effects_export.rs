@@ -3,11 +3,11 @@
 // Integration tests: unwrapping and panicking on failure is fine here, unlike in shipped code (AGENTS.md › Robustness).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, CharStyle, Document, Effect, Node, NodeId, NodeKind, TextObject};
+use logocraft_geom::{Point, Rect, shapes};
+use logocraft_svg::{ExportOptions, export};
 use serde_json::json;
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, CharStyle, Document, Effect, Node, NodeId, NodeKind, TextObject};
-use vectorcraft_geom::{Point, Rect, shapes};
-use vectorcraft_svg::{ExportOptions, export};
 
 fn doc_with(mut n: Node) -> Document {
     let mut d = Document::new(200.0, 200.0);

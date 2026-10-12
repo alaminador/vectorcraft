@@ -13,12 +13,14 @@ use crate::PdfError;
 use crate::lab_spot::find;
 
 /// The embedded file holding the native document (its name among the PDF's attachments).
-pub const EDITING_FILE: &str = "vectorcraft-editing.vectorcraft";
+pub const EDITING_FILE: &str = "logocraft-editing.logocraft";
 /// The editing file's name from before the project was renamed: still read.
 pub const LEGACY_EDITING_FILE: &str = "drawcraft-editing.drawcraft";
+/// The editing data file of PDFs VectorCraft wrote (LogoCraft is based on it): still read.
+pub const VECTORCRAFT_EDITING_FILE: &str = "vectorcraft-editing.vectorcraft";
 
 /// The editing file's description: this text, then the hash of the pages.
-const DESCRIPTION: &str = "VectorCraft editing data; page hash ";
+const DESCRIPTION: &str = "LogoCraft editing data; page hash ";
 /// Stands for the hash while the PDF is written: as long as a hash, so writing the hash over it
 /// keeps every offset.
 const PLACEHOLDER: &str = "0000000000000000";
@@ -112,7 +114,7 @@ fn editing_spec<'a>(node: &Dict<'a>, depth: usize) -> Option<Dict<'a>> {
 fn is_editing_file(spec: &Dict<'_>) -> bool {
     [&b"UF"[..], b"F"].into_iter().filter_map(|k| spec.get::<PdfString<'_>>(k)).any(|name| {
         let name = name.as_bytes();
-        name == EDITING_FILE.as_bytes() || name == LEGACY_EDITING_FILE.as_bytes()
+        name == EDITING_FILE.as_bytes() || name == VECTORCRAFT_EDITING_FILE.as_bytes() || name == LEGACY_EDITING_FILE.as_bytes()
     })
 }
 

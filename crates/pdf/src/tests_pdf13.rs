@@ -1,10 +1,10 @@
 //! Compatibility PDF 1.3: which standards allow it, the header and metadata that say so, the
 //! writer refusing transparency (the app flattens it first) and 40-bit RC4 encryption.
 
+use logocraft_color::{BlendMode, Color, Paint};
+use logocraft_doc::{Appearance, Document, Node};
+use logocraft_geom::{Rect, shapes};
 use serde_json::json;
-use vectorcraft_color::{BlendMode, Color, Paint};
-use vectorcraft_doc::{Appearance, Document, Node};
-use vectorcraft_geom::{Rect, shapes};
 
 use crate::*;
 

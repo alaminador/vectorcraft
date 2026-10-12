@@ -8,7 +8,7 @@ use super::palette::{WHITE_MIN, auto_palette, flat_fraction, parse_hex, unexplai
 use super::restore::RestoreParams;
 use super::unmix::{Px, count_ambiguous, unmix};
 use crate::{Raster, TraceError, TraceParams, TraceResult, TracedPath};
-use vectorcraft_geom::{Anchor, AnchorKind, PathData, Point, SubPath};
+use logocraft_geom::{Anchor, AnchorKind, PathData, Point, SubPath};
 
 /// Longest side the tracer works at; bigger images are averaged down first and the result scaled up.
 const WORK_MAX_SIDE: usize = 1024;

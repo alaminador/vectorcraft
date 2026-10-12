@@ -1,7 +1,7 @@
 //! OpenType feature selection (the OpenType panel), resolved per character style.
 
 use harfrust::{Feature, Tag};
-use vectorcraft_doc::CharStyle;
+use logocraft_doc::CharStyle;
 
 /// Tracking (in 1/1000 em) outside which standard ligatures are dropped automatically: tighter
 /// than the first, looser than the second.
@@ -231,8 +231,8 @@ pub fn explicit_ligatures<S: AsRef<str>>(features: &[S]) -> bool {
 mod tests {
     use super::*;
     use crate::{FontDb, layout};
-    use vectorcraft_doc::TextObject;
-    use vectorcraft_geom::Point;
+    use logocraft_doc::TextObject;
+    use logocraft_geom::Point;
 
     fn glyphs(features: &[&str]) -> usize {
         let st = CharStyle { font_family: "Source Serif 4".into(), features: features.iter().map(|s| s.to_string()).collect(), ..Default::default() };

@@ -562,7 +562,7 @@ fn font_files_are_told_by_their_extension() {
     }
 }
 
-/// VectorCraft's own Fonts folder joins the scan once set, even before it exists; only the first
+/// LogoCraft's own Fonts folder joins the scan once set, even before it exists; only the first
 /// folder set counts.
 #[test]
 fn the_app_font_folder_is_read_by_the_scan() {
@@ -607,7 +607,7 @@ fn thai_falls_back_to_a_font_made_for_thai() {
         eprintln!("skipped: no Thai font installed");
         return;
     };
-    let st = vectorcraft_doc::CharStyle { size: 20.0, ..Default::default() };
+    let st = logocraft_doc::CharStyle { size: 20.0, ..Default::default() };
     let l = layout(db, &TextObject::point(kurbo::Point::ZERO, "Thai ภาษาไทย", st));
     let family = |g: &PositionedGlyph| db.face_by_id(g.font_id).map(|f| f.family.clone()).unwrap_or_default();
     let (latin, thai_glyphs) = l.glyphs.split_at(5);

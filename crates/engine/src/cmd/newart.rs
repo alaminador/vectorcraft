@@ -10,10 +10,10 @@
 
 use std::borrow::Cow;
 
+use logocraft_color::{BlendMode, Paint};
+use logocraft_doc::{Appearance, AppearanceItem, FillLayer, GraphicStyle, Node, NodeKind, StrokeLayer};
+use logocraft_tools::PaintDefaults;
 use serde_json::{Value, json};
-use vectorcraft_color::{BlendMode, Paint};
-use vectorcraft_doc::{Appearance, AppearanceItem, FillLayer, GraphicStyle, Node, NodeKind, StrokeLayer};
-use vectorcraft_tools::PaintDefaults;
 
 use super::gradient::unplaced;
 use super::*;
@@ -84,7 +84,7 @@ impl NewArt {
 
     /// Give new object `n` (in `d`) this look: its placed gradients land relative to its bounds, and
     /// it links to the style (type keeps its own transparency).
-    pub(crate) fn apply(&self, d: &mut vectorcraft_doc::Document, n: &mut Node) {
+    pub(crate) fn apply(&self, d: &mut logocraft_doc::Document, n: &mut Node) {
         n.appearance = self.appearance.clone().into();
         if self.unit_box
             && n.appearance.has_placed_gradient()

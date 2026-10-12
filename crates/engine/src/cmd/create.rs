@@ -1,8 +1,8 @@
 //! Creating art: shapes, paths, text.
 
+use logocraft_doc::{Appearance, CharStyle, LiveShape, Node, NodeKind, TextObject};
+use logocraft_geom::{Affine, Anchor, AnchorKind, FillRule, PathData, Point, Rect, SubPath, shapes};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Appearance, CharStyle, LiveShape, Node, NodeKind, TextObject};
-use vectorcraft_geom::{Affine, Anchor, AnchorKind, FillRule, PathData, Point, Rect, SubPath, shapes};
 
 use super::newart::NewArt;
 use super::*;
@@ -86,7 +86,7 @@ pub(crate) fn add_look(s: &mut Session, label: &str, kind: NodeKind, look: NewAr
                         let (par, idx, _) = d.position(target).ok_or(crate::EngineError::NoNode(target))?;
                         let mut mask = d.node(target).cloned().ok_or(crate::EngineError::NoNode(target))?;
                         mask.id = d.alloc_id();
-                        mask.appearance = Appearance::basic(vectorcraft_color::Paint::None, vectorcraft_color::Paint::None, 0.0).into();
+                        mask.appearance = Appearance::basic(logocraft_color::Paint::None, logocraft_color::Paint::None, 0.0).into();
                         if let NodeKind::Path { clipping, .. } = &mut mask.kind {
                             *clipping = true;
                         }
@@ -216,8 +216,8 @@ fn line(s: &mut Session, p: &Value) -> Result<Value> {
     let live = LiveShape::Line { a, b };
     // Lines are stroked, never filled (Illustrator ignores the fill for new open lines).
     let look = s.new_art_look(
-        vectorcraft_color::Paint::None,
-        if s.paint.stroke.is_none() { vectorcraft_color::Paint::solid(vectorcraft_color::Color::BLACK) } else { s.paint.stroke.clone() },
+        logocraft_color::Paint::None,
+        if s.paint.stroke.is_none() { logocraft_color::Paint::solid(logocraft_color::Color::BLACK) } else { s.paint.stroke.clone() },
         s.paint.stroke_width.max(0.1),
     );
     add_look(s, "Line", path_kind(live.to_path(), Some(live)), look, None)
@@ -263,7 +263,7 @@ pub(crate) fn anchor_from_json(v: &Value, cmd: &str) -> Result<Anchor> {
 
 fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
     let path = if let Some(d) = str_param(p, "d") {
-        let bp = vectorcraft_geom::BezPath::from_svg(d).map_err(|e| bad("path.create", format!("bad path data: {e}")))?;
+        let bp = logocraft_geom::BezPath::from_svg(d).map_err(|e| bad("path.create", format!("bad path data: {e}")))?;
         PathData::from_bezpath(&bp)
     } else {
         let anchors: Vec<Anchor> = p
@@ -282,7 +282,7 @@ fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
     // Open paths drawn with a stroke of None would be invisible: mimic Illustrator and keep what the user set.
     let ap = &mut look.appearance;
     if !path.is_closed() && ap.stroke_paint().is_none() && ap.fill_paint().is_none() {
-        ap.set_stroke(vectorcraft_color::Paint::solid(vectorcraft_color::Color::BLACK));
+        ap.set_stroke(logocraft_color::Paint::solid(logocraft_color::Color::BLACK));
     }
     add_look(s, "Pen", path_kind(path, None), look, None)
 }
@@ -298,7 +298,7 @@ fn text_create(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(a) = p.get("area") {
         let w = f64_or(a, "width", 200.0);
         let h = f64_or(a, "height", 100.0);
-        t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, w, h)) };
+        t.kind = logocraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, w, h)) };
         t.area.fit = new_area_fit(s, a, "text.create")?;
     }
     if bool_or(p, "placeholder", false) {
@@ -313,11 +313,11 @@ fn text_create(s: &mut Session, p: &Value) -> Result<Value> {
 /// The paragraph attributes new type gets (the Type tools, `text.create`): aligned to the start of
 /// each paragraph's direction (left, right for Hebrew and Arabic), Japanese punctuation composed
 /// with Line-end Punctuation Half Width and Standard burasagari. Imported text keeps its own.
-pub(crate) fn new_type_para() -> vectorcraft_doc::ParaStyle {
-    vectorcraft_doc::ParaStyle {
-        justify: vectorcraft_doc::Justify::Auto,
-        mojikumi: vectorcraft_doc::Mojikumi::LineEndHalf,
-        burasagari: vectorcraft_doc::Burasagari::Standard,
+pub(crate) fn new_type_para() -> logocraft_doc::ParaStyle {
+    logocraft_doc::ParaStyle {
+        justify: logocraft_doc::Justify::Auto,
+        mojikumi: logocraft_doc::Mojikumi::LineEndHalf,
+        burasagari: logocraft_doc::Burasagari::Standard,
         ..Default::default()
     }
 }
@@ -327,7 +327,7 @@ pub(crate) fn new_type_para() -> vectorcraft_doc::ParaStyle {
 /// interface is in Japanese (#432), else the Roman baseline for both. Noted in the journal, so a
 /// replay sets the same whatever the interface.
 pub(crate) fn new_type_alignment(s: &mut Session, p: &Value, cmd: &str, t: &mut TextObject) -> Result<()> {
-    use vectorcraft_doc::{CharAlign, LeadingModel};
+    use logocraft_doc::{CharAlign, LeadingModel};
     let japanese = s.japanese_interface();
     let leading = match p.get("leadingModel").filter(|v| !v.is_null()) {
         Some(v) => match v.as_str() {
@@ -358,8 +358,8 @@ pub(crate) fn new_type_alignment(s: &mut Session, p: &Value, cmd: &str, t: &mut 
 
 /// The fit new area type gets: `fit`/`fitMinPercent` from `p` (as `text.areaOptions` takes
 /// them), else Auto Size when the "Auto Size New Area Type" preference is on.
-pub(crate) fn new_area_fit(s: &Session, p: &Value, c: &str) -> Result<vectorcraft_doc::AreaFit> {
-    let default = if s.prefs.auto_size_area_type { vectorcraft_doc::AreaFit::AutoHeight } else { vectorcraft_doc::AreaFit::None };
+pub(crate) fn new_area_fit(s: &Session, p: &Value, c: &str) -> Result<logocraft_doc::AreaFit> {
+    let default = if s.prefs.auto_size_area_type { logocraft_doc::AreaFit::AutoHeight } else { logocraft_doc::AreaFit::None };
     Ok(super::typecmd::fit_param(p, default, c)?.unwrap_or(default))
 }
 
@@ -377,9 +377,9 @@ pub(crate) fn new_type_style(s: &Session, p: &Value) -> CharStyle {
         style.font_style = f.to_string();
     }
     style.fill = match p.get("color").and_then(color_value) {
-        Some(c) => vectorcraft_color::Paint::solid(c),
-        None if !s.paint.fill.is_none() && s.paint.fill != vectorcraft_color::Paint::solid(vectorcraft_color::Color::WHITE) => s.paint.fill.clone(),
-        None => vectorcraft_color::Paint::solid(vectorcraft_color::Color::BLACK),
+        Some(c) => logocraft_color::Paint::solid(c),
+        None if !s.paint.fill.is_none() && s.paint.fill != logocraft_color::Paint::solid(logocraft_color::Color::WHITE) => s.paint.fill.clone(),
+        None => logocraft_color::Paint::solid(logocraft_color::Color::BLACK),
     };
     style
 }

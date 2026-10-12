@@ -1,8 +1,8 @@
 //! Brushes and symbols: commands, tools, rendering and persistence.
 
+use logocraft_doc::{Node, NodeKind};
+use logocraft_geom::Rect;
 use serde_json::{Value, json};
-use vectorcraft_doc::{Node, NodeKind};
-use vectorcraft_geom::Rect;
 
 use super::*;
 
@@ -175,7 +175,7 @@ fn pressure_round(s: &mut Session) {
     s.execute("brush.options", &json!({"name": "3 pt. Round", "params": params})).unwrap();
 }
 
-fn pressure_of(s: &Session, id: NodeId) -> Option<vectorcraft_doc::PressureProfile> {
+fn pressure_of(s: &Session, id: NodeId) -> Option<logocraft_doc::PressureProfile> {
     node(s, id).appearance.stroke().and_then(|st| st.pressure.clone())
 }
 
@@ -194,7 +194,7 @@ fn continuing_a_stroke_joins_its_pressure() {
     s.execute("path.freehand", &json!({"points": [[0, 150, 1], [-100, 150, 0]], "style": "brush", "extend": {"id": id.0, "end": "start"}})).unwrap();
     let p = pressure_of(&s, id).unwrap();
     assert!(p.at(0.0) < 0.05 && (p.at(0.5) - 1.0).abs() < 0.05, "{p:?}");
-    assert_eq!(p.at(1.0), vectorcraft_doc::PressureProfile::MID, "the old part had no pressure");
+    assert_eq!(p.at(1.0), logocraft_doc::PressureProfile::MID, "the old part had no pressure");
 }
 
 /// Brush Options sets the variation modes; bad modes are refused, never a panic.
@@ -214,8 +214,8 @@ fn brush_options_set_variation_modes() {
 /// The bounds of the brush art `id`'s strokes draw.
 fn brushed_bounds(s: &Session, id: NodeId) -> Rect {
     let st = s.doc().unwrap();
-    let pieces = vectorcraft_brush::node_pieces(&st.doc, &node(s, id)).expect("brushed");
-    vectorcraft_brush::pieces_bounds(&pieces).expect("draws")
+    let pieces = logocraft_brush::node_pieces(&st.doc, &node(s, id)).expect("brushed");
+    logocraft_brush::pieces_bounds(&pieces).expect("draws")
 }
 
 /// Scatter, Art and Pattern Brush Options: the params reach the brush and every stroke painted
@@ -421,7 +421,7 @@ fn brushed_strokes_and_instances_render() {
     let l = line(&mut s);
     s.execute("brush.apply", &json!({"name": "Chain", "ids": [l.0]})).unwrap();
     let doc = s.doc().unwrap().doc.clone();
-    let img = vectorcraft_render::Renderer::new().render_region(&doc, Rect::new(0.0, 0.0, 400.0, 300.0), 1.0, true);
+    let img = logocraft_render::Renderer::new().render_region(&doc, Rect::new(0.0, 0.0, 400.0, 300.0), 1.0, true);
     let dark = |x: u32, y: u32| {
         let p = img.pixel(x, y);
         (p[0] as u32 + p[1] as u32 + p[2] as u32) < 300
@@ -434,17 +434,17 @@ fn brushed_strokes_and_instances_render() {
 }
 
 #[test]
-fn brushes_and_symbols_survive_vectorcraft_round_trip() {
+fn brushes_and_symbols_survive_logocraft_round_trip() {
     let mut s = session();
     make_symbol(&mut s);
     s.execute("brush.new", &json!({"type": "calligraphic", "name": "Mine", "params": {"size": 7}})).unwrap();
     let l = line(&mut s);
     s.execute("brush.apply", &json!({"name": "Mine", "ids": [l.0]})).unwrap();
     let doc = s.doc().unwrap().doc.clone();
-    let bytes = vectorcraft_format::save(&doc, false);
-    let back = vectorcraft_format::load(&bytes).unwrap();
-    assert_eq!(vectorcraft_brush::library(&back), vectorcraft_brush::library(&doc));
-    assert_eq!(vectorcraft_brush::find(&back, "Mine").map(|b| b.kind.type_id()), Some("calligraphic"));
+    let bytes = logocraft_format::save(&doc, false);
+    let back = logocraft_format::load(&bytes).unwrap();
+    assert_eq!(logocraft_brush::library(&back), logocraft_brush::library(&doc));
+    assert_eq!(logocraft_brush::find(&back, "Mine").map(|b| b.kind.type_id()), Some("calligraphic"));
     assert_eq!(back.symbols, doc.symbols);
     assert_eq!(back.unknown.get("symbolSizes"), doc.unknown.get("symbolSizes"));
     let bl = back.node(l).unwrap();

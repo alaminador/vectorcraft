@@ -1,8 +1,8 @@
 //! What renderers keep between frames: decoded images shared by all of them, image mips, symbol
 //! art placed for instances and inline graphics, and caches swept by every kind of render.
 
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
 
 use super::*;
 
@@ -59,8 +59,8 @@ fn node_renders_sweep_stale_cache_entries() {
     let mut d = Document::new(10.0, 10.0);
     let id = d.alloc_id();
     let square = |x: f64| {
-        let p = vectorcraft_geom::shapes::rectangle(Rect::new(x, 0.0, x + 5.0, 5.0));
-        Arc::new(Node::path(id, p, vectorcraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0)))
+        let p = logocraft_geom::shapes::rectangle(Rect::new(x, 0.0, x + 5.0, 5.0));
+        Arc::new(Node::path(id, p, logocraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0)))
     };
     let first = square(0.0);
     let mut r = Renderer::new();
@@ -106,11 +106,11 @@ fn image_mips_are_opt_in_and_change_nothing_off() {
 
 /// A document of `n` point type objects reading `word`, in rows.
 fn text_doc(n: usize, word: &str) -> Document {
-    use vectorcraft_doc::text::{CharStyle, TextObject};
+    use logocraft_doc::text::{CharStyle, TextObject};
     let mut d = Document::new(400.0, 400.0);
     let l = d.layers[0].id;
     for i in 0..n {
-        let at = vectorcraft_geom::Point::new(10.0 + (i % 8) as f64 * 48.0, 30.0 + (i / 8) as f64 * 30.0);
+        let at = logocraft_geom::Point::new(10.0 + (i % 8) as f64 * 48.0, 30.0 + (i / 8) as f64 * 30.0);
         let style = CharStyle { size: 18.0, ..Default::default() };
         let mut t = Node::new(NodeId(0), NodeKind::Text(Box::new(TextObject::point(at, word, style))));
         t.id = d.alloc_id();
@@ -177,10 +177,10 @@ fn swept_type_entries_give_back_their_bytes() {
 /// A symbol's art inside the 20 × 20 square around the origin: a group of a square filled blue
 /// with a 2 pt black stroke and a black line.
 fn symbol_art(d: &mut Document) -> Node {
-    use vectorcraft_doc::Appearance;
-    let square = vectorcraft_geom::shapes::rectangle(Rect::new(-8.0, -8.0, 8.0, 8.0));
+    use logocraft_doc::Appearance;
+    let square = logocraft_geom::shapes::rectangle(Rect::new(-8.0, -8.0, 8.0, 8.0));
     let square = Node::path(d.alloc_id(), square, Appearance::basic(Paint::solid(Color::rgb(0.0, 0.0, 1.0)), Paint::solid(Color::BLACK), 2.0));
-    let line = vectorcraft_geom::shapes::line((-8.0, 4.0).into(), (8.0, 4.0).into());
+    let line = logocraft_geom::shapes::line((-8.0, 4.0).into(), (8.0, 4.0).into());
     let line = Node::path(d.alloc_id(), line, Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 1.5));
     Node::group(d.alloc_id(), vec![Arc::new(square), Arc::new(line)])
 }
@@ -190,7 +190,7 @@ fn symbol_art(d: &mut Document) -> Node {
 fn symbol_doc() -> Document {
     let mut d = Document::new(200.0, 100.0);
     let art = symbol_art(&mut d);
-    d.symbols.push(vectorcraft_doc::Symbol { name: "S".into(), art: Arc::new(art) });
+    d.symbols.push(logocraft_doc::Symbol { name: "S".into(), art: Arc::new(art) });
     let l = d.layers[0].id;
     let xfs = [
         Affine::translate((30.0, 30.0)),
@@ -242,10 +242,10 @@ fn symbol_instances_keep_their_placed_art_between_frames() {
 fn editing_an_instance_or_a_symbol_places_only_its_art_again() {
     let mut d = symbol_doc();
     // Symbol `T` is a green square, and one instance of it stands below the others.
-    let green = vectorcraft_doc::Appearance::basic(Paint::solid(Color::rgb(0.0, 1.0, 0.0)), Paint::None, 0.0);
-    let square = Node::path(d.alloc_id(), vectorcraft_geom::shapes::rectangle(Rect::new(-5.0, -5.0, 5.0, 5.0)), green);
+    let green = logocraft_doc::Appearance::basic(Paint::solid(Color::rgb(0.0, 1.0, 0.0)), Paint::None, 0.0);
+    let square = Node::path(d.alloc_id(), logocraft_geom::shapes::rectangle(Rect::new(-5.0, -5.0, 5.0, 5.0)), green);
     let t = Node::group(d.alloc_id(), vec![Arc::new(square)]);
-    d.symbols.push(vectorcraft_doc::Symbol { name: "T".into(), art: Arc::new(t) });
+    d.symbols.push(logocraft_doc::Symbol { name: "T".into(), art: Arc::new(t) });
     let (l, id) = (d.layers[0].id, d.alloc_id());
     d.insert(Some(l), 0, Node::new(id, NodeKind::SymbolInstance { symbol: "T".into(), xf: Affine::translate((30.0, 80.0)) })).unwrap();
     let opts = RenderOptions::default();
@@ -294,7 +294,7 @@ fn edit_draws_as_new(mut d: Document, edit: impl FnOnce(&mut Document)) {
 /// `d` with symbol `Holder` (a group of `members`) shown by one instance at (100, 50).
 fn holder_doc(mut d: Document, members: Vec<Node>) -> Document {
     let holder = Node::group(d.alloc_id(), members.into_iter().map(Arc::new).collect());
-    d.symbols.push(vectorcraft_doc::Symbol { name: "Holder".into(), art: Arc::new(holder) });
+    d.symbols.push(logocraft_doc::Symbol { name: "Holder".into(), art: Arc::new(holder) });
     let (l, id) = (d.layers[0].id, d.alloc_id());
     d.insert(Some(l), 0, Node::new(id, NodeKind::SymbolInstance { symbol: "Holder".into(), xf: Affine::translate((100.0, 50.0)) })).unwrap();
     d
@@ -305,26 +305,22 @@ fn holder_doc(mut d: Document, members: Vec<Node>) -> Document {
 /// frame draws what a new renderer draws.
 #[test]
 fn art_showing_another_symbol_draws_its_edits() {
-    use vectorcraft_doc::text::{CharStyle, InlineArt, TextObject, TextRun};
+    use logocraft_doc::text::{CharStyle, InlineArt, TextObject, TextRun};
     let mut d = Document::new(200.0, 100.0);
     let art = symbol_art(&mut d);
-    d.symbols.push(vectorcraft_doc::Symbol { name: "S".into(), art: Arc::new(art) });
+    d.symbols.push(logocraft_doc::Symbol { name: "S".into(), art: Arc::new(art) });
     let style = CharStyle { size: 24.0, ..Default::default() };
-    let mut t = TextObject::point(vectorcraft_geom::Point::new(-60.0, 10.0), "A", style.clone());
+    let mut t = TextObject::point(logocraft_geom::Point::new(-60.0, 10.0), "A", style.clone());
     t.runs.push(TextRun::inline(InlineArt::new("S"), style.clone()));
     t.runs.push(TextRun::new("B", style));
     let text = Node::new(d.alloc_id(), NodeKind::Text(Box::new(t)));
     let mut moved = Node::new(d.alloc_id(), NodeKind::SymbolInstance { symbol: "S".into(), xf: Affine::translate((40.0, 0.0)) });
-    moved.appearance.effects.push(vectorcraft_doc::Effect {
-        id: "distort.transform".into(),
-        params: serde_json::json!({"moveH": 4.0}),
-        visible: true,
-    });
+    moved.appearance.effects.push(logocraft_doc::Effect { id: "distort.transform".into(), params: serde_json::json!({"moveH": 4.0}), visible: true });
     let d = holder_doc(d, vec![text, moved]);
     // `S` becomes a wide red bar: the inline graphic grows, and the type after it moves.
     edit_draws_as_new(d, |d| {
-        let bar = vectorcraft_geom::shapes::rectangle(Rect::new(-20.0, -4.0, 20.0, 4.0));
-        let red = vectorcraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
+        let bar = logocraft_geom::shapes::rectangle(Rect::new(-20.0, -4.0, 20.0, 4.0));
+        let red = logocraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
         d.symbols[0].art = Arc::new(Node::path(d.alloc_id(), bar, red));
     });
 }
@@ -334,28 +330,28 @@ fn art_showing_another_symbol_draws_its_edits() {
 /// renderer draws.
 #[test]
 fn art_with_raster_effects_draws_pattern_and_resolution_edits() {
-    use vectorcraft_doc::pattern::{PatternDef, pattern_paint};
-    let effect = |id: &str, params: serde_json::Value| vectorcraft_doc::Effect { id: id.into(), params, visible: true };
+    use logocraft_doc::pattern::{PatternDef, pattern_paint};
+    let effect = |id: &str, params: serde_json::Value| logocraft_doc::Effect { id: id.into(), params, visible: true };
     let mut d = Document::new(200.0, 100.0);
     d.raster_effects_ppi = 72.0;
     // Pattern `Checks` is a red 10 × 10 square in a 20 × 20 tile.
     let tile = |c: Color| {
-        let square = vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
-        vec![Arc::new(Node::path(NodeId(900), square, vectorcraft_doc::Appearance::basic(Paint::solid(c), Paint::None, 0.0)))]
+        let square = logocraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
+        vec![Arc::new(Node::path(NodeId(900), square, logocraft_doc::Appearance::basic(Paint::solid(c), Paint::None, 0.0)))]
     };
     let mut def = PatternDef::new("Checks", tile(Color::rgb(1.0, 0.0, 0.0)));
     def.tile = Rect::new(0.0, 0.0, 20.0, 20.0);
     d.patterns.push(def);
-    let band = vectorcraft_geom::shapes::rectangle(Rect::new(-90.0, -45.0, -20.0, -25.0));
-    let mut blurred = Node::path(d.alloc_id(), band, vectorcraft_doc::Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0));
+    let band = logocraft_geom::shapes::rectangle(Rect::new(-90.0, -45.0, -20.0, -25.0));
+    let mut blurred = Node::path(d.alloc_id(), band, logocraft_doc::Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0));
     blurred.appearance.effects.push(effect("blur.gaussian", serde_json::json!({"radius": 2.0})));
     // The path holds ten bars, 1 pt high and 2 pt apart.
-    let mut bars = vectorcraft_geom::shapes::rectangle(Rect::new(20.0, -40.0, 90.0, -39.0));
+    let mut bars = logocraft_geom::shapes::rectangle(Rect::new(20.0, -40.0, 90.0, -39.0));
     for k in 1..10 {
         let y = -40.0 + 2.0 * k as f64;
-        bars.subpaths.extend(vectorcraft_geom::shapes::rectangle(Rect::new(20.0, y, 90.0, y + 1.0)).subpaths);
+        bars.subpaths.extend(logocraft_geom::shapes::rectangle(Rect::new(20.0, y, 90.0, y + 1.0)).subpaths);
     }
-    let mut striped = Node::path(d.alloc_id(), bars, vectorcraft_doc::Appearance::basic(Paint::solid(Color::BLACK), Paint::None, 0.0));
+    let mut striped = Node::path(d.alloc_id(), bars, logocraft_doc::Appearance::basic(Paint::solid(Color::BLACK), Paint::None, 0.0));
     striped.appearance.effects.push(effect("video.deinterlace", serde_json::json!({})));
     let d = holder_doc(d, vec![blurred, striped]);
     edit_draws_as_new(d, |d| {
@@ -371,18 +367,18 @@ fn art_with_raster_effects_draws_pattern_and_resolution_edits() {
 /// draws.
 #[test]
 fn art_with_live_objects_draws_pattern_layout_edits() {
-    use vectorcraft_doc::live::EnvelopeOptions;
-    use vectorcraft_doc::pattern::{PatternDef, TileType, pattern_paint};
+    use logocraft_doc::live::EnvelopeOptions;
+    use logocraft_doc::pattern::{PatternDef, TileType, pattern_paint};
     let mut d = Document::new(200.0, 100.0);
     // Pattern `Checks` is a red 10 × 10 square in a 20 × 20 tile.
-    let square = vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
-    let red = vectorcraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
+    let square = logocraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
+    let red = logocraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
     let mut def = PatternDef::new("Checks", vec![Arc::new(Node::path(NodeId(900), square, red))]);
     def.tile = Rect::new(0.0, 0.0, 20.0, 20.0);
     d.patterns.push(def);
-    let band = vectorcraft_geom::shapes::rectangle(Rect::new(-80.0, -40.0, 80.0, 40.0));
-    let filled = Node::path(d.alloc_id(), band, vectorcraft_doc::Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0));
-    let kind = vectorcraft_doc::EnvelopeKind::Warp { style: "arc".into(), bend: 30.0, h: 0.0, v: 0.0, horizontal: true };
+    let band = logocraft_geom::shapes::rectangle(Rect::new(-80.0, -40.0, 80.0, 40.0));
+    let filled = Node::path(d.alloc_id(), band, logocraft_doc::Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0));
+    let kind = logocraft_doc::EnvelopeKind::Warp { style: "arc".into(), bend: 30.0, h: 0.0, v: 0.0, horizontal: true };
     let options = EnvelopeOptions { distort_appearance: true, distort_pattern_fills: true, ..Default::default() };
     let envelope = Node::new(
         d.alloc_id(),
@@ -415,10 +411,10 @@ fn symbol_instances_draw_as_groups_of_their_placed_art() {
     over.appearance.set_fill(Paint::solid(Color::rgb(0.0, 1.0, 0.0)));
     d.insert(Some(l), 1, over).unwrap();
     // Symbol `U` is a single path, a circle with a black stroke.
-    let circle = vectorcraft_geom::shapes::ellipse(Rect::new(-6.0, -6.0, 6.0, 6.0));
-    let ap = vectorcraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.8, 0.0)), Paint::solid(Color::BLACK), 1.0);
+    let circle = logocraft_geom::shapes::ellipse(Rect::new(-6.0, -6.0, 6.0, 6.0));
+    let ap = logocraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.8, 0.0)), Paint::solid(Color::BLACK), 1.0);
     let circle = Node::path(d.alloc_id(), circle, ap);
-    d.symbols.push(vectorcraft_doc::Symbol { name: "U".into(), art: Arc::new(circle) });
+    d.symbols.push(logocraft_doc::Symbol { name: "U".into(), art: Arc::new(circle) });
     let id = d.alloc_id();
     d.insert(Some(l), usize::MAX, Node::new(id, NodeKind::SymbolInstance { symbol: "U".into(), xf: Affine::translate((175.0, 25.0)) })).unwrap();
     // `groups` holds the same art in place of the instances: groups, and the circle as a path.
@@ -458,12 +454,12 @@ fn symbol_instances_draw_as_groups_of_their_placed_art() {
 /// Inline graphics in type draw the art placed for them in an earlier frame, as instances do.
 #[test]
 fn inline_graphics_keep_their_placed_art_between_frames() {
-    use vectorcraft_doc::text::{CharStyle, InlineArt, TextObject, TextRun};
+    use logocraft_doc::text::{CharStyle, InlineArt, TextObject, TextRun};
     let mut d = Document::new(200.0, 100.0);
     let art = symbol_art(&mut d);
-    d.symbols.push(vectorcraft_doc::Symbol { name: "S".into(), art: Arc::new(art) });
+    d.symbols.push(logocraft_doc::Symbol { name: "S".into(), art: Arc::new(art) });
     let style = CharStyle { size: 24.0, ..Default::default() };
-    let mut t = TextObject::point(vectorcraft_geom::Point::new(10.0, 50.0), "A", style.clone());
+    let mut t = TextObject::point(logocraft_geom::Point::new(10.0, 50.0), "A", style.clone());
     t.runs.push(TextRun::inline(InlineArt::new("S"), style.clone()));
     t.runs.push(TextRun::new("B", style));
     let (l, id) = (d.layers[0].id, d.alloc_id());
@@ -481,20 +477,20 @@ fn inline_graphics_keep_their_placed_art_between_frames() {
 /// decorations in layout order (the whole text's path is kept once, the runs as spans of it).
 #[test]
 fn text_runs_draw_their_own_glyphs_from_the_shared_outlines() {
-    use vectorcraft_doc::text::{CharStyle, TextObject, TextRun};
+    use logocraft_doc::text::{CharStyle, TextObject, TextRun};
     let plain = CharStyle { size: 24.0, ..Default::default() };
     let under = CharStyle { underline: true, ..plain.clone() };
-    let mut t = TextObject::point(vectorcraft_geom::Point::new(10.0, 40.0), "Ab", plain.clone());
+    let mut t = TextObject::point(logocraft_geom::Point::new(10.0, 40.0), "Ab", plain.clone());
     t.runs.push(TextRun::new("cd", under));
     t.runs.push(TextRun::new("ef", plain));
     let g = text_geom(&t);
-    let db = vectorcraft_text::FontDb::global();
-    let layout = vectorcraft_text::layout(db, &t);
+    let db = logocraft_text::FontDb::global();
+    let layout = logocraft_text::layout(db, &t);
     let mut want = vec![BezPath::new(); t.runs.len()];
     for gl in &layout.glyphs {
         want[gl.run].extend(gl.outline.iter());
     }
-    for (run, bar) in vectorcraft_text::decorations(&layout, db, &t) {
+    for (run, bar) in logocraft_text::decorations(&layout, db, &t) {
         want[run].extend(bar.iter());
     }
     for (i, w) in want.iter().enumerate() {

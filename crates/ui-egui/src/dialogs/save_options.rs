@@ -5,19 +5,19 @@
 //!
 //! Fields: `__action` (the save command it finishes), `__pick` (file name and format
 //! editable), `path`, `format`, and one field per option (agents set them with `ui.dialog.set`).
-//! Native and `.ai` files show their save options (VectorCraft Options after Save As): each
+//! Native and `.ai` files show their save options (LogoCraft Options after Save As): each
 //! artboard to a separate file, with `all` (true: every artboard) or `range`, Include Linked Files,
 //! Embed ICC Profiles, Create PDF-Compatible File and Use Compression.
 
 use std::sync::OnceLock;
 
+use logocraft_engine::cmd::fileio::{self, ArtboardPick, Format, FormatOption, SAVE_FORMATS, SaveMode};
 use serde_json::{Map, Value, json};
-use vectorcraft_engine::cmd::fileio::{self, ArtboardPick, Format, FormatOption, SAVE_FORMATS, SaveMode};
 
 use super::{DialogResult, DialogSpec, form};
 use crate::state::Dialog;
 use crate::theme::Tokens;
-use crate::{VectorcraftApp, io, widgets};
+use crate::{LogocraftApp, io, widgets};
 
 /// Dialog kind.
 pub const KIND: &str = "saveOptions";
@@ -38,7 +38,7 @@ fn heading(d: &Dialog) -> String {
 
 /// `f`'s options with the values a save would use (`file.formatOptions`: as last saved in that
 /// format, else the defaults). Text options start empty rather than null.
-pub(crate) fn option_values(app: &mut VectorcraftApp, f: &Format) -> Map<String, Value> {
+pub(crate) fn option_values(app: &mut LogocraftApp, f: &Format) -> Map<String, Value> {
     let v = app.session.execute("file.formatOptions", &json!({ "format": f.id })).unwrap_or_default();
     f.options
         .iter()
@@ -120,7 +120,7 @@ fn save_labels() -> &'static [&'static str] {
     LABELS.get_or_init(|| SAVE_FORMATS.iter().filter_map(|id| fileio::format(id)).map(|f| f.label).collect())
 }
 
-fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let t = Tokens::get(ui.ctx());
     let Some(f) = fileio::format(&d.str("format")) else { return false };
     let mut switch = None;
@@ -144,7 +144,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 }
 
 /// One option: a checkbox, an artboard menu, a number or a text field.
-fn option_row(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, o: &FormatOption) {
+fn option_row(app: &LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog, o: &FormatOption) {
     let t = Tokens::get(ui.ctx());
     let label = label(o);
     let value = d.fields.get(o.name).cloned().unwrap_or(Value::Null);
@@ -185,7 +185,7 @@ fn option_row(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, o: &Forma
 }
 
 /// Web Save As: another format brings its own options and file extension.
-fn switch_format(app: &mut VectorcraftApp, d: &mut Dialog, id: &str) {
+fn switch_format(app: &mut LogocraftApp, d: &mut Dialog, id: &str) {
     let (Some(old), Some(new)) = (fileio::format(&d.str("format")), fileio::format(id)) else { return };
     for o in old.options {
         d.fields.remove(o.name);
@@ -204,7 +204,7 @@ fn with_extension(path: &str, f: &Format) -> String {
 }
 
 /// Write the file with the chosen options (blank ones fall back to the format's defaults).
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> DialogResult {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> DialogResult {
     let f = fileio::format(&d.str("format")).ok_or("unknown format")?;
     let path = d.str("path");
     if path.trim().is_empty() {
@@ -238,7 +238,7 @@ mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use vectorcraft_engine::Session;
+    use logocraft_engine::Session;
 
     use super::*;
     use crate::{FilePick, Services, theme};
@@ -246,7 +246,7 @@ mod tests {
     type Written = Rc<RefCell<Vec<(String, Vec<u8>)>>>;
 
     /// A desktop app whose save panel answers `picked` and records what it was shown.
-    fn desktop(picked: &'static str) -> (VectorcraftApp, Written, Rc<RefCell<Vec<FilePick>>>) {
+    fn desktop(picked: &'static str) -> (LogocraftApp, Written, Rc<RefCell<Vec<FilePick>>>) {
         let (written, picks) = (Written::default(), Rc::new(RefCell::new(vec![])));
         let (w, p) = (written.clone(), picks.clone());
         let services = Services {
@@ -264,7 +264,7 @@ mod tests {
     }
 
     /// A browser app: saves are downloads.
-    fn web() -> (VectorcraftApp, Written) {
+    fn web() -> (LogocraftApp, Written) {
         let written = Written::default();
         let w = written.clone();
         let services = Services {
@@ -274,15 +274,15 @@ mod tests {
         (with_art(services), written)
     }
 
-    fn with_art(services: Services) -> VectorcraftApp {
-        let mut app = VectorcraftApp::new(Session::new(), services);
+    fn with_art(services: Services) -> LogocraftApp {
+        let mut app = LogocraftApp::new(Session::new(), services);
         app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
         app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap();
         app
     }
 
     /// One headless frame of the dialog layer; `enter` presses OK.
-    fn frame(app: &mut VectorcraftApp, enter: bool) {
+    fn frame(app: &mut LogocraftApp, enter: bool) {
         let ctx = egui::Context::default();
         theme::install_fonts(&ctx);
         let events = if enter {
@@ -294,7 +294,7 @@ mod tests {
         out.textures_delta.clear();
     }
 
-    fn dialog(app: &VectorcraftApp) -> &Dialog {
+    fn dialog(app: &LogocraftApp) -> &Dialog {
         app.ui.dialog.as_ref().expect("a dialog is open")
     }
 
@@ -306,8 +306,8 @@ mod tests {
         // The save panel offers every save format, the document's own first.
         let pick = &picks.borrow()[0];
         let labels: Vec<&str> = pick.filters.iter().map(|f| f.0).collect();
-        assert_eq!(labels, ["VectorCraft", "VectorCraft Template", "PDF", "SVG", "SVG Compressed", "PDF-compatible .ai"]);
-        assert_eq!(pick.name, "Untitled-1.vectorcraft");
+        assert_eq!(labels, ["LogoCraft", "LogoCraft Template", "PDF", "SVG", "SVG Compressed", "PDF-compatible .ai"]);
+        assert_eq!(pick.name, "Untitled-1.logocraft");
         let d = dialog(&app);
         assert_eq!((d.kind.as_str(), d.str("path").as_str(), d.str("mode").as_str()), ("svgOptions", "art.svg", "save"));
         assert!(written.borrow().is_empty(), "nothing is written before OK");
@@ -334,20 +334,20 @@ mod tests {
 
     #[test]
     fn save_a_copy_and_template_suggest_their_names() {
-        let (mut app, written, picks) = desktop("copy.vectorcraft");
-        let folder = vectorcraft_testkit::temp_dir("save-template-dialog");
+        let (mut app, written, picks) = desktop("copy.logocraft");
+        let folder = logocraft_testkit::temp_dir("save-template-dialog");
         app.session.prefs.templates_folder = folder.to_string_lossy().into_owned();
         app.run("file.saveCopy", json!({})).unwrap();
-        assert_eq!(picks.borrow()[0].name, "Untitled-1 copy.vectorcraft");
+        assert_eq!(picks.borrow()[0].name, "Untitled-1 copy.logocraft");
         assert!(app.ui.dialog.is_none(), "the native format has no options");
-        assert!(vectorcraft_format::sniff(&written.borrow()[0].1));
+        assert!(logocraft_format::sniff(&written.borrow()[0].1));
         assert!(app.session.active().unwrap().path.is_none() && app.session.active().unwrap().is_dirty());
         app.run("file.saveAsTemplate", json!({})).unwrap();
         let pick = &picks.borrow()[1];
         assert_eq!(pick.name, "Untitled-1 template.vctemplate");
         assert_eq!(pick.folder.as_deref().map(std::path::Path::new), Some(folder.as_path()));
-        assert_eq!(pick.filters, [("VectorCraft Template", &["vctemplate"][..])]);
-        assert_eq!(written.borrow()[1].0, "copy.vectorcraft", "the picked name is kept");
+        assert_eq!(pick.filters, [("LogoCraft Template", &["vctemplate"][..])]);
+        assert_eq!(written.borrow()[1].0, "copy.logocraft", "the picked name is kept");
     }
 
     #[test]
@@ -355,7 +355,7 @@ mod tests {
         let (mut app, written) = web();
         app.run("file.saveAs", json!({})).unwrap();
         let d = dialog(&app);
-        assert_eq!((heading(d).as_str(), d.str("path").as_str(), d.str("format").as_str()), ("Save As", "Untitled-1.vectorcraft", "vectorcraft"));
+        assert_eq!((heading(d).as_str(), d.str("path").as_str(), d.str("format").as_str()), ("Save As", "Untitled-1.logocraft", "logocraft"));
         frame(&mut app, false);
         let mut d = app.ui.dialog.take().unwrap();
         switch_format(&mut app, &mut d, "pdf");

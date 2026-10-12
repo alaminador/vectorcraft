@@ -7,13 +7,13 @@
 //! `#rrggbb`), `template`, `locked`, `visible`, `printable`, `preview`, `dimImages` and
 //! `dimPercent`. OK runs `layer.setProps`, `layer.new` or `layer.newSublayer`.
 
+use logocraft_doc::{LAYER_COLORS, LayerColor, Node, NodeId, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_doc::{LAYER_COLORS, LayerColor, Node, NodeId, NodeKind};
 
 use super::swatch_options::{grid, label};
 use super::{DialogSpec, form, run_and_close};
 use crate::state::Dialog;
-use crate::{VectorcraftApp, widgets};
+use crate::{LogocraftApp, widgets};
 
 /// The dialog kind of Layer Options.
 pub const KIND: &str = "layerOptions";
@@ -52,7 +52,7 @@ fn fields_of(n: &Node) -> serde_json::Map<String, Value> {
 
 /// `ui.layerOptions {ids?|id?}`: open Layer Options for rows (default: the highlighted rows, else
 /// the current layer), filled in from the first.
-pub fn open(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp, p: &Value) -> Result<Value, String> {
     let st = app.session.active().ok_or("no document open")?;
     // Rows given are used as given: a malformed or unknown id fails rather than being skipped or
     // the dialog opening on the highlighted rows instead.
@@ -79,7 +79,7 @@ pub fn open(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
 
 /// `ui.newLayer {sublayer?}`: Layer Options for a new layer (or sublayer), with the name and
 /// colour it would get.
-pub fn open_new(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
+pub fn open_new(app: &mut LogocraftApp, p: &Value) -> Result<Value, String> {
     let st = app.session.active().ok_or("no document open")?;
     let mut layers = vec![];
     st.doc.walk(|n| {
@@ -135,7 +135,7 @@ fn color_dropdown(ui: &mut egui::Ui, shown: &str) -> Option<usize> {
     })
 }
 
-fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(_: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let layer = d.bool("layer");
     let many = d.fields.get("ids").and_then(Value::as_array).is_some_and(|a| a.len() > 1);
     grid(ui, |ui| {
@@ -157,7 +157,7 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
                     .find(|(n, _)| n.eq_ignore_ascii_case(&cur))
                     .map(|(_, c)| *c)
                     .or_else(|| {
-                        vectorcraft_color::Color::from_hex(&cur).map(|c| {
+                        logocraft_color::Color::from_hex(&cur).map(|c| {
                             let [r, g, b, _] = c.to_rgba8(1.0);
                             [r, g, b]
                         })
@@ -232,7 +232,7 @@ pub(crate) fn params(d: &Dialog) -> (&'static str, Value) {
     }
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let (cmd, p) = params(d);
     run_and_close(app, cmd, p)
 }
@@ -240,22 +240,22 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_engine::Session;
+    use logocraft_engine::Session;
 
-    fn app() -> VectorcraftApp {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    fn app() -> LogocraftApp {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
         app
     }
 
-    fn draw(app: &mut VectorcraftApp) {
+    fn draw(app: &mut LogocraftApp) {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         let mut out = ctx.run_ui(Default::default(), |ui| super::super::show(app, ui.ctx()));
         out.textures_delta.clear();
     }
 
-    fn set(app: &mut VectorcraftApp, k: &str, v: Value) {
+    fn set(app: &mut LogocraftApp, k: &str, v: Value) {
         app.ui.dialog.as_mut().unwrap().fields.insert(k.into(), v);
     }
 

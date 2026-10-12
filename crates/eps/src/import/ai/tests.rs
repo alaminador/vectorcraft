@@ -3,9 +3,9 @@
 use std::sync::Arc;
 
 use kurbo::{Point, Rect};
-use vectorcraft_color::gradient::GradientKind;
-use vectorcraft_color::{BlendMode, Color, Paint};
-use vectorcraft_doc::{AppearanceItem, ColorMode, Document, Knockout, LayerColor, LineCap, LineJoin, Node, NodeKind};
+use logocraft_color::gradient::GradientKind;
+use logocraft_color::{BlendMode, Color, Paint};
+use logocraft_doc::{AppearanceItem, ColorMode, Document, Knockout, LayerColor, LineCap, LineJoin, Node, NodeKind};
 
 use super::*;
 
@@ -111,7 +111,7 @@ fn paths_colours_and_strokes() {
     assert_eq!(path.bounds(), Some(Rect::new(0.0, 90.0, 10.0, 100.0)));
     assert!(path.subpaths[0].closed);
     assert_eq!(path.subpaths[0].anchors.len(), 4, "the closing point merges with the first");
-    assert_eq!(*rule, vectorcraft_geom::FillRule::EvenOdd);
+    assert_eq!(*rule, logocraft_geom::FillRule::EvenOdd);
     assert_eq!(fill(&a[0]).color(), Some(Color::rgb(1.0, 0.0, 0.0)));
     let st = a[0].appearance.stroke().unwrap();
     assert_eq!((st.width, st.cap, st.join, st.miter_limit), (3.0, LineCap::Round, LineJoin::Bevel, 4.0));

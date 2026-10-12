@@ -4,12 +4,12 @@
 
 use std::rc::Rc;
 
+use logocraft_color::Paint;
 use std::sync::Arc;
-use vectorcraft_color::Paint;
 
-use vectorcraft_doc::{CharStyle, Node, NodeId, NodeKind, TextObject};
-use vectorcraft_geom::{Affine, Point, Vec2};
-use vectorcraft_text::TextLayout;
+use logocraft_doc::{CharStyle, Node, NodeId, NodeKind, TextObject};
+use logocraft_geom::{Affine, Point, Vec2};
+use logocraft_text::TextLayout;
 
 use super::graphics::MAX_APART;
 use super::interp::{Interp, matrix_obj, matrix_of};
@@ -53,7 +53,7 @@ pub fn family_style(name: &str) -> (String, String) {
         Some((base, n)) if !base.is_empty() && !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) => base,
         _ => name,
     };
-    if let Some(face) = vectorcraft_text::FontDb::global().find_postscript(name) {
+    if let Some(face) = logocraft_text::FontDb::global().find_postscript(name) {
         return (face.family.clone(), face.style.clone());
     }
     let (family, style) = name.split_once('-').unwrap_or((name, ""));
@@ -422,12 +422,12 @@ impl Interp<'_> {
         }
         let (family, font_style) = family_style(&name);
         // The available family's own spelling: `MicrosoftYaHei` is Microsoft YaHei, not "Microsoft Ya Hei".
-        let font_family = vectorcraft_text::FontDb::global().find_family(&family).unwrap_or(family);
+        let font_family = logocraft_text::FontDb::global().find_family(&family).unwrap_or(family);
         let text: String = s.iter().map(|b| char::from(*b)).filter(|c| !c.is_control()).collect();
-        let fill = if self.g.paint.is_none() { Paint::solid(vectorcraft_color::Color::BLACK) } else { self.g.paint.clone() };
+        let fill = if self.g.paint.is_none() { Paint::solid(logocraft_color::Color::BLACK) } else { self.g.paint.clone() };
         let style = CharStyle { font_family, font_style, size, fill, stroke: Paint::None, ..CharStyle::default() };
         let mut t = TextObject::point(Point::ZERO, &text, style);
-        let layout = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t);
+        let layout = logocraft_text::layout(logocraft_text::FontDb::global(), &t);
         t.xf = m * Affine::scale_non_uniform(1.0 / size, -1.0 / size);
         t.cached_bounds = Some(layout.bounds);
         let adv: f64 = layout.glyphs.iter().map(|g| g.advance).sum();

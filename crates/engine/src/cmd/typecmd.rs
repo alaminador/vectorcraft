@@ -3,9 +3,9 @@
 
 use std::sync::Arc;
 
+use logocraft_doc::{AreaFit, Document, Justify, Node, NodeId, NodeKind, TextObject};
+use logocraft_geom::{Affine, PathData, Vec2};
 use serde_json::{Value, json};
-use vectorcraft_doc::{AreaFit, Document, Justify, Node, NodeId, NodeKind, TextObject};
-use vectorcraft_geom::{Affine, PathData, Vec2};
 
 use super::edit::selected_roots;
 use super::pathops::{len_param, num_param, shape_node};
@@ -72,23 +72,23 @@ pub fn specs() -> Vec<CommandSpec> {
 
 /// Recompute the layout caches (bounds and baselines) after a text edit. Every engine text edit ends here (typing
 /// through `text.editRange` too), inside its `Session::edit`, so this is where Auto Size area type
-/// ([`vectorcraft_doc::AreaFit::AutoHeight`]) fits its frame to the text: part of the same undo
+/// ([`logocraft_doc::AreaFit::AutoHeight`]) fits its frame to the text: part of the same undo
 /// step as the edit.
 pub(crate) fn refresh_bounds(t: &mut TextObject) {
     // Edits that changed the paragraph count keep one paragraph style per paragraph.
     t.normalize_paras();
     auto_height(t);
-    let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+    let lay = logocraft_text::layout(logocraft_text::FontDb::global(), t);
     t.cached_bounds = Some(lay.bounds);
     t.cached_baselines = lay.baselines();
 }
 
 /// The text-space bounds of area type's frame, when Auto Size can fit it: a rectangle (one
 /// subpath, as large as its bounds) of horizontal type in one row, with some height.
-fn auto_height_frame(t: &TextObject) -> Option<vectorcraft_geom::Rect> {
-    use vectorcraft_geom::Shape;
-    let vectorcraft_doc::TextKind::Area { frame } = &t.kind else { return None };
-    if t.area.fit != vectorcraft_doc::AreaFit::AutoHeight || t.vertical || t.area.rows > 1 || frame.subpaths.len() != 1 {
+fn auto_height_frame(t: &TextObject) -> Option<logocraft_geom::Rect> {
+    use logocraft_geom::Shape;
+    let logocraft_doc::TextKind::Area { frame } = &t.kind else { return None };
+    if t.area.fit != logocraft_doc::AreaFit::AutoHeight || t.vertical || t.area.rows > 1 || frame.subpaths.len() != 1 {
         return None;
     }
     let b = frame.bounds()?;
@@ -101,9 +101,9 @@ fn auto_height_frame(t: &TextObject) -> Option<vectorcraft_geom::Rect> {
 /// the inset), so the frame's height follows the text. Text in several columns gets the least
 /// height (to 0.01 pt) at which it fits. True when the frame changed.
 fn auto_height(t: &mut TextObject) -> bool {
-    use vectorcraft_geom::Shape;
+    use logocraft_geom::Shape;
     let Some(b) = auto_height_frame(t) else { return false };
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     // Lay out in a frame as tall as the canvas allows: everything the width lets through flows.
     let tall = (crate::MAX_COORD - b.y0).min(1.0e5);
     if tall <= 1.0 {
@@ -111,8 +111,8 @@ fn auto_height(t: &mut TextObject) -> bool {
     }
     let mut probe = t.clone();
     let with_size = |probe: &mut TextObject, w: f64, h: f64| {
-        if let vectorcraft_doc::TextKind::Area { frame } = &mut probe.kind {
-            *frame = PathData::from_bezpath(&vectorcraft_geom::Rect::new(b.x0, b.y0, b.x0 + w, b.y0 + h).to_path(0.1));
+        if let logocraft_doc::TextKind::Area { frame } = &mut probe.kind {
+            *frame = PathData::from_bezpath(&logocraft_geom::Rect::new(b.x0, b.y0, b.x0 + w, b.y0 + h).to_path(0.1));
         }
     };
     // Columns: all the text in one column as wide as each of them is surely tall enough.
@@ -121,8 +121,8 @@ fn auto_height(t: &mut TextObject) -> bool {
     with_size(&mut probe, col_w, tall);
     probe.area.columns = 1;
     // Measured from the top: aligned in the tall probe the lines would sit far below.
-    probe.area.vertical_align = vectorcraft_doc::VerticalAlign::Top;
-    let lay = vectorcraft_text::layout(db, &probe);
+    probe.area.vertical_align = logocraft_doc::VerticalAlign::Top;
+    let lay = logocraft_text::layout(db, &probe);
     let inset = t.area.inset.max(0.0);
     let Some(bottom) = lay.lines.iter().map(|l| l.baseline + l.descent).filter(|y| y.is_finite()).reduce(f64::max) else { return false };
     // The layout's fit test is `baseline + descent <= bottom + 0.01`: the last line fits exactly.
@@ -132,7 +132,7 @@ fn auto_height(t: &mut TextObject) -> bool {
         probe.area.columns = cols;
         let fits = |probe: &mut TextObject, h: f64| {
             with_size(probe, b.width(), h);
-            !vectorcraft_text::layout(db, probe).overflow
+            !logocraft_text::layout(db, probe).overflow
         };
         if !fits(&mut probe, h) {
             return false;
@@ -152,7 +152,7 @@ fn auto_height(t: &mut TextObject) -> bool {
     }
     // Scale the frame about its top edge, keeping its anchors (and their order) as they are.
     let a = Affine::translate((0.0, b.y0)) * Affine::scale_non_uniform(1.0, h / b.height()) * Affine::translate((0.0, -b.y0));
-    let vectorcraft_doc::TextKind::Area { frame } = &mut t.kind else { return false };
+    let logocraft_doc::TextKind::Area { frame } = &mut t.kind else { return false };
     let mut next = frame.clone();
     next.transform(a);
     if next.bounds().is_none_or(|nb| ![nb.x0, nb.y0, nb.x1, nb.y1].iter().all(|v| v.is_finite() && v.abs() <= crate::MAX_COORD)) {
@@ -203,7 +203,7 @@ fn create_outlines(s: &mut Session, _: &Value) -> Result<Value> {
         for tid in texts {
             let Some(n) = d.node(tid).cloned() else { continue };
             let NodeKind::Text(t) = &n.kind else { continue };
-            let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+            let lay = logocraft_text::layout(logocraft_text::FontDb::global(), t);
             let mut children = vec![];
             for (gi, g) in lay.glyphs.iter().enumerate() {
                 // Inline graphics become instances of their symbols, in place.
@@ -225,7 +225,7 @@ fn create_outlines(s: &mut Session, _: &Value) -> Result<Value> {
                 children.push(Arc::new(node));
             }
             // Underline and strikethrough bars become paths of their run's paint too (#847).
-            for (run, bar) in vectorcraft_text::decorations(&lay, vectorcraft_text::FontDb::global(), t) {
+            for (run, bar) in logocraft_text::decorations(&lay, logocraft_text::FontDb::global(), t) {
                 let st = t.runs.get(run).map(|r| r.style.clone()).unwrap_or_else(|| t.first_style());
                 let mut node = shape_node(d, PathData::from_bezpath(&bar).transformed(t.xf), None);
                 node.appearance = st.appearance().into();
@@ -302,7 +302,7 @@ impl TextRange {
     }
     /// The byte range in `t`, clamped and ordered.
     pub(crate) fn bytes(&self, t: &TextObject) -> (usize, usize) {
-        let len = vectorcraft_text::edit::runs_len(&t.runs);
+        let len = logocraft_text::edit::runs_len(&t.runs);
         let a = self.start.unwrap_or(0).min(len);
         let b = self.end.unwrap_or(len).min(len);
         (a.min(b), a.max(b))
@@ -320,13 +320,13 @@ pub(crate) fn para_span(range: Option<TextRange>, t: &TextObject) -> Option<std:
 }
 
 /// Apply `f` to the character styles of `range` of `t` (None: every run).
-pub(crate) fn style_chars(t: &mut TextObject, range: Option<TextRange>, mut f: impl FnMut(&mut vectorcraft_doc::CharStyle)) {
+pub(crate) fn style_chars(t: &mut TextObject, range: Option<TextRange>, mut f: impl FnMut(&mut logocraft_doc::CharStyle)) {
     match range {
         None => t.runs.iter_mut().for_each(|r| f(&mut r.style)),
         Some(r) => {
             let (a, b) = r.bytes(t);
             if a < b {
-                vectorcraft_text::edit::style_range(&mut t.runs, a, b, f);
+                logocraft_text::edit::style_range(&mut t.runs, a, b, f);
             }
         }
     }
@@ -340,8 +340,8 @@ fn set_text(s: &mut Session, p: &Value) -> Result<Value> {
             let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
             let style = t.first_style();
             // Every paragraph of the new text takes the first paragraph's attributes.
-            t.splice_paras(0, vectorcraft_text::edit::runs_len(&t.runs), &text);
-            t.runs = vec![vectorcraft_doc::TextRun { text: text.clone(), style, inline: None }];
+            t.splice_paras(0, logocraft_text::edit::runs_len(&t.runs), &text);
+            t.runs = vec![logocraft_doc::TextRun { text: text.clone(), style, inline: None }];
             refresh_bounds(t);
         }
         Ok(())
@@ -383,8 +383,8 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let fill = match p.get("fill") {
         None | Some(Value::Null) => None,
-        Some(Value::String(n)) if n.eq_ignore_ascii_case("none") => Some(vectorcraft_color::Paint::None),
-        Some(v) => Some(vectorcraft_color::Paint::solid(color_value(v).ok_or_else(|| bad(C, "bad fill colour"))?)),
+        Some(Value::String(n)) if n.eq_ignore_ascii_case("none") => Some(logocraft_color::Paint::None),
+        Some(v) => Some(logocraft_color::Paint::solid(color_value(v).ok_or_else(|| bad(C, "bad fill colour"))?)),
     };
     let features = super::textedit::features_param(p, C)?;
     if font.is_none()
@@ -454,7 +454,7 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
 pub(crate) fn reshape_area_with(t: &mut TextObject, f: impl FnOnce(&mut TextObject) -> bool) -> bool {
     let before = t.kind.clone();
     let within = |t: &TextObject| match &t.kind {
-        vectorcraft_doc::TextKind::Area { frame } => {
+        logocraft_doc::TextKind::Area { frame } => {
             frame.bounds().is_some_and(|b| [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.abs() <= crate::MAX_COORD))
         }
         _ => false,
@@ -469,7 +469,7 @@ pub(crate) fn reshape_area_with(t: &mut TextObject, f: impl FnOnce(&mut TextObje
     if let (Some(a), Some(b)) = (was, height(t))
         && (a - b).abs() > 1e-6
     {
-        t.area.fit = vectorcraft_doc::AreaFit::None;
+        t.area.fit = logocraft_doc::AreaFit::None;
     }
     refresh_bounds(t);
     true
@@ -478,15 +478,15 @@ pub(crate) fn reshape_area_with(t: &mut TextObject, f: impl FnOnce(&mut TextObje
 /// Area type's text, if `n` is area type.
 fn area_text(n: Option<&Node>) -> Option<&TextObject> {
     match n.map(|n| &n.kind) {
-        Some(NodeKind::Text(t)) if matches!(t.kind, vectorcraft_doc::TextKind::Area { .. }) => Some(t),
+        Some(NodeKind::Text(t)) if matches!(t.kind, logocraft_doc::TextKind::Area { .. }) => Some(t),
         _ => None,
     }
 }
 
 /// The width and height of area type's frame in points, along the type's own axes, and the frame's
 /// bounds in text space.
-fn area_size(t: &TextObject) -> Option<(f64, f64, vectorcraft_geom::Rect)> {
-    let vectorcraft_doc::TextKind::Area { frame } = &t.kind else { return None };
+fn area_size(t: &TextObject) -> Option<(f64, f64, logocraft_geom::Rect)> {
+    let logocraft_doc::TextKind::Area { frame } = &t.kind else { return None };
     let b = frame.bounds()?;
     let [a, bb, c, d, _, _] = t.xf.as_coeffs();
     Some((b.width() * a.hypot(bb), b.height() * c.hypot(d), b))
@@ -542,7 +542,7 @@ pub(crate) fn fit_param(p: &Value, cur: AreaFit, c: &str) -> Result<Option<AreaF
 /// `overflow`s its frame at `fitScale` (Shrink Text to Fit's factor; 1 unshrunk).
 pub(crate) fn area_options_json(t: &TextObject) -> Result<Value> {
     let mut v = serde_json::to_value(&t.area).map_err(|e| EngineError::Other(e.to_string()))?;
-    let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+    let lay = logocraft_text::layout(logocraft_text::FontDb::global(), t);
     if let Some(o) = v.as_object_mut() {
         o.insert("fit".into(), json!(t.area.fit.id()));
         let min = match t.area.fit {
@@ -560,7 +560,7 @@ pub(crate) fn area_options_json(t: &TextObject) -> Result<Value> {
     Ok(v)
 }
 
-/// The [`vectorcraft_doc::AreaOptions`] keys `text.areaOptions` merges as they are.
+/// The [`logocraft_doc::AreaOptions`] keys `text.areaOptions` merges as they are.
 const AREA_KEYS: [&str; 7] = ["rows", "columns", "gutter", "inset", "firstBaseline", "firstBaselineMin", "verticalAlign"];
 
 fn area_options(s: &mut Session, p: &Value) -> Result<Value> {
@@ -589,7 +589,7 @@ fn area_options(s: &mut Session, p: &Value) -> Result<Value> {
     if !changed {
         return options(s);
     }
-    let mut opts: vectorcraft_doc::AreaOptions = serde_json::from_value(v).map_err(|e| bad(C, e.to_string()))?;
+    let mut opts: logocraft_doc::AreaOptions = serde_json::from_value(v).map_err(|e| bad(C, e.to_string()))?;
     opts.rows = opts.rows.clamp(1, 100);
     opts.columns = opts.columns.clamp(1, 100);
     let finite = |x: f64| if x.is_finite() { x } else { 0.0 };
@@ -646,7 +646,7 @@ mod area_tests {
 
     #[test]
     fn kinsoku_set_is_set_per_paragraph_and_saved_only_when_not_hard() {
-        use vectorcraft_doc::Kinsoku;
+        use logocraft_doc::Kinsoku;
         let mut s = Session::new();
         s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
         let id = s.execute("text.create", &json!({"x": 10, "y": 10, "text": "あカッ", "area": {"width": 40, "height": 100}})).unwrap()["id"]
@@ -670,13 +670,13 @@ mod area_tests {
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(para(&s).kinsoku, Kinsoku::Hard);
         // Documents from before it read as Hard.
-        let old: vectorcraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left"})).unwrap();
+        let old: logocraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left"})).unwrap();
         assert_eq!(old.kinsoku, Kinsoku::Hard);
     }
 
     #[test]
     fn burasagari_is_set_per_paragraph_and_saved_only_when_on() {
-        use vectorcraft_doc::Burasagari;
+        use logocraft_doc::Burasagari;
         let mut s = Session::new();
         s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
         let id = s.execute("text.create", &json!({"x": 10, "y": 10, "text": "雅楽、笙。", "area": {"width": 200, "height": 100}})).unwrap()["id"]
@@ -700,7 +700,7 @@ mod area_tests {
         s.execute("edit.undo", &json!({})).unwrap();
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(para(&s).burasagari, Burasagari::Standard);
-        let old: vectorcraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left"})).unwrap();
+        let old: logocraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left"})).unwrap();
         assert_eq!(old.burasagari, Burasagari::None);
     }
 
@@ -710,7 +710,7 @@ mod area_tests {
     /// baseline.
     #[test]
     fn new_type_takes_the_japanese_defaults_while_the_interface_is_japanese() {
-        use vectorcraft_doc::{CharAlign, LeadingModel};
+        use logocraft_doc::{CharAlign, LeadingModel};
         let mut s = Session::new();
         s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
         let made = |s: &mut Session, cmd: &str, p: Value| -> (LeadingModel, CharAlign) {
@@ -761,7 +761,7 @@ mod area_tests {
         // Imported text keeps the Roman baseline.
         s.ui_language = Some("ja".into());
         let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><text x="10" y="50">雅楽</text></svg>"#;
-        s.execute("document.open", &json!({"name": "t.svg", "dataBase64": vectorcraft_format::base64_encode(svg.as_bytes())})).unwrap();
+        s.execute("document.open", &json!({"name": "t.svg", "dataBase64": logocraft_format::base64_encode(svg.as_bytes())})).unwrap();
         let mut found = vec![];
         s.doc().unwrap().doc.walk(|n| {
             if let NodeKind::Text(t) = &n.kind {
@@ -773,7 +773,7 @@ mod area_tests {
 
     #[test]
     fn leading_model_is_set_per_paragraph_and_saved_only_when_top_to_top() {
-        use vectorcraft_doc::LeadingModel;
+        use logocraft_doc::LeadingModel;
         let mut s = Session::new();
         s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
         // Exercise ink bounds with bundled glyphs; Japanese outlines require optional craft-fonts.
@@ -792,7 +792,7 @@ mod area_tests {
         let t = text(&s);
         assert_eq!(t.para.leading_model, LeadingModel::EmBoxTop);
         // The fallback used without craft-fonts has no glyph metrics to move the first line.
-        if !vectorcraft_text::CRAFT_FONTS.is_empty() {
+        if !logocraft_text::CRAFT_FONTS.is_empty() {
             assert_ne!(t.cached_bounds, before, "the first line moves up to the frame's top");
         }
         assert_eq!(serde_json::to_value(&t.para).unwrap()["leading_model"], "emBoxTop");
@@ -802,7 +802,7 @@ mod area_tests {
 
     #[test]
     fn character_alignment_is_a_character_attribute_saved_only_when_set() {
-        use vectorcraft_doc::CharAlign;
+        use logocraft_doc::CharAlign;
         let mut s = Session::new();
         s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
         let id = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "雅楽"})).unwrap()["id"].as_u64().unwrap();
@@ -857,14 +857,14 @@ mod area_tests {
         // Styles written without it (documents from before it) read as off.
         let old = serde_json::to_value(&runs(&s)[0].style).unwrap();
         assert!(old.get("proportionalMetrics").is_none());
-        assert!(!serde_json::from_value::<vectorcraft_doc::CharStyle>(old).unwrap().proportional_metrics);
+        assert!(!serde_json::from_value::<logocraft_doc::CharStyle>(old).unwrap().proportional_metrics);
     }
 
     /// Digits (Character panel menu, Middle Eastern options): a character attribute, saved only
     /// when set; the text keeps the digits that were typed.
     #[test]
     fn digits_are_a_character_attribute_saved_only_when_set() {
-        use vectorcraft_doc::Digits;
+        use logocraft_doc::Digits;
         let mut s = Session::new();
         s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
         let id = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "صفحة 12"})).unwrap()["id"].as_u64().unwrap();
@@ -896,7 +896,7 @@ mod area_tests {
 
     #[test]
     fn new_type_is_composed_with_line_end_half_width_punctuation() {
-        use vectorcraft_doc::Mojikumi;
+        use logocraft_doc::Mojikumi;
         let mut s = Session::new();
         s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
         let id = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "雅楽。"})).unwrap()["id"].as_u64().unwrap();
@@ -914,7 +914,7 @@ mod area_tests {
         // Saved only when set; documents from before it read as None.
         let json = serde_json::to_value(para(&s)).unwrap();
         assert_eq!(json["mojikumi"], "lineEndHalf");
-        let old: vectorcraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left"})).unwrap();
+        let old: logocraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left"})).unwrap();
         assert_eq!(old.mojikumi, Mojikumi::None);
         assert!(serde_json::to_value(&old).unwrap().get("mojikumi").is_none());
     }
@@ -931,7 +931,7 @@ mod area_tests {
         let q = s.execute("text.areaOptions", &json!({})).unwrap();
         assert_eq!((q["rows"].as_u64(), q["columns"].as_u64()), (Some(1), Some(1)));
         let lay = |s: &Session| match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
-            NodeKind::Text(t) => vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t),
+            NodeKind::Text(t) => logocraft_text::layout(logocraft_text::FontDb::global(), t),
             _ => panic!(),
         };
         assert_eq!(lay(&s).frames.len(), 1);
@@ -952,8 +952,8 @@ mod area_tests {
 fn headline_fit(t: &TextObject, tracking: f64) -> Option<(f64, f64, usize)> {
     let mut probe = t.clone();
     let para_end = probe.plain_text().find('\n').unwrap_or(usize::MAX);
-    vectorcraft_text::edit::style_range(&mut probe.runs, 0, para_end.min(vectorcraft_text::edit::runs_len(&t.runs)), |st| st.tracking = tracking);
-    let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &probe);
+    logocraft_text::edit::style_range(&mut probe.runs, 0, para_end.min(logocraft_text::edit::runs_len(&t.runs)), |st| st.tracking = tracking);
+    let lay = logocraft_text::layout(logocraft_text::FontDb::global(), &probe);
     let cell = lay.frames.first()?;
     let line = lay.lines.first()?;
     let para = t.para_at(0);
@@ -968,7 +968,7 @@ fn fit_headline(s: &mut Session, p: &Value) -> Result<Value> {
     let mut plans = vec![];
     for id in &ids {
         let Some(NodeKind::Text(t)) = d.node(*id).map(|n| &n.kind) else { continue };
-        if !matches!(t.kind, vectorcraft_doc::TextKind::Area { .. }) {
+        if !matches!(t.kind, logocraft_doc::TextKind::Area { .. }) {
             continue;
         }
         // Largest tracking that keeps the first paragraph on one line (bisection).
@@ -987,8 +987,8 @@ fn fit_headline(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit("Fit Headline", |d, _| {
         for (id, tr) in &plans {
             if let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) {
-                let end = t.plain_text().find('\n').unwrap_or(usize::MAX).min(vectorcraft_text::edit::runs_len(&t.runs));
-                vectorcraft_text::edit::style_range(&mut t.runs, 0, end, |st| st.tracking = *tr);
+                let end = t.plain_text().find('\n').unwrap_or(usize::MAX).min(logocraft_text::edit::runs_len(&t.runs));
+                logocraft_text::edit::style_range(&mut t.runs, 0, end, |st| st.tracking = *tr);
                 refresh_bounds(t);
             }
         }

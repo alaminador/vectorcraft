@@ -2,7 +2,7 @@
 
 > **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-12 · **Change:** minor (desktop printing uses craft-print; Windows 7 fallback retained) · **Target:** Adobe Illustrator 2026 (30.x)
 
-How VectorCraft is built today. The design rationale lives in the local, gitignored `plan/architecture.md`;
+How LogoCraft is built today. The design rationale lives in the local, gitignored `plan/architecture.md`;
 this file describes what is committed. Day-to-day rules (clean-room, never crash, quality gates) are in
 [`AGENTS.md`](../AGENTS.md) and [development.md](development.md).
 
@@ -26,7 +26,7 @@ nothing below L6 depends on a UI toolkit (egui, eframe, winit, rfd). Table: `xta
 | L4 | `tools` | tool state machines: pointer events in, commands and overlays out (Pen, Direct Selection, smart guides…) |
 | L5 | `engine` | sessions, history (unlimited undo by structural sharing), selection, the command registry (~710 commands), file I/O, the panic guard |
 | L6 | `ui-egui`, `mcp` | the egui front end (menus, panels, dialogs, canvas, i18n); the MCP server (JSON-RPC over stdio) |
-| L7 | `apps/vectorcraft`, `apps/vectorcraft-cli`, `apps/vectorcraft-web`, `xtask` | desktop app (eframe, wgpu), CLI (`run`, `convert`, `info`, `bench`, `perf`, `mcp`), browser runner (WebGPU, WebGL2 fallback), build tooling |
+| L7 | `apps/logocraft`, `apps/logocraft-cli`, `apps/logocraft-web`, `xtask` | desktop app (eframe, wgpu), CLI (`run`, `convert`, `info`, `bench`, `perf`, `mcp`), browser runner (WebGPU, WebGL2 fallback), build tooling |
 
 `testkit` holds test helpers (fixtures, generators, render comparison) and is only a dev-dependency.
 
@@ -47,7 +47,7 @@ effects are rendered offscreen per object and cached while panning. See
 
 ## Files
 
-The native `.vectorcraft` format is versioned, compressed JSON with embedded images, saved atomically, readable
+The native `.logocraft` format is versioned, compressed JSON with embedded images, saved atomically, readable
 down to v1 and from the old `.drawcraft` name. The `FORMATS` table in `crates/engine/src/cmd/fileio/mod.rs`
 lists every format read or written; importers are fuzzed (`crates/engine/tests/import_fuzz.rs`). See
 [file-format-parity.md](file-format-parity.md).
@@ -63,14 +63,14 @@ its target excludes the shared backend because Windows.Data.Pdf is unavailable t
 
 - **Control channel:** JSON lines on a local TCP port (`--control 7979`), with real egui pointer and keyboard
   injection and screenshots ([control-protocol.md](control-protocol.md)).
-- **MCP:** `vectorcraft-cli mcp`, attached to a running app or headless ([mcp.md](mcp.md)).
+- **MCP:** `logocraft-cli mcp`, attached to a running app or headless ([mcp.md](mcp.md)).
 - **Sandboxing:** `--automation-read-root` / `--automation-write-root` confine what agents read and write.
 
 ## Robustness
 
 No panics in shipped code (workspace clippy lints ban `unwrap`, `expect`, `panic!` and friends outside tests);
-`vectorcraft_engine::guard` catches a panic at every entry point and rolls the document back; Data Recovery
-saves copies in the background. See [development.md](development.md#robustness-vectorcraft-never-crashes).
+`logocraft_engine::guard` catches a panic at every entry point and rolls the document back; Data Recovery
+saves copies in the background. See [development.md](development.md#robustness-logocraft-never-crashes).
 
 ## Revision history
 

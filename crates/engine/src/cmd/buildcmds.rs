@@ -1,5 +1,5 @@
 //! Shape Builder (`shapeBuilder.*`) and Image Trace (`imageTrace.*`). See
-//! `vectorcraft_tools::builder` for Shape Builder's shared helpers.
+//! `logocraft_tools::builder` for Shape Builder's shared helpers.
 //!
 //! **Image Trace** makes a group named "Image Trace" holding the source image (hidden, bottom)
 //! and the traced filled paths above it, mapped with the image's transform. Expand drops the
@@ -7,14 +7,14 @@
 
 use std::sync::Arc;
 
+use logocraft_color::{Color, Paint};
+use logocraft_doc::appearance::{AppearanceItem, FillLayer, LineCap, LineJoin, StrokeLayer};
+use logocraft_doc::{Appearance, Document, Node, NodeId, NodeKind, TraceView};
+use logocraft_geom::{FillRule, PathData, Point, Rect, SubPath};
+use logocraft_pathops as po;
+use logocraft_tools::builder::{self as b, BuilderMap, Touched, sample_polyline, sorted_roots};
+use logocraft_trace as tr;
 use serde_json::{Value, json};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::appearance::{AppearanceItem, FillLayer, LineCap, LineJoin, StrokeLayer};
-use vectorcraft_doc::{Appearance, Document, Node, NodeId, NodeKind, TraceView};
-use vectorcraft_geom::{FillRule, PathData, Point, Rect, SubPath};
-use vectorcraft_pathops as po;
-use vectorcraft_tools::builder::{self as b, BuilderMap, Touched, sample_polyline, sorted_roots};
-use vectorcraft_trace as tr;
 
 use super::edit::selected_roots;
 use super::paint::paint_from;
@@ -401,7 +401,7 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
     // Pixel space of the decoded raster → the image object's pixel space → document.
     let sx = img.width.max(1) as f64 / raster.width.max(1) as f64;
     let sy = img.height.max(1) as f64 / raster.height.max(1) as f64;
-    let xf = img.xf * vectorcraft_geom::Affine::scale_non_uniform(sx, sy);
+    let xf = img.xf * logocraft_geom::Affine::scale_non_uniform(sx, sy);
     // Document units per raster pixel (stroke widths).
     let unit = xf.determinant().abs().sqrt();
     let (npaths, anchors, colors) = (res.paths.len(), res.anchor_count(), res.palette.len());

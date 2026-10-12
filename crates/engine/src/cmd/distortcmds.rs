@@ -1,9 +1,9 @@
 //! Commands behind the Width tool: width points and width profiles. The geometry kernels live in
-//! `vectorcraft_tools::distort` (shared with the tool).
+//! `logocraft_tools::distort` (shared with the tool).
 
+use logocraft_doc::{Document, NodeId, WidthProfile};
+use logocraft_tools::distort::stroke_owner;
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, NodeId, WidthProfile};
-use vectorcraft_tools::distort::stroke_owner;
 
 use super::*;
 use crate::EngineError;
@@ -59,14 +59,14 @@ fn uniform() -> WidthProfile {
 const SAME_T: f64 = 1e-6;
 
 /// The stroke of `id` that width point commands edit (a compound path's for its members).
-fn stroke_mut(d: &mut Document, id: NodeId) -> Result<&mut vectorcraft_doc::StrokeLayer> {
+fn stroke_mut(d: &mut Document, id: NodeId) -> Result<&mut logocraft_doc::StrokeLayer> {
     let id = stroke_owner(d, id);
     let n = d.node_mut(id).ok_or(EngineError::NoNode(id))?;
     n.appearance.stroke_mut().ok_or_else(|| EngineError::Other("the object has no stroke".into()))
 }
 
 /// [`stroke_mut`], which must have a weight.
-fn weighted_stroke(d: &mut Document, id: NodeId) -> Result<&mut vectorcraft_doc::StrokeLayer> {
+fn weighted_stroke(d: &mut Document, id: NodeId) -> Result<&mut logocraft_doc::StrokeLayer> {
     let st = stroke_mut(d, id)?;
     if st.width <= 0.0 {
         return Err(EngineError::Other("the stroke has no weight".into()));

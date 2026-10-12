@@ -1,10 +1,10 @@
 //! Raster effects stay where they are, and look the same, at every zoom and pan (#755).
 
+use logocraft_color::{BlendMode, Color, Paint};
+use logocraft_doc::text::{CharStyle, TextObject};
+use logocraft_doc::{Appearance, Effect, Node, NodeKind};
+use logocraft_geom::{Point, shapes};
 use serde_json::json;
-use vectorcraft_color::{BlendMode, Color, Paint};
-use vectorcraft_doc::text::{CharStyle, TextObject};
-use vectorcraft_doc::{Appearance, Effect, Node, NodeKind};
-use vectorcraft_geom::{Point, shapes};
 
 use super::*;
 

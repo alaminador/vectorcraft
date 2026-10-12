@@ -4,8 +4,8 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use logocraft_doc::{Document, Node, NodeId, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind};
 
 use crate::DocState;
 
@@ -14,7 +14,7 @@ use super::encode::single_artboard;
 use super::{ARTBOARD_PARAMS, Format, default_name, encode_all, encode_with_warnings, merge, writable, write_encoded, write_or_return};
 
 pub(super) fn serialize(s: &mut Session, p: &Value) -> Result<Value> {
-    let f = writable("document.serialize", Some(str_param(p, "format").unwrap_or("vectorcraft")), None)?;
+    let f = writable("document.serialize", Some(str_param(p, "format").unwrap_or("logocraft")), None)?;
     let expanded = expand_presets(s, "document.serialize", p)?;
     let p = &*expanded;
     let doc = &*source(s, f, p, "document.serialize")?;
@@ -24,21 +24,21 @@ pub(super) fn serialize(s: &mut Session, p: &Value) -> Result<Value> {
     // Text formats come back as text; an SVG in UTF-16 or ISO 8859-1 also as its bytes.
     let data = |bytes: &[u8]| match f.id {
         "svg" => {
-            let text = vectorcraft_svg::text_of(bytes).unwrap_or_else(|_| String::from_utf8_lossy(bytes));
+            let text = logocraft_svg::text_of(bytes).unwrap_or_else(|_| String::from_utf8_lossy(bytes));
             let mut v = json!({ "text": text });
             if text.as_bytes() != bytes {
-                v["dataBase64"] = json!(vectorcraft_format::base64_encode(bytes));
+                v["dataBase64"] = json!(logocraft_format::base64_encode(bytes));
             }
             v
         }
-        _ => json!({ "dataBase64": vectorcraft_format::base64_encode(bytes) }),
+        _ => json!({ "dataBase64": logocraft_format::base64_encode(bytes) }),
     };
     let mut out = merge(data(main.first().map_or(&[][..], |m| &m.1)), json!({ "warnings": enc.warnings }));
     if main.len() > 1 {
         out["files"] = main.iter().map(|(name, bytes)| merge(json!({ "name": name }), data(bytes))).collect();
     }
     if !linked.is_empty() {
-        out["linked"] = linked.iter().map(|(name, bytes)| json!({ "name": name, "dataBase64": vectorcraft_format::base64_encode(bytes) })).collect();
+        out["linked"] = linked.iter().map(|(name, bytes)| json!({ "name": name, "dataBase64": logocraft_format::base64_encode(bytes) })).collect();
     }
     Ok(out)
 }
@@ -94,15 +94,15 @@ fn selected_part(n: &Node, keep: &HashSet<NodeId>) -> Option<Node> {
 /// out, at any depth of layers and sublayers, and objects that reach it stay whole (the file's
 /// bounds clip them), as DXF's crop leaves them. A clipping layer keeps every object, its clipping
 /// path among them. An artboard's file then holds its own art, not a whole document of artboards.
-pub(super) fn art_over(doc: &Document, rect: vectorcraft_geom::Rect) -> Document {
-    fn kept(n: &Arc<Node>, rect: vectorcraft_geom::Rect) -> Option<Arc<Node>> {
+pub(super) fn art_over(doc: &Document, rect: logocraft_geom::Rect) -> Document {
+    fn kept(n: &Arc<Node>, rect: logocraft_geom::Rect) -> Option<Arc<Node>> {
         if matches!(n.kind, NodeKind::Layer { clip: false, .. }) {
             let mut layer = Node::clone(n);
             let children = layer.children_mut()?;
             *children = children.iter().filter_map(|c| kept(c, rect)).collect();
             return Some(Arc::new(layer));
         }
-        let over = |b: vectorcraft_geom::Rect| b.x0 <= rect.x1 && rect.x0 <= b.x1 && b.y0 <= rect.y1 && rect.y0 <= b.y1;
+        let over = |b: logocraft_geom::Rect| b.x0 <= rect.x1 && rect.x0 <= b.x1 && b.y0 <= rect.y1 && rect.y0 <= b.y1;
         n.visual_bounds().is_none_or(over).then(|| n.clone())
     }
     let mut d = doc.clone();
@@ -141,7 +141,7 @@ fn source<'a>(s: &'a mut Session, f: &Format, p: &Value, cmd: &str) -> Result<Co
 
 /// The selected objects (not on template layers) alone on one layer, with one artboard: their
 /// visual bounds.
-fn selection(s: &mut Session, cmd: &str) -> Result<(Document, vectorcraft_geom::Rect)> {
+fn selection(s: &mut Session, cmd: &str) -> Result<(Document, logocraft_geom::Rect)> {
     let ids = edit::selected_roots(s)?;
     let st = s.doc()?;
     let is_template = |id| st.doc.node(id).is_some_and(|l| matches!(l.kind, NodeKind::Layer { template: true, .. }));
@@ -153,11 +153,11 @@ fn selection(s: &mut Session, cmd: &str) -> Result<(Document, vectorcraft_geom::
 
 /// Objects `ids` of `doc` alone on one layer (in that order, back to front), with one artboard
 /// named `name`: their visual bounds (`None` when they have none).
-pub(crate) fn isolated(doc: &Document, ids: &[NodeId], name: &str) -> Option<(Document, vectorcraft_geom::Rect)> {
+pub(crate) fn isolated(doc: &Document, ids: &[NodeId], name: &str) -> Option<(Document, logocraft_geom::Rect)> {
     let nodes: Vec<Arc<Node>> = ids.iter().filter_map(|id| doc.node(*id).cloned().map(Arc::new)).collect();
     let bounds = nodes.iter().filter_map(|n| n.visual_bounds()).reduce(|a, b| a.union(b))?;
     let mut d = single_artboard(doc, bounds, name);
-    let mut layer = Node::layer(d.alloc_id(), name, vectorcraft_doc::LayerColor::Preset(0));
+    let mut layer = Node::layer(d.alloc_id(), name, logocraft_doc::LayerColor::Preset(0));
     if let Some(ch) = layer.children_mut() {
         *ch = nodes;
     }

@@ -1,9 +1,9 @@
 //! Window → Attributes (`attributes.set`, `attributes.info`, `path.setFillRule`, `path.reverse`)
 //! and the links SVG export writes for objects with a URL.
 
+use logocraft_doc::NodeKind;
+use logocraft_geom::FillRule;
 use serde_json::{Value, json};
-use vectorcraft_doc::NodeKind;
-use vectorcraft_geom::FillRule;
 
 use super::*;
 
@@ -57,7 +57,7 @@ fn object_data_is_set_saved_and_written_to_svg() {
     }
     let svg = run(&mut s, "document.serialize", json!({"format": "svg"}))["text"].as_str().unwrap().to_string();
     assert!(svg.contains("data-pivot=\"60,100\" data-z=\"3\""), "{svg}");
-    let native = vectorcraft_format::save(&s.doc().unwrap().doc, false);
-    let back = vectorcraft_format::load(&native).unwrap();
+    let native = logocraft_format::save(&s.doc().unwrap().doc, false);
+    let back = logocraft_format::load(&native).unwrap();
     assert_eq!(back.node(a).unwrap().extras().attrs, s.doc().unwrap().doc.node(a).unwrap().extras().attrs);
 }

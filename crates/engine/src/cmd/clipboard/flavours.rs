@@ -6,9 +6,9 @@
 //! the system clipboard into the internal clipboard with the `clipboard.import*` commands. These
 //! commands only convert, so agents can drive them headless.
 
+use logocraft_doc::{Document, ImageObject, Node, NodeId, NodeKind, TextObject};
+use logocraft_geom::{Affine, Point};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, ImageObject, Node, NodeId, NodeKind, TextObject};
-use vectorcraft_geom::{Affine, Point};
 
 use super::super::fileio;
 use super::super::place::pt_per_px;
@@ -187,7 +187,7 @@ impl Session {
 
     /// The clipboard as a document whose one artboard is the objects' visual bounds (`None` when
     /// it is empty or has no extent).
-    fn clipboard_cropped(&self) -> Option<(Document, vectorcraft_geom::Rect)> {
+    fn clipboard_cropped(&self) -> Option<(Document, logocraft_geom::Rect)> {
         let b = self.clipboard.bounds().filter(|b| b.width() > 0.0 && b.height() > 0.0)?;
         Some((fileio::with_single_artboard(self.clipboard.to_document(), b, "Clipboard"), b))
     }
@@ -197,7 +197,7 @@ impl Session {
     pub fn clipboard_png(&self, scale: f64) -> Result<Option<(Vec<u8>, u32, u32)>> {
         const C: &str = "clipboard.exportPng";
         let Some((doc, b)) = self.clipboard_cropped() else { return Ok(None) };
-        let (w, h) = vectorcraft_render::raster_size(b, scale).map_err(|e| bad(C, e))?;
+        let (w, h) = logocraft_render::raster_size(b, scale).map_err(|e| bad(C, e))?;
         let png = fileio::encode(&doc, "png", &json!({ "scale": scale, "background": "transparent" }))?;
         Ok(Some((png, w, h)))
     }
@@ -266,7 +266,7 @@ impl Session {
 /// The bytes of `p`'s `dataBase64`.
 fn data_param(p: &Value, cmd: &str) -> Result<Vec<u8>> {
     let b64 = str_param(p, "dataBase64").ok_or_else(|| bad(cmd, "give dataBase64"))?;
-    vectorcraft_format::base64_decode(b64).ok_or_else(|| bad(cmd, "bad base64"))
+    logocraft_format::base64_decode(b64).ok_or_else(|| bad(cmd, "bad base64"))
 }
 
 fn export_png(s: &mut Session, p: &Value) -> Result<Value> {
@@ -275,13 +275,13 @@ fn export_png(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad("clipboard.exportPng", "scale must be a number above 0, at most 64"));
     }
     Ok(match s.clipboard_png(scale)? {
-        Some((png, w, h)) => json!({ "dataBase64": vectorcraft_format::base64_encode(&png), "width": w, "height": h }),
+        Some((png, w, h)) => json!({ "dataBase64": logocraft_format::base64_encode(&png), "width": w, "height": h }),
         None => json!({ "dataBase64": null }),
     })
 }
 
 fn export_pdf(s: &mut Session, _: &Value) -> Result<Value> {
-    Ok(json!({ "dataBase64": s.clipboard_pdf()?.map(|b| vectorcraft_format::base64_encode(&b)) }))
+    Ok(json!({ "dataBase64": s.clipboard_pdf()?.map(|b| logocraft_format::base64_encode(&b)) }))
 }
 
 fn export_text(s: &mut Session, _: &Value) -> Result<Value> {

@@ -1,22 +1,22 @@
 [package]
-name = "vectorcraft-testkit"
+name = "logocraft-testkit"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "VectorCraft test helpers: fixtures, generators, render comparison, geometry assertions"
+description = "LogoCraft test helpers: fixtures, generators, render comparison, geometry assertions"
 publish = false
 
 [lints]
 workspace = true
 
 [dependencies]
-vectorcraft-geom = { workspace = true }
-vectorcraft-color = { workspace = true }
-vectorcraft-doc = { workspace = true }
-vectorcraft-engine = { workspace = true }
-vectorcraft-render = { workspace = true }
-vectorcraft-format = { workspace = true }
-vectorcraft-svg = { workspace = true }
+logocraft-geom = { workspace = true }
+logocraft-color = { workspace = true }
+logocraft-doc = { workspace = true }
+logocraft-engine = { workspace = true }
+logocraft-render = { workspace = true }
+logocraft-format = { workspace = true }
+logocraft-svg = { workspace = true }
 kurbo = { workspace = true }
 serde_json = { workspace = true }
 proptest = { workspace = true }

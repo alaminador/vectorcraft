@@ -1,7 +1,7 @@
 use super::*;
-use vectorcraft_color::{Color, Gradient, GradientPaint, Paint};
-use vectorcraft_doc::{Appearance, Node};
-use vectorcraft_geom::shapes;
+use logocraft_color::{Color, Gradient, GradientPaint, Paint};
+use logocraft_doc::{Appearance, Node};
+use logocraft_geom::shapes;
 
 fn rect_node(d: &mut Document, r: Rect, fill: Paint, stroke: Paint, w: f64) -> Node {
     let id = d.alloc_id();
@@ -134,7 +134,7 @@ fn multiply_blend() {
     let mut d = Document::new(100.0, 100.0);
     let a = rect_node(&mut d, Rect::new(0.0, 0.0, 100.0, 100.0), Paint::solid(Color::rgb(1.0, 1.0, 0.0)), Paint::None, 0.0);
     let mut b = rect_node(&mut d, Rect::new(0.0, 0.0, 100.0, 100.0), Paint::solid(Color::rgb(0.0, 1.0, 1.0)), Paint::None, 0.0);
-    b.blend = vectorcraft_color::BlendMode::Multiply;
+    b.blend = logocraft_color::BlendMode::Multiply;
     let l = d.layers[0].id;
     d.insert(Some(l), 0, a).unwrap();
     d.insert(Some(l), 1, b).unwrap();
@@ -251,8 +251,8 @@ fn arrowheads_render() {
     assert!(r.pixel(85, 50)[0] > 200, "nothing past the tip");
 }
 
-use vectorcraft_doc::Arrowhead;
-use vectorcraft_geom::Point;
+use logocraft_doc::Arrowhead;
+use logocraft_geom::Point;
 
 /// A red 10..90 square masked by a white square covering only its left half (10..50),
 /// plus a mid-grey strip (50..70) — rendered both multi- and single-threaded.
@@ -263,7 +263,7 @@ fn masked_doc(clip: bool, invert: bool) -> Document {
     let grey = rect_node(&mut d, Rect::new(50.0, 10.0, 70.0, 90.0), Paint::solid(Color::rgb(0.5, 0.5, 0.5)), Paint::None, 0.0);
     let gid = d.alloc_id();
     let art = Node::group(gid, vec![Arc::new(white), Arc::new(grey)]);
-    let mut m = vectorcraft_doc::OpacityMask::new(art, clip);
+    let mut m = logocraft_doc::OpacityMask::new(art, clip);
     m.invert = invert;
     n.extras_mut().mask = Some(Box::new(m));
     let l = d.layers[0].id;
@@ -333,7 +333,7 @@ fn trim_view_clips_to_artboards() {
 fn drop_shadow_profile_and_cache() {
     let mut d = Document::new(100.0, 100.0);
     let mut n = rect_node(&mut d, Rect::new(20.0, 20.0, 60.0, 60.0), Paint::solid(Color::WHITE), Paint::None, 0.0);
-    n.appearance.effects.push(vectorcraft_doc::Effect {
+    n.appearance.effects.push(logocraft_doc::Effect {
         id: "stylize.dropShadow".into(),
         params: serde_json::json!({"x": 10.0, "y": 10.0, "blur": 4.0, "opacity": 75.0}),
         visible: true,
@@ -365,7 +365,7 @@ fn blend_mode_on_a_single_fill_is_exact_without_a_layer() {
     let mut d = Document::new(100.0, 100.0);
     let red = rect_node(&mut d, Rect::new(0.0, 0.0, 50.0, 100.0), Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
     let mut over = rect_node(&mut d, Rect::new(25.0, 0.0, 75.0, 100.0), Paint::solid(Color::rgb(0.5, 0.5, 1.0)), Paint::None, 0.0);
-    over.blend = vectorcraft_color::BlendMode::Multiply;
+    over.blend = logocraft_color::BlendMode::Multiply;
     let l = d.layers[0].id;
     d.insert(Some(l), 0, red).unwrap();
     d.insert(Some(l), 1, over).unwrap();
@@ -391,8 +391,8 @@ fn invalid_dash_pattern_strokes_solid() {
         bp.move_to((10.0, 50.0));
         bp.line_to((90.0, 50.0));
         let id = d.alloc_id();
-        let mut n = Node::path(id, vectorcraft_geom::PathData::from_bezpath(&bp), Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 6.0));
-        n.appearance.stroke_mut().unwrap().dash = dash.map(|pattern| vectorcraft_doc::Dash { pattern, ..Default::default() });
+        let mut n = Node::path(id, logocraft_geom::PathData::from_bezpath(&bp), Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 6.0));
+        n.appearance.stroke_mut().unwrap().dash = dash.map(|pattern| logocraft_doc::Dash { pattern, ..Default::default() });
         let l = d.layers[0].id;
         d.insert(Some(l), 0, n).unwrap();
         d
@@ -412,7 +412,7 @@ fn invalid_dash_pattern_strokes_solid() {
 /// Anti-aliased Images off, #394).
 #[test]
 fn images_take_their_nearest_pixel_without_smoothing() {
-    use vectorcraft_doc::{ImageBlob, ImageObject, NodeKind};
+    use logocraft_doc::{ImageBlob, ImageObject, NodeKind};
     let img = image::RgbaImage::from_fn(2, 1, |x, _| image::Rgba(if x == 0 { [0, 0, 0, 255] } else { [255, 255, 255, 255] }));
     let mut png = vec![];
     img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
@@ -440,13 +440,13 @@ fn supersampled_art_leaves_no_seam_between_shapes_that_meet() {
     let layer = d.layers[0].id;
     // Two triangles sharing the diagonal of the square (10, 10)–(90, 90).
     for pts in [[(10.0, 10.0), (90.0, 10.0), (90.0, 90.0)], [(10.0, 10.0), (90.0, 90.0), (10.0, 90.0)]] {
-        let mut b = vectorcraft_geom::BezPath::new();
+        let mut b = logocraft_geom::BezPath::new();
         b.move_to(pts[0]);
         b.line_to(pts[1]);
         b.line_to(pts[2]);
         b.close_path();
         let id = d.alloc_id();
-        d.insert(Some(layer), 0, Node::path(id, vectorcraft_geom::PathData::from_bezpath(&b), Appearance::basic(red(), Paint::None, 0.0))).unwrap();
+        d.insert(Some(layer), 0, Node::path(id, logocraft_geom::PathData::from_bezpath(&b), Appearance::basic(red(), Paint::None, 0.0))).unwrap();
     }
     let draw = |supersample: bool| {
         let opts = RenderOptions { background: Some([255, 255, 255, 255]), precise: true, supersample, ..Default::default() };

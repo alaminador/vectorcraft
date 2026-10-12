@@ -4,15 +4,15 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use logocraft_engine::Session;
 use serde_json::json;
-use vectorcraft_engine::Session;
 
-use crate::{FilePick, Services, VectorcraftApp, io};
+use crate::{FilePick, LogocraftApp, Services, io};
 
 type Written = Rc<RefCell<Vec<String>>>;
 
 /// An app with a document whose save panel answers `typed` and whose writer records the paths.
-fn saving_app(typed: &'static str) -> (VectorcraftApp, Written) {
+fn saving_app(typed: &'static str) -> (LogocraftApp, Written) {
     let written = Written::default();
     let w = written.clone();
     let services = Services {
@@ -23,7 +23,7 @@ fn saving_app(typed: &'static str) -> (VectorcraftApp, Written) {
         pick_save: Some(Box::new(move |_: &FilePick| Some(typed.to_string()))),
         ..Default::default()
     };
-    let mut app = VectorcraftApp::new(Session::new(), services);
+    let mut app = LogocraftApp::new(Session::new(), services);
     app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
     app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap();
     (app, written)
@@ -37,8 +37,8 @@ fn last(w: &Written) -> String {
 fn saves_add_the_format_extension_to_a_bare_name() {
     let (mut app, w) = saving_app("/tmp/Untitled-1");
     app.run("file.save", json!({})).unwrap();
-    assert_eq!(last(&w), "/tmp/Untitled-1.vectorcraft");
-    assert_eq!(app.session.active().unwrap().path.as_deref(), Some("/tmp/Untitled-1.vectorcraft"));
+    assert_eq!(last(&w), "/tmp/Untitled-1.logocraft");
+    assert_eq!(app.session.active().unwrap().path.as_deref(), Some("/tmp/Untitled-1.logocraft"));
     let (mut app, w) = saving_app("/tmp/copy");
     app.run("file.saveCopy", json!({"format": "svg", "svg": {}})).unwrap();
     assert_eq!(last(&w), "/tmp/copy.svg");

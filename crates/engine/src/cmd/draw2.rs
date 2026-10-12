@@ -4,13 +4,13 @@
 use std::sync::Arc;
 
 use kurbo::{ParamCurve, ParamCurveNearest};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, Document, Node, NodeId, NodeKind, PressureProfile, Selection};
+use logocraft_geom::hit::fill_contains;
+use logocraft_geom::{Anchor, BezPath, FillRule, PathData, Point, Rect, SubPath, Vec2};
+use logocraft_pathops as po;
+use logocraft_pathops::{BoolOp, Cap, Join, SimplifyOptions};
 use serde_json::{Value, json};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, Document, Node, NodeId, NodeKind, PressureProfile, Selection};
-use vectorcraft_geom::hit::fill_contains;
-use vectorcraft_geom::{Anchor, BezPath, FillRule, PathData, Point, Rect, SubPath, Vec2};
-use vectorcraft_pathops as po;
-use vectorcraft_pathops::{BoolOp, Cap, Join, SimplifyOptions};
 
 use super::create::add_look;
 use super::*;
@@ -370,7 +370,7 @@ fn fit_freehand(pts: &[Point], tol: f64, closed: bool) -> SubPath {
             (kept[i], corner)
         })
         .collect();
-    let sp = vectorcraft_tools::draw2::catmull_rom(&marked, closed);
+    let sp = logocraft_tools::draw2::catmull_rom(&marked, closed);
     if sp.anchors.len() < 3 {
         return sp;
     }
@@ -482,7 +482,7 @@ fn curvature(s: &mut Session, p: &Value) -> Result<Value> {
     if pts.is_empty() {
         return Err(bad(C, "need at least one point"));
     }
-    let sp = vectorcraft_tools::draw2::catmull_rom(&pts, bool_or(p, "closed", false));
+    let sp = logocraft_tools::draw2::catmull_rom(&pts, bool_or(p, "closed", false));
     if let Some(id) = id_param(p, "id") {
         s.edit("Curvature", |d, sel| {
             *path_mut(d, id)? = PathData::single(sp);
@@ -508,7 +508,7 @@ enum CurvatureOp {
 }
 
 fn curvature_edit(s: &mut Session, p: &Value) -> Result<Value> {
-    use vectorcraft_tools::draw2::{EndCurve, curvature_close, curvature_extend, curvature_insert, curvature_move};
+    use logocraft_tools::draw2::{EndCurve, curvature_close, curvature_extend, curvature_insert, curvature_move};
     const C: &str = "path.curvatureEdit";
     let id = id_param(p, "id").ok_or_else(|| bad(C, "missing id"))?;
     let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;

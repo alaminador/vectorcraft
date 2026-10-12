@@ -12,14 +12,14 @@
 //! ({png|png8|jpg|webp|gif|svg|pdf: {…}}); `__settings` names the format whose Format Settings
 //! show ("" when closed).
 
+use logocraft_engine::cmd::fileio::{self, ArtboardPick, SCREEN_PRESETS, ScreenSize, pdf};
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
-use vectorcraft_engine::cmd::fileio::{self, ArtboardPick, SCREEN_PRESETS, ScreenSize, pdf};
 
 use super::{DialogSpec, form, png_options, svg_options};
 use crate::state::Dialog;
 use crate::theme::Tokens;
-use crate::{VectorcraftApp, io, widgets};
+use crate::{LogocraftApp, io, widgets};
 
 pub(super) const SPEC: DialogSpec = DialogSpec {
     heading: |_| tl!("Export for Screens").into(),
@@ -74,7 +74,7 @@ pub(crate) fn saved_rows(saved: &Map<String, Value>) -> (Vec<Value>, Option<&str
 }
 
 /// Open the dialog on its Assets tab with `checked` assets checked (every asset when `None`).
-pub(crate) fn open_assets(app: &mut VectorcraftApp, checked: Option<&[u64]>) {
+pub(crate) fn open_assets(app: &mut LogocraftApp, checked: Option<&[u64]>) {
     open(app);
     if let Some(d) = app.ui.dialog.as_mut() {
         d.fields.insert("tab".into(), json!("assets"));
@@ -86,7 +86,7 @@ pub(crate) fn open_assets(app: &mut VectorcraftApp, checked: Option<&[u64]>) {
 
 /// Open the dialog on the settings the active document last exported with (else one PNG row at
 /// 1x, into the Desktop), every asset checked.
-pub fn open(app: &mut VectorcraftApp) {
+pub fn open(app: &mut LogocraftApp) {
     let (n, saved, assets) = app
         .session
         .active()
@@ -137,7 +137,7 @@ pub fn open(app: &mut VectorcraftApp) {
 /// (without quality and image maps: the rows choose quality, a map is another file), the SVG
 /// Options' first-use ones (without artboards and images: a linked image is another file), or the
 /// default PDF preset.
-fn defaults(app: &VectorcraftApp, id: &str) -> Map<String, Value> {
+fn defaults(app: &LogocraftApp, id: &str) -> Map<String, Value> {
     let mut o = match (id, fileio::format(id)) {
         ("svg", _) => svg_options::first_use(),
         ("pdf", _) => Map::from_iter([("preset".to_string(), json!(pdf::DEFAULT_PRESET))]),
@@ -191,7 +191,7 @@ pub(super) fn range_text(boards: &[bool]) -> String {
 
 /// The `document.exportForScreens` params the dialog describes (the web: no folder, one ZIP for
 /// several files).
-fn params(app: &VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn params(app: &LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let n = app.session.active().map_or(0, |st| st.doc.artboards.len());
     let rows = d.fields.get("formats").and_then(Value::as_array).cloned().unwrap_or_default();
     if rows.is_empty() {
@@ -244,7 +244,7 @@ fn params(app: &VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 }
 
 /// Export; the dialog stays open when the export fails.
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let p = params(app, d)?;
     let r = io::export_for_screens(app, p);
     if r.is_ok() {
@@ -253,7 +253,7 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     r
 }
 
-fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let t = Tokens::get(ui.ctx());
     let tab = usize::from(d.str("tab") == "assets");
     if let Some(i) = widgets::tab_bar(ui, &[tl!("Artboards"), tl!("Assets")], tab) {
@@ -296,7 +296,7 @@ fn set_select(d: &mut Dialog, select: &str) {
 }
 
 /// Select (All, Range, Full Document), Include Bleed, and the artboards' thumbnails and checkboxes.
-fn artboards(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
+fn artboards(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     let n = app.session.active().map_or(0, |st| st.doc.artboards.len());
     let mut boards: Vec<bool> =
         d.fields.get("boards").and_then(Value::as_array).map(|a| a.iter().map(|b| b.as_bool().unwrap_or(false)).collect()).unwrap_or_default();
@@ -373,13 +373,13 @@ fn artboards(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
 }
 
 /// The checked assets that are still in the document, in panel order.
-fn checked_assets(app: &VectorcraftApp, d: &Dialog) -> Vec<u64> {
+fn checked_assets(app: &LogocraftApp, d: &Dialog) -> Vec<u64> {
     let on: Vec<u64> = d.fields.get("assets").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).collect()).unwrap_or_default();
     app.session.active().map(|st| st.doc.assets.iter().map(|a| a.id).filter(|id| on.contains(id)).collect()).unwrap_or_default()
 }
 
 /// The Assets tab: each asset's thumbnail and checkbox, Select All and Clear.
-fn assets(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
+fn assets(app: &LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     let Some(st) = app.session.active() else { return };
     if st.doc.assets.is_empty() {
         ui.add_space(24.0);
@@ -418,7 +418,7 @@ fn assets(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
 
 /// Export to: the folder (typed or picked), Open Location after Export and Create Sub-folders; the
 /// web downloads instead.
-fn destination(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
+fn destination(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     widgets::dim_label(ui, tl!("Export to:"));
     if io::is_web(app) {
         widgets::dim_label(ui, tl!("Your browser downloads the files (several as one .zip)."));
@@ -578,7 +578,7 @@ fn format_settings(ui: &mut egui::Ui, d: &mut Dialog, id: &str) {
 }
 
 /// A small cached rendering of artboard `i` (keyed by document revision).
-fn artboard_thumb(app: &mut VectorcraftApp, ctx: &egui::Context, i: usize) -> Option<egui::TextureHandle> {
+fn artboard_thumb(app: &mut LogocraftApp, ctx: &egui::Context, i: usize) -> Option<egui::TextureHandle> {
     let st = app.session.active()?;
     let key = egui::Id::new(("ab-thumb", i, st.revision));
     if let Some(t) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(key)) {

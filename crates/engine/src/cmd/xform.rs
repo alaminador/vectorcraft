@@ -2,10 +2,10 @@
 
 use std::sync::Arc;
 
+use logocraft_color::Paint;
+use logocraft_doc::{Node, NodeKind, Scaling};
+use logocraft_geom::{Affine, Point, Rect, Vec2};
 use serde_json::{Value, json};
-use vectorcraft_color::Paint;
-use vectorcraft_doc::{Node, NodeKind, Scaling};
-use vectorcraft_geom::{Affine, Point, Rect, Vec2};
 
 use super::edit::selected_roots;
 use super::*;
@@ -353,7 +353,7 @@ fn sample_color(s: &mut Session, p: &Value) -> Result<Value> {
             let mut stops = g.gradient.stops;
             let n = stops.len();
             stops.get_mut(i).ok_or_else(|| bad(C, format!("no stop {i} (the gradient has {n})")))?.set_color(color, None);
-            ("paint.editGradient", json!({ "stops": vectorcraft_tools::params::stops_json(&stops), "stroke": stroke }))
+            ("paint.editGradient", json!({ "stops": logocraft_tools::params::stops_json(&stops), "stroke": stroke }))
         }
     };
     if let Some(ids) = p.get("ids") {

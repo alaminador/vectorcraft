@@ -3,10 +3,10 @@
 //! for the overprinting fills and strokes).
 
 use hayro_syntax::object::{Array, Dict, Name, ObjectIdentifier};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, CharStyle, Document, LayerColor, Node, NodeKind, TextObject};
+use logocraft_geom::{Point, Rect, shapes};
 use serde_json::{Value, json};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, CharStyle, Document, LayerColor, Node, NodeKind, TextObject};
-use vectorcraft_geom::{Point, Rect, shapes};
 
 use crate::*;
 

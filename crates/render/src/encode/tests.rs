@@ -1,6 +1,6 @@
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, CharStyle, Node, NodeKind, TextObject};
-use vectorcraft_geom::{Point, shapes};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, CharStyle, Node, NodeKind, TextObject};
+use logocraft_geom::{Point, shapes};
 
 use super::png::{PngOptions, encode, pixels_per_metre};
 use super::*;
@@ -193,7 +193,7 @@ fn anti_alias_none_is_the_same_on_every_thread_count() {
     let id = d.alloc_id();
     let mut n = Node::path(id, shapes::rectangle(Rect::new(20.5, 20.3, 60.4, 59.6)), Appearance::basic(Paint::solid(Color::BLACK), Paint::None, 0.0));
     let glow = serde_json::json!({"color": "#ffffff", "mode": "normal", "opacity": 100, "blur": 4});
-    n.appearance.effects = vec![vectorcraft_doc::Effect { id: "stylize.innerGlow".into(), params: glow, visible: true }];
+    n.appearance.effects = vec![logocraft_doc::Effect { id: "stylize.innerGlow".into(), params: glow, visible: true }];
     let l = d.layers[0].id;
     d.insert(Some(l), 0, n).unwrap();
     let opts = RenderOptions { anti_alias: AntiAlias::None, ..Default::default() };

@@ -27,7 +27,7 @@ use serde_json::{Value, json};
 
 use crate::state::{DockTab, FloatingPanels, UiState, all_panels};
 use crate::theme::{self, Tokens};
-use crate::{VectorcraftApp, dock, icons, panels};
+use crate::{LogocraftApp, dock, icons, panels};
 
 /// Height of a floating group's title bar (its grip and ×).
 pub const TITLE: f32 = 14.0;
@@ -276,7 +276,7 @@ pub fn clamp(pos: [f32; 2], size: Vec2, screen: Rect) -> Pos2 {
 }
 
 /// Start moving `what` with the pointer, held `grab` from its top-left corner.
-fn start(app: &VectorcraftApp, ctx: &egui::Context, what: Moving, grab: Vec2) {
+fn start(app: &LogocraftApp, ctx: &egui::Context, what: Moving, grab: Vec2) {
     if !gesture_allowed(ctx) {
         return;
     }
@@ -293,7 +293,7 @@ pub(crate) fn strip_grab(ctx: &egui::Context, left: f32) -> Vec2 {
 
 /// Float `ids` under the pointer, held `grab` from the new group's top-left corner, and carry on
 /// moving them with the pointer (a tab or group dragged out of the dock or out of its group).
-pub(crate) fn tear(app: &mut VectorcraftApp, ctx: &egui::Context, ids: &[&'static str], active: &'static str, grab: Vec2) {
+pub(crate) fn tear(app: &mut LogocraftApp, ctx: &egui::Context, ids: &[&'static str], active: &'static str, grab: Vec2) {
     // A restored popout may retain its drag response in the cancellation frame. Do not
     // immediately tear it out again after track restored the gesture's original layout.
     if !gesture_allowed(ctx) {
@@ -317,7 +317,7 @@ pub(crate) fn tear(app: &mut VectorcraftApp, ctx: &egui::Context, ids: &[&'stati
 
 /// The Tools panel's title bar was pressed (`title`, the panel's bounds `bounds`): docked, dragging
 /// it out of the panel floats the panel under the pointer; floating at `floating`, a drag moves it.
-pub(crate) fn drag_tools(app: &mut VectorcraftApp, ctx: &egui::Context, title: &egui::Response, bounds: Rect, floating: Option<Pos2>) {
+pub(crate) fn drag_tools(app: &mut LogocraftApp, ctx: &egui::Context, title: &egui::Response, bounds: Rect, floating: Option<Pos2>) {
     if !gesture_allowed(ctx) {
         return;
     }
@@ -336,7 +336,7 @@ pub(crate) fn drag_tools(app: &mut VectorcraftApp, ctx: &egui::Context, title: &
 }
 
 /// Where the pointer at `at` would drop `what`, and the zone that lights up for it.
-pub(crate) fn drop_target(app: &VectorcraftApp, ctx: &egui::Context, what: Moving, at: Pos2) -> Option<(Drop, Rect)> {
+pub(crate) fn drop_target(app: &LogocraftApp, ctx: &egui::Context, what: Moving, at: Pos2) -> Option<(Drop, Rect)> {
     let zone = |id: Id| ctx.data(|d| d.get_temp::<Rect>(id)).filter(|r| r.contains(at));
     let Moving::Panel(id) = what else { return zone(tools_zone_id()).map(|r| (Drop::Dock, r)) };
     let own = group_of(&app.ui, id);
@@ -361,7 +361,7 @@ pub(crate) fn drop_target(app: &VectorcraftApp, ctx: &egui::Context, what: Movin
         let Some((first, _)) = g.panels.first().and_then(|p| panel(p)).filter(|_| !moving.contains(&i)) else { continue };
         let Some(mut r) = ctx
             .data(|d| d.get_temp::<Rect>(group_rect_id(first)))
-            .or_else(|| ctx.memory(|m| m.area_rect(Id::new("vectorcraft-panel-docking").with(("floating", &first.to_string())))))
+            .or_else(|| ctx.memory(|m| m.area_rect(Id::new("logocraft-panel-docking").with(("floating", &first.to_string())))))
         else {
             continue;
         };
@@ -370,7 +370,7 @@ pub(crate) fn drop_target(app: &VectorcraftApp, ctx: &egui::Context, what: Movin
         // available just outside the window. Dock columns reserve their own panel space.
         if g.docked.is_none() && r.contains(at) {
             let area = if app.ui.docking.is_some() && !crate::panel_docking::decorated(g) {
-                Id::new("vectorcraft-panel-docking").with(("floating", &first.to_string()))
+                Id::new("logocraft-panel-docking").with(("floating", &first.to_string()))
             } else {
                 let lead = set_of(&app.ui, i).first().and_then(|&index| app.ui.floating_panels.get(index)).and_then(|group| group.panels.first());
                 area_id(lead.map_or(first, String::as_str))
@@ -378,7 +378,7 @@ pub(crate) fn drop_target(app: &VectorcraftApp, ctx: &egui::Context, what: Movin
             let moving_areas: Vec<Id> = moving
                 .iter()
                 .filter_map(|&index| app.ui.floating_panels.get(index).and_then(|group| group.panels.first()))
-                .flat_map(|panel| [area_id(panel), Id::new("vectorcraft-panel-docking").with(("floating", panel))])
+                .flat_map(|panel| [area_id(panel), Id::new("logocraft-panel-docking").with(("floating", panel))])
                 .collect();
             let owner = ctx.memory(|memory| {
                 let layers: Vec<_> = memory.layer_ids().collect();
@@ -462,7 +462,7 @@ pub(crate) fn preview(ctx: &egui::Context, target: Drop, rect: Rect) {
 
 /// Carry a move on (at the start of a frame, before the panels are drawn): the group or Tools panel
 /// follows the pointer and the zone it would drop on lights up; the release drops it there.
-pub fn track(app: &mut VectorcraftApp, ctx: &egui::Context) {
+pub fn track(app: &mut LogocraftApp, ctx: &egui::Context) {
     if ctx.input(|input| input.pointer.primary_pressed()) {
         ctx.data_mut(|data| data.remove::<bool>(suppressed_id()));
     }
@@ -591,7 +591,7 @@ fn docked(ui: &UiState, set: &[usize]) -> bool {
 
 /// The floating groups, each a stack of tabs, stacked in their sets under a title bar. Hidden with
 /// the dock (Tab, Presentation Mode). Sets docked as dock columns are drawn by [`docked_columns`].
-pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
+pub fn show(app: &mut LogocraftApp, ctx: &egui::Context) {
     if app.ui.floating_panels.is_empty() || !app.ui.dock || app.ui.screen_mode >= 3 {
         crate::panel_docking::finish_native_drop(app, ctx);
         return;
@@ -610,7 +610,7 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
 }
 
 /// Carry out what a press on a floating or docked group did.
-fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) {
+fn apply(app: &mut LogocraftApp, ctx: &egui::Context, action: Option<Action>) {
     if action.is_none() {
         return;
     }
@@ -676,7 +676,7 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
 
 /// Take group `gi` out of its set (or its dock column) under the pointer, its tab strip having
 /// begun `left` points from the window's left, and carry on moving it with the pointer.
-fn detach(app: &mut VectorcraftApp, ctx: &egui::Context, gi: usize, left: f32) {
+fn detach(app: &mut LogocraftApp, ctx: &egui::Context, gi: usize, left: f32) {
     let Some(at) = ctx.input(|i| i.pointer.interact_pos()) else { return };
     let Some(id) = shown(&app.ui, gi) else { return };
     let grab = strip_grab(ctx, left);
@@ -727,7 +727,7 @@ fn docked_sets(ui: &UiState) -> Vec<(u32, Vec<usize>)> {
 /// [`dock::show`] lays it out): a strip along its top that floats the column when dragged and
 /// whose × puts its panels back in the dock, then its groups top to bottom. Returns the columns'
 /// bounds, next to the icon column first.
-pub(crate) fn docked_columns(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> Vec<Rect> {
+pub(crate) fn docked_columns(app: &mut LogocraftApp, ui: &mut egui::Ui) -> Vec<Rect> {
     let t = Tokens::get(ui.ctx());
     let mut rects = vec![];
     let mut action = None;
@@ -789,7 +789,7 @@ pub(crate) fn docked_columns(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> Vec
 }
 
 /// Draw the set of floating groups `set` (top to bottom) as one floating box.
-fn show_set(app: &mut VectorcraftApp, ctx: &egui::Context, set: &[usize], action: &mut Option<Action>) {
+fn show_set(app: &mut LogocraftApp, ctx: &egui::Context, set: &[usize], action: &mut Option<Action>) {
     let t = Tokens::get(ctx);
     let screen = ctx.content_rect();
     let groups = shown_groups(&app.ui, set);
@@ -855,7 +855,7 @@ fn show_set(app: &mut VectorcraftApp, ctx: &egui::Context, set: &[usize], action
 /// the set or dock column).
 #[allow(clippy::too_many_arguments)]
 fn draw_groups(
-    app: &mut VectorcraftApp,
+    app: &mut LogocraftApp,
     ui: &mut egui::Ui,
     groups: &[Shown],
     width: f32,
@@ -929,7 +929,7 @@ fn draw_groups(
 }
 
 /// `window.panel.float` and `window.panel.dock`; `None` for other commands.
-pub fn command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Result<Value, String>> {
+pub fn command(app: &mut LogocraftApp, id: &str, p: &Value) -> Option<Result<Value, String>> {
     let float = match id {
         "window.panel.float" => true,
         "window.panel.dock" => false,
@@ -951,7 +951,7 @@ fn position(p: &Value) -> Result<Option<Pos2>, String> {
     }
 }
 
-fn float_or_dock(app: &mut VectorcraftApp, float_it: bool, p: &Value) -> Result<Value, String> {
+fn float_or_dock(app: &mut LogocraftApp, float_it: bool, p: &Value) -> Result<Value, String> {
     let raw = p.get("panel").and_then(Value::as_str).unwrap_or_default().trim();
     let group = crate::menus::opt_bool(p, "group")?.unwrap_or(false);
     let at = position(p)?;
@@ -1050,7 +1050,7 @@ fn column_slot(ui: &UiState, p: &Value) -> Result<Option<u32>, String> {
 /// Float `ids` (`id` among them; `own`, the group holding `id`) as their own group at `at`, or
 /// stacked as tabs `onto` another group.
 fn float_onto(
-    app: &mut VectorcraftApp,
+    app: &mut LogocraftApp,
     ids: &[&'static str],
     id: &'static str,
     own: Option<usize>,
@@ -1088,8 +1088,8 @@ fn float_onto(
 #[cfg(test)]
 mod tests {
     use egui::{Event, PointerButton};
+    use logocraft_engine::Session;
     use serde_json::json;
-    use vectorcraft_engine::Session;
 
     use super::*;
 
@@ -1098,7 +1098,7 @@ mod tests {
     /// Frames of the whole window, with pointer input one event a frame (as the control
     /// channel's `ui.drag` sends it).
     struct Harness {
-        app: VectorcraftApp,
+        app: LogocraftApp,
         ctx: egui::Context,
         time: f64,
         screen: Vec2,
@@ -1117,7 +1117,7 @@ mod tests {
         /// every icon, which hides the ones past the bottom — a test that counts them needs
         /// a window tall enough to show them all.
         fn on(screen: Vec2) -> Self {
-            let mut app = VectorcraftApp::new(Session::new(), Default::default());
+            let mut app = LogocraftApp::new(Session::new(), Default::default());
             app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
             let mut h = Self { app, ctx: egui::Context::default(), time: 0.0, screen };
             h.settle();
@@ -1178,7 +1178,7 @@ mod tests {
         fn group(&self, first: &str) -> Rect {
             let native = group_of(&self.app.ui, first).and_then(|i| self.app.ui.floating_panels.get(i)).is_some_and(crate::panel_docking::decorated);
             let id = if self.app.ui.docking.is_some() && !native {
-                Id::new("vectorcraft-panel-docking").with(("floating", &first.to_string()))
+                Id::new("logocraft-panel-docking").with(("floating", &first.to_string()))
             } else {
                 area_id(first)
             };
@@ -1206,7 +1206,7 @@ mod tests {
         }
 
         fn shared_tab(&self, panel: &str) -> Rect {
-            self.ctx.read_response(Id::new("vectorcraft-panel-docking").with(("tab", &panel.to_string()))).unwrap().rect
+            self.ctx.read_response(Id::new("logocraft-panel-docking").with(("tab", &panel.to_string()))).unwrap().rect
         }
 
         /// The dock's tabs, left to right.
@@ -1216,9 +1216,7 @@ mod tests {
                 return root
                     .panels()
                     .into_iter()
-                    .filter_map(|panel| {
-                        self.ctx.read_response(Id::new("vectorcraft-panel-docking").with(("tab", panel))).map(|response| response.rect)
-                    })
+                    .filter_map(|panel| self.ctx.read_response(Id::new("logocraft-panel-docking").with(("tab", panel))).map(|response| response.rect))
                     .collect();
             }
             let dock = self.temp_rect(dock_rect_id());
@@ -1472,7 +1470,7 @@ mod tests {
 
     #[test]
     fn float_and_dock_commands_check_their_params() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         assert!(app.run("window.panel.float", json!({"panel": "nope"})).is_err());
         assert!(app.run("window.panel.float", json!({"panel": "layers", "x": "left", "y": 2})).is_err());
         assert!(app.run("window.panel.float", json!({"panel": "layers", "x": 2})).is_err(), "both x and y");
@@ -1594,7 +1592,7 @@ mod tests {
 
     #[test]
     fn sets_by_command_are_checked_and_kept_in_workspaces_and_preferences() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("window.panel.float", json!({"panel": "layers", "x": 100, "y": 50})).unwrap();
         assert!(app.run("window.panel.float", json!({"panel": "color", "below": "swatches"})).is_err(), "Swatches isn't floating");
         assert!(app.run("window.panel.float", json!({"panel": "color", "onto": "layers", "below": "layers"})).is_err(), "one of them");
@@ -1707,7 +1705,7 @@ mod tests {
 
     #[test]
     fn dock_columns_by_command_are_checked_and_kept_in_workspaces() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         assert!(app.run("window.panel.dock", json!({"panel": "color", "column": 0})).is_err());
         assert!(app.run("window.panel.dock", json!({"panel": "color", "column": "left"})).is_err());
         assert!(app.ui.floating_panels.is_empty());
@@ -1818,7 +1816,7 @@ mod tests {
         assert!(moved.top() < last.top() - 100.0, "scrolled up: {moved:?} from {last:?}");
     }
 
-    fn floating_pos(app: &VectorcraftApp, id: &str) -> [f32; 2] {
+    fn floating_pos(app: &LogocraftApp, id: &str) -> [f32; 2] {
         group_of(&app.ui, id).map(|i| app.ui.floating_panels[i].pos).unwrap()
     }
 }

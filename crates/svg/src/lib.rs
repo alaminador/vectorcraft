@@ -1,4 +1,4 @@
-//! VectorCraft SVG import and export.
+//! LogoCraft SVG import and export.
 //!
 //! * [`export`] / [`export_full`] write a [`Document`] as SVG 1.1 with our own writer, as set by
 //!   [`ExportOptions`] (presentation attributes, inline styles, style entities or internal CSS
@@ -45,7 +45,7 @@
 //!   one is absolute. The document's units follow the unit of the root `width` (pixels when it has
 //!   none).
 //! * `<mask>` imports as a luminance opacity mask; a mask we exported keeps its options and art
-//!   (its `data-vectorcraft-mask="noclip invert"` lists the options that differ from clipping and
+//!   (its `data-logocraft-mask="noclip invert"` lists the options that differ from clipping and
 //!   not inverted). Nested clip paths (`<clipPath clip-path>`) are clip groups in clip groups.
 //! * Filters that are a Gaussian blur, a drop shadow (`feDropShadow` or the usual chains of offset,
 //!   blur, flood or colour matrix, composite and merge), a glow or a feather (as we export them)
@@ -87,8 +87,8 @@ pub use css::{CssOptions, CssRule, CssSheet, CssUnits, css_rules};
 
 use serde::{Deserialize, Serialize};
 
-pub use vectorcraft_doc::Document;
-pub use vectorcraft_doc::TextObject;
+pub use logocraft_doc::Document;
+pub use logocraft_doc::TextObject;
 
 /// How style properties are written (SVG Options → Styling).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -201,7 +201,7 @@ pub struct ExportOptions {
     pub responsive: bool,
     /// Fonts → Convert to Outlines: text becomes paths (portable, no font needed to view it).
     pub outline_text: bool,
-    /// Embed the native document (passed to [`export_full`]) in `<metadata>` so VectorCraft
+    /// Embed the native document (passed to [`export_full`]) in `<metadata>` so LogoCraft
     /// reopens the SVG with nothing lost (see [`editing`]).
     pub preserve_editing: bool,
     /// Write `<metadata>` with the document's title, format and File Info (Dublin Core).
@@ -332,7 +332,9 @@ pub fn export_full(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>) 
 }
 
 /// The XML namespace of the editing data [`ExportOptions::preserve_editing`] embeds.
-pub const EDITING_NS: &str = "urn:vectorcraft:editing";
+pub const EDITING_NS: &str = "urn:logocraft:editing";
+/// The namespace VectorCraft (which LogoCraft is based on) wrote its editing data in: still read.
+pub const VECTORCRAFT_EDITING_NS: &str = "urn:vectorcraft:editing";
 
 /// The native document an SVG carries ([`ExportOptions::preserve_editing`]).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -347,12 +349,14 @@ pub struct Editing {
 
 /// The native document an SVG carries, if any, and whether the SVG was edited since.
 pub fn editing(svg: &str) -> Option<Editing> {
-    if !svg.contains(EDITING_NS) {
+    if !svg.contains(EDITING_NS) && !svg.contains(VECTORCRAFT_EDITING_NS) {
         return None;
     }
     let opts = usvg::roxmltree::ParsingOptions { allow_dtd: true, ..Default::default() };
     let xml = usvg::roxmltree::Document::parse_with_options(svg, opts).ok()?;
-    let el = xml.descendants().find(|n| n.tag_name().namespace() == Some(EDITING_NS) && n.tag_name().name() == "document")?;
+    let el = xml
+        .descendants()
+        .find(|n| matches!(n.tag_name().namespace(), Some(EDITING_NS | VECTORCRAFT_EDITING_NS)) && n.tag_name().name() == "document")?;
     let data: String = el.children().filter_map(|c| c.text()).flat_map(|t| t.chars().filter(|c| !c.is_whitespace())).collect();
     if data.is_empty() {
         return None;
@@ -507,11 +511,11 @@ pub fn import_with(svg: &str, opts: &ImportOptions) -> Result<(Document, Vec<Str
 
 /// Reads a linked file: its bytes and the link to it (absolute path, size, time and hash), or
 /// `None` when there is no readable file at the (absolute) path.
-pub type ReadFile<'a> = &'a dyn Fn(&str) -> Option<(Vec<u8>, vectorcraft_doc::LinkInfo)>;
+pub type ReadFile<'a> = &'a dyn Fn(&str) -> Option<(Vec<u8>, logocraft_doc::LinkInfo)>;
 
 /// How [`import_with`] reads the files an SVG's `<image>` elements link to.
 ///
-/// A raster file stays linked ([`vectorcraft_doc::ImageObject::link`]); an SVG file imports as
+/// A raster file stays linked ([`logocraft_doc::ImageObject::link`]); an SVG file imports as
 /// vector art. A file that can't be read imports as a placeholder that keeps the link (and a
 /// warning), so it can be relinked.
 #[derive(Clone, Copy, Default)]
@@ -609,6 +613,16 @@ mod tests {
         assert_eq!(fmt_num(-0.0001, 3), "0");
         assert_eq!(fmt_num(10.5, 1), "10.5");
         assert_eq!(fmt_num(100.0, 0), "100");
+    }
+
+    /// LogoCraft is based on VectorCraft: the document a VectorCraft SVG carries comes back.
+    #[test]
+    fn vectorcraft_editing_data_is_read() {
+        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg"><metadata><vectorcraft:document xmlns:vectorcraft="urn:vectorcraft:editing">QUJD</vectorcraft:document></metadata></svg>"#;
+        assert_eq!(editing(svg), Some(Editing { data: "QUJD".into(), intact: true }));
+        let ours = svg.replace("vectorcraft", "logocraft");
+        assert_eq!(editing(&ours).map(|e| e.data), Some("QUJD".into()));
+        assert_eq!(editing(&svg.replace("urn:vectorcraft:editing", "urn:other:editing")), None);
     }
 
     #[test]

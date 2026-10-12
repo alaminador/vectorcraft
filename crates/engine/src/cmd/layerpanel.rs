@@ -6,8 +6,8 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use logocraft_doc::{Document, Node, NodeId, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind};
 
 use super::layer::{make_layer, row_roots, rows_param};
 use super::*;

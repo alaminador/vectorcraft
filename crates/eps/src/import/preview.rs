@@ -2,8 +2,8 @@
 //! PostScript can't be: a TIFF image behind the binary header, or an EPSI
 //! bitmap in comments, stretched over the page.
 
-use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
-use vectorcraft_geom::{Affine, Rect};
+use logocraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
+use logocraft_geom::{Affine, Rect};
 
 /// Largest EPSI bitmap side read (pixels).
 const MAX_EPSI: usize = 8192;

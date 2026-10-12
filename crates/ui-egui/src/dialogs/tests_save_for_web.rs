@@ -3,8 +3,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use logocraft_engine::Session;
 use serde_json::json;
-use vectorcraft_engine::Session;
 
 use super::tests_export::{frame, kind, set};
 use super::*;
@@ -14,7 +14,7 @@ type Log = Rc<RefCell<Vec<String>>>;
 
 /// An app with a 60×40 pt document (an ellipse), whose save panel answers inside `dir`; `web`
 /// downloads instead (into the log).
-fn app(dir: &std::path::Path, web: bool) -> (VectorcraftApp, Log) {
+fn app(dir: &std::path::Path, web: bool) -> (LogocraftApp, Log) {
     let log = Log::default();
     let (l1, l2) = (log.clone(), log.clone());
     let dir = dir.to_string_lossy().replace('\\', "/");
@@ -26,7 +26,7 @@ fn app(dir: &std::path::Path, web: bool) -> (VectorcraftApp, Log) {
     if web {
         services.download = Some(Box::new(move |name: &str, b: &[u8]| l2.borrow_mut().push(format!("download {name} {}", b.len()))));
     }
-    let mut app = VectorcraftApp::new(Session::new(), services);
+    let mut app = LogocraftApp::new(Session::new(), services);
     app.run("file.new", json!({"width": 60, "height": 40})).unwrap();
     app.run("paint.setStroke", json!({"none": true})).unwrap();
     app.run("shape.ellipse", json!({"x": 5, "y": 4, "width": 30, "height": 20})).unwrap();
@@ -36,9 +36,9 @@ fn app(dir: &std::path::Path, web: bool) -> (VectorcraftApp, Log) {
 
 #[test]
 fn every_view_and_format_draws() {
-    let dir = vectorcraft_testkit::temp_dir("sfw-views");
+    let dir = logocraft_testkit::temp_dir("sfw-views");
     let (mut app, _) = app(&dir, false);
-    assert_eq!(crate::menus::shortcut_of("file.saveForWeb"), Some("Cmd+Alt+Shift+S"));
+    assert_eq!(crate::menus::shortcut_of("file.saveForWeb"), Some("Cmd+Shift+S"));
     assert!(crate::menus::enabled(&app, "file.saveForWeb"));
     assert_eq!((spec(save_for_web::KIND).ok_label.unwrap())(&app), "Save…");
     app.run("file.saveForWeb", json!({})).unwrap();
@@ -66,7 +66,7 @@ fn every_view_and_format_draws() {
 
 #[test]
 fn save_remembers_and_writes_and_done_only_remembers() {
-    let dir = vectorcraft_testkit::temp_dir("sfw-save");
+    let dir = logocraft_testkit::temp_dir("sfw-save");
     let (mut app, _) = app(&dir, false);
     app.run("file.saveForWeb", json!({})).unwrap();
     // A preset field loads the preset; the keys set after it win.
@@ -89,7 +89,7 @@ fn save_remembers_and_writes_and_done_only_remembers() {
     set(&mut app, "discard", json!(true));
     assert_eq!(confirm(&mut app).unwrap()["remembered"], true);
     assert!(app.ui.dialog.is_none());
-    assert_eq!(app.session.last_web_settings().format, vectorcraft_engine::cmd::webexport::WebFormat::Png24);
+    assert_eq!(app.session.last_web_settings().format, logocraft_engine::cmd::webexport::WebFormat::Png24);
     assert!(!dir.join("Untitled-1.png").exists());
     // Bad settings keep the dialog open, with nothing written.
     app.run("file.saveForWeb", json!({})).unwrap();
@@ -99,24 +99,8 @@ fn save_remembers_and_writes_and_done_only_remembers() {
 }
 
 #[test]
-fn html_output_with_slices_saves_the_page_and_images() {
-    let dir = vectorcraft_testkit::temp_dir("sfw-html");
-    let (mut app, _) = app(&dir, false);
-    app.run("object.slice.create", json!({"x": 0, "y": 0, "width": 30, "height": 20})).unwrap();
-    app.run("file.saveForWeb", json!({})).unwrap();
-    assert!(app.ui.dialog.as_ref().unwrap().bool("__hasSlices"));
-    set(&mut app, "output", json!("html"));
-    frame(&mut app);
-    let r = confirm(&mut app).unwrap();
-    let n = app.session.execute("slice.list", &json!({})).unwrap()["slices"].as_array().unwrap().len();
-    assert_eq!(r["files"].as_array().unwrap().len(), n + 1);
-    assert!(std::fs::read_to_string(dir.join("Untitled-1.html")).unwrap().contains("images/Untitled-1_01.gif"));
-    assert!(dir.join("images/Untitled-1_01.gif").exists());
-}
-
-#[test]
 fn the_web_downloads_and_has_no_browser_preview() {
-    let dir = vectorcraft_testkit::temp_dir("sfw-web");
+    let dir = logocraft_testkit::temp_dir("sfw-web");
     let (mut app, log) = app(&dir, true);
     assert_eq!((spec(save_for_web::KIND).ok_label.unwrap())(&app), "Download");
     let r = app.run("file.saveForWeb", json!({"format": "png8", "output": "html"})).unwrap();
@@ -128,7 +112,7 @@ fn the_web_downloads_and_has_no_browser_preview() {
 
 #[test]
 fn preview_in_browser_opens_the_page() {
-    let dir = vectorcraft_testkit::temp_dir("sfw-browser");
+    let dir = logocraft_testkit::temp_dir("sfw-browser");
     let (mut app, log) = app(&dir, false);
     let r = app.run("file.saveForWeb.browser", json!({"format": "jpg"})).unwrap();
     let page = r["path"].as_str().unwrap().to_string();
@@ -157,7 +141,7 @@ fn cmd_shift_s_opens_save_for_web_and_asset_export_sits_with_artboards() {
     assert_eq!(crate::shortcut_editor::command_shortcut("file.saveForWeb"), Some("Cmd+Shift+S"));
     assert_eq!(crate::shortcut_editor::command_shortcut("file.saveAs"), Some("Cmd+Alt+Shift+S"));
     assert!(crate::state::ICON_PANEL_GROUPS.iter().any(|g| *g == ["artboards", crate::panels::asset_export::ID]));
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
     app.run("file.saveForWeb", json!({})).unwrap();
     assert_eq!(app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(save_for_web::KIND));

@@ -3,11 +3,11 @@
 
 use std::sync::Arc;
 
+use logocraft_color::{Color, Paint};
+use logocraft_doc::text::{CharStyle, TextObject};
+use logocraft_doc::{Appearance, Effect, ImageBlob, ImageObject, Node, NodeKind, Symbol};
+use logocraft_geom::{Point, shapes};
 use serde_json::{Value, json};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::text::{CharStyle, TextObject};
-use vectorcraft_doc::{Appearance, Effect, ImageBlob, ImageObject, Node, NodeKind, Symbol};
-use vectorcraft_geom::{Point, shapes};
 
 use super::*;
 

@@ -29,8 +29,8 @@ use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use vectorcraft_doc::{AppearanceItem, Document, Node, NodeId, NodeKind, TextKind};
-use vectorcraft_geom::{Affine, PathData, Point, Rect, Vec2};
+use logocraft_doc::{AppearanceItem, Document, Node, NodeId, NodeKind, TextKind};
+use logocraft_geom::{Affine, PathData, Point, Rect, Vec2};
 
 use super::Imported;
 use super::ai::{self, Structure, slot_of};
@@ -39,7 +39,7 @@ use super::ate::{Story, Texts};
 /// The notes that say the import left out something the file has (see [`is_loss`]).
 const TEXT_LEFT_OUT: &str = "text objects on hidden layers or hidden objects couldn't be read, so they are left out";
 /// The same for a file without a page to take shown type from.
-const TYPE_LEFT_OUT: &str = "text objects of kinds VectorCraft doesn't read from the file's text document yet are left out";
+const TYPE_LEFT_OUT: &str = "text objects of kinds LogoCraft doesn't read from the file's text document yet are left out";
 const ART_LEFT_OUT: &str = "hidden layers have art this can't read";
 const LAYERS_UNREAD: &str = "the file's layers weren't read";
 
@@ -391,7 +391,7 @@ fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
     }
     let mut gone: BTreeSet<usize> = BTreeSet::new();
     for (first, rest, gaps) in &joins {
-        let mut runs: Vec<Vec<vectorcraft_doc::TextRun>> = [first]
+        let mut runs: Vec<Vec<logocraft_doc::TextRun>> = [first]
             .into_iter()
             .chain(rest)
             .filter_map(|j| parts.get(*j))
@@ -707,10 +707,10 @@ fn compare_scale(r: Rect) -> f64 {
 /// with a renderer of their own, which keeps their decoded images between draws (the page's images
 /// can share their keys and not their pixels, so the two don't share one).
 struct PageView {
-    page: vectorcraft_render::Rendered,
+    page: logocraft_render::Rendered,
     /// Where the page's own type is, in its pixels.
     page_type: Vec<Rect>,
-    layers: vectorcraft_render::Renderer,
+    layers: logocraft_render::Renderer,
     scale: f64,
 }
 
@@ -720,10 +720,10 @@ impl PageView {
         let scale = compare_scale(ra);
         // Drawn on nothing and then seen on white: blending modes have no page to blend with, as in
         // the app that wrote the file.
-        let page = vectorcraft_render::Renderer::new().render_region(frame.page, ra, scale, false);
+        let page = logocraft_render::Renderer::new().render_region(frame.page, ra, scale, false);
         let mut page_type = vec![];
         type_areas(&frame.page.layers, ra, scale, &mut page_type);
-        Self { page, page_type, layers: vectorcraft_render::Renderer::new(), scale }
+        Self { page, page_type, layers: logocraft_render::Renderer::new(), scale }
     }
 
     /// How `b` on `rb` (a rectangle the page's size) draws differently from the page ([`compared`]).
@@ -759,8 +759,8 @@ fn difference(a: &Document, ra: Rect, b: &Document, rb: Rect) -> Difference {
     let b = printed.as_ref().unwrap_or(b);
     let scale = compare_scale(ra);
     // A renderer each: the two documents' images can share their keys and not their pixels.
-    let x = vectorcraft_render::Renderer::new().render_region(a, ra, scale, false);
-    let y = vectorcraft_render::Renderer::new().render_region(b, rb, scale, false);
+    let x = logocraft_render::Renderer::new().render_region(a, ra, scale, false);
+    let y = logocraft_render::Renderer::new().render_region(b, rb, scale, false);
     let mut areas = vec![];
     type_areas(&a.layers, ra, scale, &mut areas);
     type_areas(&b.layers, rb, scale, &mut areas);
@@ -771,7 +771,7 @@ fn difference(a: &Document, ra: Rect, b: &Document, rb: Rect) -> Difference {
 /// the type in `areas` (pixels). Pixels are compared by lightness, and by whether they are inked
 /// at all ([`differ`]): the page of an RGB document is written in the colours' CMYK equivalents,
 /// and what the comparison looks for is art that is missing or out of place.
-fn compared(x: &vectorcraft_render::Rendered, y: &vectorcraft_render::Rendered, areas: &[Rect]) -> Difference {
+fn compared(x: &logocraft_render::Rendered, y: &logocraft_render::Rendered, areas: &[Rect]) -> Difference {
     if x.width != y.width || x.height != y.height {
         return Difference { any: 1.0, solid: 1.0 };
     }
@@ -896,7 +896,7 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool) ->
         // goes where the layers have that artboard.
         let pages: Vec<Rect> = visible.artboards.iter().map(|a| a.rect).collect();
         let same =
-            |(a, p): (&vectorcraft_doc::Artboard, &Rect)| (a.rect.width() - p.width()).abs() <= 0.5 && (a.rect.height() - p.height()).abs() <= 0.5;
+            |(a, p): (&logocraft_doc::Artboard, &Rect)| (a.rect.width() - p.width()).abs() <= 0.5 && (a.rect.height() - p.height()).abs() <= 0.5;
         let boards = (pages.len() == doc.artboards.len() && doc.artboards.iter().zip(&pages).all(same)).then_some(&doc.artboards);
         for object in shown.iter_mut().chain(hidden.iter_mut()) {
             // The page with most of it, the first for what is on none.
@@ -1085,7 +1085,7 @@ const PAST_THE_PAGE: f64 = 1.0;
 fn compare(frame: &Frame<'_>, view: &mut PageView, layered: &Document) -> Result<Option<String>, String> {
     let mut diff = view.difference(layered, frame.rect);
     if frame.whole
-        && let Some(art) = vectorcraft_render::encode::art_bounds(as_printed(layered).as_ref().unwrap_or(layered))
+        && let Some(art) = logocraft_render::encode::art_bounds(as_printed(layered).as_ref().unwrap_or(layered))
             .filter(|a| !frame.rect.inflate(PAST_THE_PAGE, PAST_THE_PAGE).contains_rect(*a))
     {
         // The page and the art the layers print beyond it, each in its own document's place.
@@ -1231,16 +1231,16 @@ pub(super) fn program_alone(ps: &[u8]) -> Option<Result<(Document, Vec<String>),
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_doc::{CharStyle, TextObject};
+    use logocraft_doc::{CharStyle, TextObject};
 
     /// `doc` with a square ring round (20, 20)–(80, 80) (or at `at`), stroked `color` `width` wide,
     /// named `name`.
-    fn ring(doc: &mut Document, name: Option<&str>, color: vectorcraft_color::Color, width: f64, at: Rect) {
-        let stroke = vectorcraft_color::Paint::solid(color);
+    fn ring(doc: &mut Document, name: Option<&str>, color: logocraft_color::Color, width: f64, at: Rect) {
+        let stroke = logocraft_color::Paint::solid(color);
         let mut n = Node::path(
             doc.alloc_id(),
-            vectorcraft_geom::shapes::rectangle(at),
-            vectorcraft_doc::Appearance::basic(vectorcraft_color::Paint::None, stroke, width),
+            logocraft_geom::shapes::rectangle(at),
+            logocraft_doc::Appearance::basic(logocraft_color::Paint::None, stroke, width),
         );
         n.name = name.map(str::to_string);
         let layer = doc.layers[0].id;
@@ -1251,7 +1251,7 @@ mod tests {
     /// by the page: it isn't taken out as unseen (#1102). An object the page doesn't draw still is.
     #[test]
     fn a_stroke_over_one_as_light_is_not_taken_for_unseen() {
-        let (dark, red) = (vectorcraft_color::Color::rgb(0.55, 0.0, 0.0), vectorcraft_color::Color::rgb(1.0, 0.0, 0.0));
+        let (dark, red) = (logocraft_color::Color::rgb(0.55, 0.0, 0.0), logocraft_color::Color::rgb(1.0, 0.0, 0.0));
         let square = Rect::new(20.0, 20.0, 80.0, 80.0);
         let mut page = Document::new(100.0, 100.0);
         ring(&mut page, None, dark, 12.0, square);
@@ -1267,7 +1267,7 @@ mod tests {
         let widths: Vec<f64> = layers.layers[0].children().unwrap().iter().filter_map(|n| n.appearance.stroke().map(|s| s.width)).collect();
         assert_eq!(widths, [12.0, 6.0]);
         // Taken by lightness alone, the red and the dark red are alike.
-        let px = |c: vectorcraft_color::Color| {
+        let px = |c: logocraft_color::Color| {
             let [r, g, b] = c.to_rgb().map(|v| (v * 255.0).round() as u8);
             [r, g, b, 255]
         };

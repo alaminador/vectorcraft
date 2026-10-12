@@ -5,7 +5,7 @@ use hayro_syntax::object::{Dict, Stream};
 use hayro_syntax::page::Page;
 use hayro_syntax::{DecryptionError, LoadPdfError, Pdf};
 use kurbo::{Affine, Rect};
-use vectorcraft_doc::setup::MAX_BLEED;
+use logocraft_doc::setup::MAX_BLEED;
 
 use crate::{Choice, CropTo, ImportOptions, PdfError};
 
@@ -148,7 +148,7 @@ const MAX_PRIVATE: usize = 256 << 20;
 /// streams in order, joined. A PDF saved with the editing data has its streams under
 /// `AIPDFPrivateData1`, `AIPDFPrivateData2`, … instead: those are read when there is no
 /// `AIPrivateData1`. `None` for a PDF without either (or with a stream that can't be read).
-/// What it holds is the editor's own copy of the art (see `vectorcraft_eps::layered_ai`).
+/// What it holds is the editor's own copy of the art (see `logocraft_eps::layered_ai`).
 pub fn illustrator_data(bytes: &[u8], password: Option<&str>) -> Option<Vec<u8>> {
     let pdf = open(bytes, password).ok()?;
     let page = pdf.pages().first()?;

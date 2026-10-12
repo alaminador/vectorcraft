@@ -8,12 +8,12 @@ mod corpus;
 #[path = "../../affinity/tests/support/text_fixture.rs"]
 mod fixture;
 use fixture::*;
-use vectorcraft_affinity::synth::{F, tag};
-use vectorcraft_doc::{
+use logocraft_affinity::synth::{F, tag};
+use logocraft_doc::{
     Document, Node, NodeKind, TextObject,
     text::{CharStyle, Justify, TextKind},
 };
-use vectorcraft_engine::cmd::fileio;
+use logocraft_engine::cmd::fileio;
 
 fn texts(d: &Document) -> Vec<&TextObject> {
     fn walk<'a>(n: &'a Node, out: &mut Vec<&'a TextObject>) {
@@ -59,8 +59,8 @@ fn unicode_mixed_fonts_line_breaks_and_styles_remain_editable_after_save() {
     assert_eq!(t.para.justify, Justify::Center);
     assert!(matches!(t.kind, TextKind::Point));
     assert_eq!(t.xf.as_coeffs(), [1.0, 0.0, 0.0, 1.0, 187.5, 87.0]);
-    let saved = vectorcraft_format::save_file(&loaded.doc);
-    let restored = vectorcraft_format::load(&saved).unwrap();
+    let saved = logocraft_format::save_file(&loaded.doc);
+    let restored = logocraft_format::load(&saved).unwrap();
     assert_eq!(texts(&restored)[0], t);
 }
 
@@ -151,7 +151,7 @@ fn caps_and_feature_overrides_pass_through_to_editable_type() {
     assert!(t.runs[0].style.all_caps);
     assert_eq!(t.runs[0].style.features, ["-liga", "ss01"]);
     assert!(loaded.warnings.iter().any(|w| w.contains("retained but not rendered")));
-    let restored = vectorcraft_format::load(&vectorcraft_format::save_file(&loaded.doc)).unwrap();
+    let restored = logocraft_format::load(&logocraft_format::save_file(&loaded.doc)).unwrap();
     assert_eq!(texts(&restored)[0], t);
 }
 
@@ -176,7 +176,7 @@ fn pinned_affinity3_text_opens_as_editable_unicode_with_resolved_emoji_font() {
     {
         let loaded = load(name);
         assert!(!texts(&loaded.doc).is_empty(), "{name}");
-        let restored = vectorcraft_format::load(&vectorcraft_format::save_file(&loaded.doc)).unwrap();
+        let restored = logocraft_format::load(&logocraft_format::save_file(&loaded.doc)).unwrap();
         assert_eq!(texts(&restored), texts(&loaded.doc), "{name}");
     }
 }
@@ -185,7 +185,7 @@ fn pinned_affinity3_text_opens_as_editable_unicode_with_resolved_emoji_font() {
 fn installed_postscript_identity_overrides_ambiguous_family_and_weight() {
     // This is an OS font metadata check. No font file is committed or required; the structural
     // fallback cases above always run, including when the optional font repository is absent.
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     let Some((family, face_style)) = db.by_postscript_name("DejaVuSans") else {
         eprintln!("DejaVuSans is not installed; exact PostScript face test skipped");
         return;

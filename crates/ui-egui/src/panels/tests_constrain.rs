@@ -8,29 +8,29 @@ use super::tests_appearance::{frame_raw, run};
 use super::*;
 
 /// What draws a set of size fields.
-type Draw = fn(&mut VectorcraftApp, &mut Ui);
+type Draw = fn(&mut LogocraftApp, &mut Ui);
 
 /// A selected 100 × 50 pt rectangle.
-fn rect_app() -> VectorcraftApp {
-    let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+fn rect_app() -> LogocraftApp {
+    let mut app = LogocraftApp::new(logocraft_engine::Session::new(), Default::default());
     run(&mut app, "file.new", json!({"width": 400, "height": 400}));
     let id = run(&mut app, "shape.rectangle", json!({"x": 10, "y": 10, "width": 100, "height": 50}))["id"].clone();
     run(&mut app, "select.set", json!({ "ids": [id] }));
     app
 }
 
-fn size(app: &VectorcraftApp) -> (f64, f64) {
+fn size(app: &LogocraftApp) -> (f64, f64) {
     let st = app.session.active().unwrap();
     let b = st.doc.bounds_of(&st.selection.objects, false).unwrap();
     (b.width().round(), b.height().round())
 }
 
 /// Type `value` into the W field (the one showing "100 pt") of what `draw` shows, and press Enter.
-fn set_width(app: &mut VectorcraftApp, draw: Draw, value: &str) {
+fn set_width(app: &mut LogocraftApp, draw: Draw, value: &str) {
     let ctx = egui::Context::default();
     crate::theme::install_fonts(&ctx);
     let mut time = 0.0;
-    let mut frame = |app: &mut VectorcraftApp, events: Vec<Event>| {
+    let mut frame = |app: &mut LogocraftApp, events: Vec<Event>| {
         time += 1.0;
         frame_raw(&ctx, app, egui::RawInput { events, time: Some(time), ..Default::default() }, draw)
     };

@@ -2,10 +2,10 @@
 //! state follow the active fill or stroke, objects without bounds still show their paints, and the
 //! proxy focus can be set directly (M3.51).
 
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, Node};
+use logocraft_geom::PathData;
 use serde_json::json;
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, Node};
-use vectorcraft_geom::PathData;
 
 use super::*;
 

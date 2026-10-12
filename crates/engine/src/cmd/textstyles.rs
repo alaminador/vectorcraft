@@ -5,10 +5,10 @@
 //! (Clear Overrides first resets to the Normal style). Redefining a style updates its users but keeps
 //! their local overrides: an attribute changes only where it still had the old style's value.
 
+use logocraft_doc::{CharStyle, Document, NodeId, NodeKind, ParaStyle, TextStyleDef};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};
-use vectorcraft_doc::{CharStyle, Document, NodeId, NodeKind, ParaStyle, TextStyleDef};
 
 use super::typecmd::{refresh_bounds, text_targets};
 use super::*;
@@ -116,7 +116,7 @@ pub fn specs() -> Vec<CommandSpec> {
 // ---------- attribute plumbing ----------
 
 /// `v` as a JSON map with one key per attribute: Auto alignment, which files save as its
-/// direction's alignment plus `justify_auto` (see `vectorcraft_doc::ParaStyle`), is `"justify":
+/// direction's alignment plus `justify_auto` (see `logocraft_doc::ParaStyle`), is `"justify":
 /// "Auto"`, so a style's `justify` replaces it.
 fn to_map<T: Serialize>(v: &T) -> Option<Map<String, Value>> {
     let Ok(Value::Object(mut m)) = serde_json::to_value(v) else { return None };
@@ -202,7 +202,7 @@ fn all_text(d: &Document) -> Vec<NodeId> {
     v
 }
 
-fn text_mut(d: &mut Document, id: NodeId) -> Option<&mut vectorcraft_doc::TextObject> {
+fn text_mut(d: &mut Document, id: NodeId) -> Option<&mut logocraft_doc::TextObject> {
     match d.node_mut(id).map(|n| &mut n.kind) {
         Some(NodeKind::Text(t)) => Some(t),
         _ => None,
@@ -265,7 +265,7 @@ fn selection_attrs(s: &Session, p: &Value, kind: Kind) -> Result<Option<Map<Stri
     let Some(NodeKind::Text(t)) = id.and_then(|i| d.node(i)).map(|n| &n.kind) else { return Ok(None) };
     let at = p.get("start").and_then(Value::as_u64).map_or(0, |v| usize::try_from(v).unwrap_or(usize::MAX));
     Ok(Some(match kind {
-        Kind::Char => to_attrs(&vectorcraft_text::edit::style_at(&t.runs, at)),
+        Kind::Char => to_attrs(&logocraft_text::edit::style_at(&t.runs, at)),
         // The paragraph at `start`.
         Kind::Para => to_attrs(t.para_at(t.paragraphs_in(at, at).start)),
     }))
@@ -301,11 +301,11 @@ fn new_style_attrs(s: &Session, kind: Kind) -> Map<String, Value> {
     }
     let (set, default) = match kind {
         Kind::Char => {
-            let st = CharStyle { char_align: vectorcraft_doc::CharAlign::EmBoxCenter, ..CharStyle::default() };
+            let st = CharStyle { char_align: logocraft_doc::CharAlign::EmBoxCenter, ..CharStyle::default() };
             (to_attrs(&st), to_attrs(&CharStyle::default()))
         }
         Kind::Para => {
-            let st = ParaStyle { leading_model: vectorcraft_doc::LeadingModel::EmBoxTop, ..ParaStyle::default() };
+            let st = ParaStyle { leading_model: logocraft_doc::LeadingModel::EmBoxTop, ..ParaStyle::default() };
             (to_attrs(&st), to_attrs(&ParaStyle::default()))
         }
     };
@@ -386,7 +386,7 @@ fn apply(s: &mut Session, p: &Value, kind: Kind) -> Result<Value> {
             let Some(t) = text_mut(d, *id) else { continue };
             match kind {
                 Kind::Char => {
-                    let len = vectorcraft_text::edit::runs_len(&t.runs);
+                    let len = logocraft_text::edit::runs_len(&t.runs);
                     let (a, b) = match range {
                         Some(_) => {
                             let g = |k: &str, def: usize| p.get(k).and_then(Value::as_u64).map_or(def, |v| (v as usize).min(len));
@@ -395,7 +395,7 @@ fn apply(s: &mut Session, p: &Value, kind: Kind) -> Result<Value> {
                         None => (0, len),
                     };
                     let mut err = None;
-                    vectorcraft_text::edit::style_range(&mut t.runs, a.min(b), a.max(b), |st| match char_fn(st) {
+                    logocraft_text::edit::style_range(&mut t.runs, a.min(b), a.max(b), |st| match char_fn(st) {
                         Ok(n) => *st = n,
                         Err(e) => err = Some(e),
                     });
@@ -534,7 +534,7 @@ mod tests {
         (s, id)
     }
 
-    fn runs(s: &Session, id: u64) -> Vec<vectorcraft_doc::TextRun> {
+    fn runs(s: &Session, id: u64) -> Vec<logocraft_doc::TextRun> {
         match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
             NodeKind::Text(t) => t.runs.clone(),
             _ => panic!(),
@@ -603,12 +603,12 @@ mod tests {
             NodeKind::Text(t) => t.para.clone(),
             _ => panic!(),
         };
-        assert_eq!((para(&s).justify, para(&s).space_after), (vectorcraft_doc::Justify::Center, 6.0));
+        assert_eq!((para(&s).justify, para(&s).space_after), (logocraft_doc::Justify::Center, 6.0));
         // The Normal style can be redefined too (stored once redefined).
         s.execute("paraStyle.redefine", &json!({"name": NORMAL_PARA})).unwrap();
         assert_eq!(s.execute("paraStyle.list", &json!({})).unwrap()["styles"][0]["attrs"]["justify"], "Center");
         let d = s.doc().unwrap().doc.clone();
-        let back = vectorcraft_format::load(&vectorcraft_format::save(&d, false)).unwrap();
+        let back = logocraft_format::load(&logocraft_format::save(&d, false)).unwrap();
         assert_eq!(back.para_styles, d.para_styles);
     }
 }

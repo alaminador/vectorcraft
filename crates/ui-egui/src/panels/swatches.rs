@@ -8,19 +8,19 @@
 use std::sync::Arc;
 
 use egui::{Color32, Rect, Response, Sense, Shape, Stroke, StrokeKind, Ui, pos2, vec2};
+use logocraft_color::libraries::{BuiltinLibrary, GRADIENT_LIBRARIES, SWATCH_LIBRARIES};
+use logocraft_color::swatch::REGISTRATION;
+use logocraft_color::{Color, GradientKind, Paint, Swatch, SwatchLibrary};
+use logocraft_doc::Document;
+use logocraft_engine::cmd::swatchlib;
 use serde_json::{Value, json};
-use vectorcraft_color::libraries::{BuiltinLibrary, GRADIENT_LIBRARIES, SWATCH_LIBRARIES};
-use vectorcraft_color::swatch::REGISTRATION;
-use vectorcraft_color::{Color, GradientKind, Paint, Swatch, SwatchLibrary};
-use vectorcraft_doc::Document;
-use vectorcraft_engine::cmd::swatchlib;
 
 use super::library_panel::{self, LibraryKind, LibraryRef, Row};
 use super::{active_paint, pstate, set_pstate};
 use crate::menus::Item;
 use crate::theme::Tokens;
 use crate::widgets::{self, PanelDrag, SwatchRows, menu_item, swatch_tile};
-use crate::{VectorcraftApp, icons};
+use crate::{LogocraftApp, icons};
 
 /// View modes of the swatch list (and of the library panel).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -109,14 +109,14 @@ impl Entry {
 
 /// The panel's rows for the kind filter and the find field's `query` (a case-insensitive name
 /// match; a colour group whose name matches shows all its swatches).
-fn entries(app: &VectorcraftApp, kind: Kind, query: &str) -> Vec<Entry> {
+fn entries(app: &LogocraftApp, kind: Kind, query: &str) -> Vec<Entry> {
     let Some(st) = app.session.active() else { return vec![] };
     let d = &st.doc;
     let q = query.trim().to_lowercase();
     let found = |n: &str| q.is_empty() || n.to_lowercase().contains(&q);
     let mut out = vec![];
     // A tint swatch shows its base's kind (global or spot).
-    let sw = |s: &vectorcraft_color::Swatch| {
+    let sw = |s: &logocraft_color::Swatch| {
         let (global, spot) = s.tint_of().and_then(|(base, _)| d.swatch(base)).map_or((s.global, s.spot), |b| (b.global, b.spot));
         // A spot colour shows the colour its art shows (a Lab one's CMYK equivalent when the Spot
         // Colors options use those).
@@ -161,14 +161,14 @@ fn swatch_params(e: &Entry) -> Option<Value> {
 }
 
 /// Apply a clicked swatch to the active proxy (Alt: the inactive one).
-fn apply(app: &mut VectorcraftApp, ui: &Ui, e: &Entry) {
+fn apply(app: &mut LogocraftApp, ui: &Ui, e: &Entry) {
     if let Some(params) = swatch_params(e) {
         super::apply_click(app, ui, params);
     }
 }
 
 /// A pattern swatch drawn as a rendered tile (cached by the definition's identity and size).
-fn pattern_thumb(app: &VectorcraftApp, ui: &Ui, r: Rect, paint: &Paint) {
+fn pattern_thumb(app: &LogocraftApp, ui: &Ui, r: Rect, paint: &Paint) {
     use std::collections::HashMap;
     type Key = (String, Vec<usize>, String, u32);
     thread_local! {
@@ -185,7 +185,7 @@ fn pattern_thumb(app: &VectorcraftApp, ui: &Ui, r: Rect, paint: &Paint) {
         px,
     );
     let tex = CACHE.with(|c| c.borrow().get(&key).cloned()).unwrap_or_else(|| {
-        let tex = vectorcraft_render::render_pattern_swatch(&st.doc, pattern, px).map(|img| {
+        let tex = logocraft_render::render_pattern_swatch(&st.doc, pattern, px).map(|img| {
             let color = egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels);
             ui.ctx().load_texture(format!("pattern-swatch-{pattern}-{px}"), color, egui::TextureOptions::LINEAR)
         });
@@ -308,7 +308,7 @@ pub(crate) fn list_icons(ui: &Ui, r: Rect, paint: &Paint, global: bool, spot: bo
 
 /// The swatches and colour groups selected in the panel, in click order, without names that no
 /// longer exist (deleted, renamed or undone).
-fn selection(app: &VectorcraftApp, ui: &Ui) -> Vec<String> {
+fn selection(app: &LogocraftApp, ui: &Ui) -> Vec<String> {
     let Some(st) = app.session.active() else { return vec![] };
     let mut names: Vec<String> = pstate(ui.ctx(), "swatch-selected");
     names.retain(|n| n == REGISTRATION || st.doc.swatch_name_taken(n));
@@ -532,7 +532,7 @@ fn same_kind(a: &Paint, b: &Paint) -> bool {
 
 /// Run a drop on the panel: move the swatches or make a swatch of the proxy's paint (a colour
 /// dropped on a folder or a grouped swatch joins that group).
-fn apply_drop(app: &mut VectorcraftApp, drop: Drop) {
+fn apply_drop(app: &mut LogocraftApp, drop: Drop) {
     let Some(d) = app.session.active().map(|st| &st.doc) else { return };
     let (cmd, params) = match drop {
         Drop::Move { names, target, after } => match move_params(d, &names, target.as_deref(), after) {
@@ -563,9 +563,9 @@ fn apply_drop(app: &mut VectorcraftApp, drop: Drop) {
 /// a Fill/Stroke proxy, the Gradient panel's thumbnail), the fill of the object whose appearance
 /// the Appearance panel's thumbnail carries (or of the first art dragged off the canvas), or the
 /// thumbnail of a dragged graphic style.
-pub(crate) fn drag_preview(app: &VectorcraftApp, ctx: &egui::Context) {
+pub(crate) fn drag_preview(app: &LogocraftApp, ctx: &egui::Context) {
     let Some(d) = egui::DragAndDrop::payload::<PanelDrag>(ctx) else { return };
-    let fill_of = |id: &vectorcraft_doc::NodeId| app.session.active().and_then(|st| st.doc.node(*id)).map(|n| n.appearance.fill_paint());
+    let fill_of = |id: &logocraft_doc::NodeId| app.session.active().and_then(|st| st.doc.node(*id)).map(|n| n.appearance.fill_paint());
     let (paint, registration) = match &*d {
         // Colour groups paint nothing.
         PanelDrag::Paint { params, .. } if params.is_null() => return,
@@ -609,13 +609,13 @@ fn find_id() -> egui::Id {
     egui::Id::new("swatch-find")
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     body(app, ui, TILE);
 }
 
 /// The panel in a Fill/Stroke chip popover (the Control bar's and Properties'): the same body, its
 /// tiles under their own ids so it can be open beside the panel.
-pub(crate) fn popover(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub(crate) fn popover(app: &mut LogocraftApp, ui: &mut Ui) {
     body(app, ui, POPOVER_TILE);
 }
 
@@ -624,7 +624,7 @@ const TILE: &str = "swatch-tile";
 const POPOVER_TILE: &str = "swatch-pop-tile";
 
 /// The panel's body; `salt` keys its tiles (see [`tile_id`]).
-fn body(app: &mut VectorcraftApp, ui: &mut Ui, salt: &'static str) {
+fn body(app: &mut LogocraftApp, ui: &mut Ui, salt: &'static str) {
     if app.session.active().is_none() {
         super::empty_state(ui, "swatch-book", tl!("No document"), tl!("Open a document to see its swatches."));
         return;
@@ -729,7 +729,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut Ui, salt: &'static str) {
 
 /// The swatch the active paint comes from: a linked colour's global swatch (a tint's tint swatch
 /// when there is one), a gradient's gradient swatch, or None.
-fn active_swatch(app: &VectorcraftApp) -> Option<String> {
+fn active_swatch(app: &LogocraftApp) -> Option<String> {
     match active_paint(app) {
         Paint::Solid { swatch: Some(n), tint, .. } => {
             let d = &app.session.active()?.doc;
@@ -815,7 +815,7 @@ fn deletable(sel: &[String]) -> Vec<String> {
 
 /// The selected swatch when exactly one swatch with an editor is selected (not None, Registration
 /// or a group).
-fn editable(app: &VectorcraftApp, sel: &[String]) -> Option<String> {
+fn editable(app: &LogocraftApp, sel: &[String]) -> Option<String> {
     match sel {
         [n] if !n.starts_with('[') && app.session.active().is_some_and(|st| st.doc.swatch(n).is_some()) => Some(n.clone()),
         _ => None,
@@ -823,24 +823,24 @@ fn editable(app: &VectorcraftApp, sel: &[String]) -> Option<String> {
 }
 
 /// The selected solid-colour swatches in selection order (Merge Swatches keeps the first).
-fn mergeable(app: &VectorcraftApp, sel: &[String]) -> Vec<String> {
+fn mergeable(app: &LogocraftApp, sel: &[String]) -> Vec<String> {
     let Some(st) = app.session.active() else { return vec![] };
     sel.iter().filter(|n| st.doc.swatch(n).is_some_and(|w| w.paint.color().is_some())).cloned().collect()
 }
 
 /// The first selected colour group (Ungroup Color Group).
-fn selected_group(app: &VectorcraftApp, sel: &[String]) -> Option<String> {
+fn selected_group(app: &LogocraftApp, sel: &[String]) -> Option<String> {
     let d = &app.session.active()?.doc;
     sel.iter().find(|n| d.swatch_groups.iter().any(|g| g.name == **n)).cloned()
 }
 
 /// Edit or Apply Color Group: Recolor Artwork on colour group `group` (and the selected art).
-fn edit_group(app: &mut VectorcraftApp, group: &str) {
+fn edit_group(app: &mut LogocraftApp, group: &str) {
     app.run("ui.recolorDialog", json!({ "group": group })).ok();
 }
 
 /// Delete `names` (swatches and colour groups) after asking, or at once with `now` (Alt-click).
-fn delete(app: &mut VectorcraftApp, names: Vec<String>, now: bool) {
+fn delete(app: &mut LogocraftApp, names: Vec<String>, now: bool) {
     let params = json!({"names": names});
     if now {
         app.run("swatch.delete", params).ok();
@@ -853,7 +853,7 @@ fn delete(app: &mut VectorcraftApp, names: Vec<String>, now: bool) {
     crate::dialogs::confirm::ask(app, &message, tl!("Art using a deleted global swatch keeps its colour."), "swatch.delete", params);
 }
 
-fn bottom(app: &mut VectorcraftApp, ui: &mut Ui, sel: &[String]) {
+fn bottom(app: &mut LogocraftApp, ui: &mut Ui, sel: &[String]) {
     let kind: Kind = pstate(ui.ctx(), "swatch-kind");
     widgets::bottom_bar(ui, |ui| {
         let open = app.ui.library_panel.as_ref().is_some_and(|o| o.kind == SwatchLibraries::KIND);
@@ -900,13 +900,13 @@ fn bottom(app: &mut VectorcraftApp, ui: &mut Ui, sel: &[String]) {
 
 /// The colour group the selection points at: the last selected group, or the group of the last
 /// selected swatch.
-fn target_group(app: &VectorcraftApp, sel: &[String]) -> Option<String> {
+fn target_group(app: &LogocraftApp, sel: &[String]) -> Option<String> {
     group_of(&app.session.active()?.doc, sel.last()?)
 }
 
 /// New Swatch from the active paint (a colour goes into the selected colour group): opens the
 /// dialog, or saves at once with `now` (Alt-click). `spot` (Cmd/Ctrl-click) makes a spot colour.
-fn new_swatch(app: &mut VectorcraftApp, sel: &[String], spot: bool, now: bool) {
+fn new_swatch(app: &mut LogocraftApp, sel: &[String], spot: bool, now: bool) {
     let paint = active_paint(app);
     let group = paint.color().and_then(|_| target_group(app, sel));
     if !now {
@@ -921,7 +921,7 @@ fn new_swatch(app: &mut VectorcraftApp, sel: &[String], spot: bool, now: bool) {
     app.run("swatch.new", params).ok();
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let view: View = pstate(ui.ctx(), "swatch-view");
     let selected = selection(app, ui);
     let del = deletable(&selected);
@@ -1004,7 +1004,7 @@ fn library_refs(libs: Vec<swatchlib::LibraryInfo>) -> Vec<LibraryRef> {
 }
 
 /// The swatch libraries with solid colours (not the gradient-only ones), for Limit to Library.
-pub(crate) fn colour_libraries(app: &VectorcraftApp) -> Vec<LibraryRef> {
+pub(crate) fn colour_libraries(app: &LogocraftApp) -> Vec<LibraryRef> {
     let has_colours = |id: &str| swatchlib::library(&app.session, id).is_some_and(|(_, lib)| lib.iter().any(|w| w.paint.color().is_some()));
     library_refs(swatchlib::libraries(&app.session).into_iter().filter(|l| l.category != "gradients" && has_colours(&l.id)).collect())
 }
@@ -1014,7 +1014,7 @@ pub(crate) const DOCUMENT_SWATCHES: &str = "Document Swatches";
 
 /// The name of Limit to Library choice `key` (a library id or [`swatchlib::DOCUMENT_SWATCHES`]);
 /// `None` for no limit or a library that is gone.
-pub(crate) fn limit_name(app: &VectorcraftApp, key: &str) -> Option<String> {
+pub(crate) fn limit_name(app: &LogocraftApp, key: &str) -> Option<String> {
     match key {
         "" => None,
         swatchlib::DOCUMENT_SWATCHES => Some(DOCUMENT_SWATCHES.into()),
@@ -1024,7 +1024,7 @@ pub(crate) fn limit_name(app: &VectorcraftApp, key: &str) -> Option<String> {
 
 /// The Limit to Library key for `l`: a library's id (from its id or name), or
 /// [`swatchlib::DOCUMENT_SWATCHES`] as it is.
-pub(crate) fn limit_key(app: &VectorcraftApp, l: &str) -> Result<String, String> {
+pub(crate) fn limit_key(app: &LogocraftApp, l: &str) -> Result<String, String> {
     if l == swatchlib::DOCUMENT_SWATCHES {
         return Ok(l.into());
     }
@@ -1042,10 +1042,10 @@ impl LibraryKind for SwatchLibraries {
     type Lib = Arc<SwatchLibrary>;
     type Item = Swatch;
 
-    fn list(app: &VectorcraftApp) -> Vec<LibraryRef> {
+    fn list(app: &LogocraftApp) -> Vec<LibraryRef> {
         library_refs(swatchlib::libraries(&app.session))
     }
-    fn get(app: &VectorcraftApp, id: &str) -> Option<(String, Self::Lib)> {
+    fn get(app: &LogocraftApp, id: &str) -> Option<(String, Self::Lib)> {
         swatchlib::library(&app.session, id).map(|(info, lib)| (info.name, lib))
     }
     /// Ungrouped swatches, then each colour group's folder and swatches (a group whose name
@@ -1064,7 +1064,7 @@ impl LibraryKind for SwatchLibraries {
         }
         out
     }
-    fn draw(_: &VectorcraftApp, ui: &Ui, r: Rect, w: &Swatch, selected: bool, hovered: bool) {
+    fn draw(_: &LogocraftApp, ui: &Ui, r: Rect, w: &Swatch, selected: bool, hovered: bool) {
         swatch_tile(ui, r, &w.paint, selected, hovered);
         if w.global {
             global_mark(ui, r, w.spot);
@@ -1077,21 +1077,21 @@ impl LibraryKind for SwatchLibraries {
         describe(&w.paint, w.global, w.spot)
     }
     /// Adds the swatch and applies it to the active proxy (Alt: the inactive one), as one step.
-    fn click(app: &mut VectorcraftApp, ui: &Ui, id: &str, name: &str) {
+    fn click(app: &mut LogocraftApp, ui: &Ui, id: &str, name: &str) {
         let alt = super::alt_held(ui);
         let apply = if super::proxy_cmd(app, alt) == "paint.setFill" { "fill" } else { "stroke" };
         add_from_library(app, json!({"library": id, "names": [name], "apply": apply, "focus": !alt}));
     }
-    fn add(app: &mut VectorcraftApp, id: &str, names: Vec<String>) {
+    fn add(app: &mut LogocraftApp, id: &str, names: Vec<String>) {
         add_from_library(app, json!({"library": id, "names": names}));
     }
-    fn menu_head(app: &mut VectorcraftApp, ui: &mut Ui) {
+    fn menu_head(app: &mut LogocraftApp, ui: &mut Ui) {
         if menu_item(ui, tl!("Default Swatches"), app.session.active().is_some(), false) {
             app.run("swatch.resetDefaults", json!({})).ok();
         }
         ui.separator();
     }
-    fn menu_tail(app: &mut VectorcraftApp, ui: &mut Ui) {
+    fn menu_tail(app: &mut LogocraftApp, ui: &mut Ui) {
         ui.separator();
         // As a command, so its file dialog, shown off the UI thread, loads the library when it
         // answers.
@@ -1107,7 +1107,7 @@ impl LibraryKind for SwatchLibraries {
     }
 }
 
-fn add_from_library(app: &mut VectorcraftApp, params: Value) {
+fn add_from_library(app: &mut LogocraftApp, params: Value) {
     if let Err(e) = app.run("swatch.library.add", params) {
         app.status(e);
     }
@@ -1115,21 +1115,21 @@ fn add_from_library(app: &mut VectorcraftApp, params: Value) {
 
 /// `window.swatchLibrary {library}`: open a swatch library in the library panel (`library` null
 /// closes it).
-pub(crate) fn open_library(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
+pub(crate) fn open_library(app: &mut LogocraftApp, p: &Value) -> Result<Value, String> {
     library_panel::open_command::<SwatchLibraries>(app, p, "swatch.library.list", |app, key| {
         swatchlib::library(&app.session, key).map(|(info, lib)| (info.id, info.name, lib.len()))
     })
 }
 
 /// `swatch.library.load` params, then open the library in the panel.
-pub(crate) fn load_library(app: &mut VectorcraftApp, params: Value) -> Result<Value, String> {
+pub(crate) fn load_library(app: &mut LogocraftApp, params: Value) -> Result<Value, String> {
     let r = app.run("swatch.library.load", params)?;
     open_library(app, &json!({ "library": r["library"] }))
 }
 
 /// Other Library…: load the library (or document) at `path`, else one picked in an open dialog
 /// (on the web the picked file arrives later and opens through [`crate::io::open_bytes`]).
-pub(crate) fn other_library(app: &mut VectorcraftApp, path: Option<String>) -> Result<Value, String> {
+pub(crate) fn other_library(app: &mut LogocraftApp, path: Option<String>) -> Result<Value, String> {
     match library_panel::pick_library_file(app, path)? {
         Some(path) => load_library(app, json!({ "path": path })),
         None => Ok(Value::Null),
@@ -1140,7 +1140,7 @@ pub(crate) fn other_library(app: &mut VectorcraftApp, path: Option<String>) -> R
 pub(crate) const USER_SLOT: &str = "window.userSwatchLibrary";
 
 /// The User Defined library slot `id` (`window.userSwatchLibrary3`) stands for.
-pub(crate) fn user_library(app: &VectorcraftApp, id: &str) -> Option<swatchlib::LibraryInfo> {
+pub(crate) fn user_library(app: &LogocraftApp, id: &str) -> Option<swatchlib::LibraryInfo> {
     library_panel::user_slot(id, USER_SLOT, swatchlib::libraries(&app.session))
 }
 
@@ -1177,28 +1177,28 @@ mod tests {
     use super::*;
     use crate::dialogs::swatch_options::KIND;
     use egui::{Event, Modifiers, PointerButton, Pos2};
-    use vectorcraft_color::Color;
-    use vectorcraft_engine::Session;
+    use logocraft_color::Color;
+    use logocraft_engine::Session;
 
-    fn app() -> VectorcraftApp {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    fn app() -> LogocraftApp {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
         app
     }
 
     /// One frame of `draw` on a persistent context (clicks need the previous frame's layout).
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<Event>, time: f64, draw: fn(&mut VectorcraftApp, &mut Ui)) {
+    fn frame(app: &mut LogocraftApp, ctx: &egui::Context, events: Vec<Event>, time: f64, draw: fn(&mut LogocraftApp, &mut Ui)) {
         frame_with(app, ctx, events, Modifiers::NONE, time, draw);
     }
 
     /// [`frame`] with `modifiers` held.
     fn frame_with(
-        app: &mut VectorcraftApp,
+        app: &mut LogocraftApp,
         ctx: &egui::Context,
         events: Vec<Event>,
         modifiers: Modifiers,
         time: f64,
-        draw: fn(&mut VectorcraftApp, &mut Ui),
+        draw: fn(&mut LogocraftApp, &mut Ui),
     ) {
         let screen_rect = Some(Rect::from_min_size(Pos2::ZERO, vec2(280.0, 700.0)));
         let events = std::iter::once(Event::ModifiersChanged(modifiers)).chain(events).collect();
@@ -1219,14 +1219,14 @@ mod tests {
     }
 
     /// Double-click the thumbnail of swatch `name` in the panel.
-    fn double_click_tile(app: &mut VectorcraftApp, ctx: &egui::Context, name: &str) {
+    fn double_click_tile(app: &mut LogocraftApp, ctx: &egui::Context, name: &str) {
         frame(app, ctx, vec![], 0.0, show);
         let tile = ctx.read_response(egui::Id::new(("swatch-tile", name))).unwrap_or_else(|| panic!("no tile for {name}")).rect;
         frame(app, ctx, double_click(tile.center()), 1.0, show);
     }
 
     /// Click the thumbnail of swatch or group `name` with `modifiers` held (frames at `time`, `time + 0.5`).
-    fn click_tile(app: &mut VectorcraftApp, ctx: &egui::Context, name: &str, modifiers: Modifiers, time: f64) {
+    fn click_tile(app: &mut LogocraftApp, ctx: &egui::Context, name: &str, modifiers: Modifiers, time: f64) {
         frame(app, ctx, vec![], time, show);
         let at = ctx.read_response(egui::Id::new(("swatch-tile", name))).unwrap_or_else(|| panic!("no tile for {name}")).rect.center();
         let button = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers };
@@ -1237,7 +1237,7 @@ mod tests {
         pstate(ctx, "swatch-selected")
     }
 
-    fn dialog_frame(app: &mut VectorcraftApp, ctx: &egui::Context) {
+    fn dialog_frame(app: &mut LogocraftApp, ctx: &egui::Context) {
         frame(app, ctx, vec![], 2.0, |app, ui| crate::dialogs::show(app, ui.ctx()));
     }
 
@@ -1262,7 +1262,7 @@ mod tests {
         assert!(app.ui.dialog.is_none() && !app.session.in_interaction());
         let doc = &app.session.doc().unwrap().doc;
         assert_eq!(doc.swatch("Signal").and_then(|w| w.paint.color()).map(|c| c.to_hex()), Some("#00ff00".into()));
-        let fill = doc.node(vectorcraft_doc::NodeId(id.as_u64().unwrap())).unwrap().appearance.fill_paint();
+        let fill = doc.node(logocraft_doc::NodeId(id.as_u64().unwrap())).unwrap().appearance.fill_paint();
         assert_eq!(fill, Paint::Solid { color: Color::from_hex("#00ff00").unwrap(), swatch: Some("Signal".into()), tint: 1.0 });
         assert_eq!(app.session.doc().unwrap().history.undo.len(), undo + 1);
     }
@@ -1325,7 +1325,7 @@ mod tests {
         assert!(app.ui.dialog.is_none());
         let doc = &app.session.doc().unwrap().doc;
         assert!(doc.swatch("Red").is_none() && doc.swatch("Bright Red").is_none() && doc.swatch_groups.iter().all(|g| g.name != "Brights"));
-        let fill = doc.node(vectorcraft_doc::NodeId(id.as_u64().unwrap())).unwrap().appearance.fill_paint();
+        let fill = doc.node(logocraft_doc::NodeId(id.as_u64().unwrap())).unwrap().appearance.fill_paint();
         assert_eq!(fill, Paint::solid(Color::from_hex("#ed1c24").unwrap()), "the art keeps its colour, unlinked");
         // Cancel keeps the swatch; Alt-click (now) deletes without asking.
         delete(&mut app, vec!["Orange".into()], false);
@@ -1391,7 +1391,7 @@ mod tests {
         let doc = &app.session.doc().unwrap().doc;
         let g = doc.swatch_groups.iter().find(|g| g.name == "Color Group 2").expect("group made");
         assert_eq!(g.swatches.iter().map(|w| (w.name.as_str(), w.global)).collect::<Vec<_>>(), [("R=18 G=52 B=86", true)]);
-        let fill = doc.node(vectorcraft_doc::NodeId(id.as_u64().unwrap())).unwrap().appearance.fill_paint();
+        let fill = doc.node(logocraft_doc::NodeId(id.as_u64().unwrap())).unwrap().appearance.fill_paint();
         assert_eq!(fill, Paint::Solid { color: Color::from_hex("#123456").unwrap(), swatch: Some("R=18 G=52 B=86".into()), tint: 1.0 });
     }
 
@@ -1401,7 +1401,7 @@ mod tests {
     }
 
     /// Press at `from`, drag to `to` and release there, a frame per step from `time`.
-    fn drag(app: &mut VectorcraftApp, ctx: &egui::Context, from: Pos2, to: Pos2, time: f64) {
+    fn drag(app: &mut LogocraftApp, ctx: &egui::Context, from: Pos2, to: Pos2, time: f64) {
         let button = |pos, pressed| Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
         frame(app, ctx, vec![Event::PointerMoved(from), button(from, true)], time, show);
         frame(app, ctx, vec![Event::PointerMoved(from + vec2(6.0, 4.0))], time + 0.1, show);
@@ -1409,7 +1409,7 @@ mod tests {
         frame(app, ctx, vec![Event::PointerMoved(to), button(to, false)], time + 0.3, show);
     }
 
-    fn names_of(app: &VectorcraftApp, group: Option<&str>) -> Vec<String> {
+    fn names_of(app: &LogocraftApp, group: Option<&str>) -> Vec<String> {
         let d = &app.session.active().unwrap().doc;
         let list = match group {
             Some(g) => &d.swatch_groups.iter().find(|x| x.name == g).unwrap().swatches,
@@ -1494,14 +1494,14 @@ mod tests {
         frame(&mut app, &ctx, vec![], 0.0, show);
         // Released over a swatch tile: the list takes it.
         let at = tile_center(&ctx, "Bright Red");
-        egui::DragAndDrop::set_payload(&ctx, PanelDrag::Art(vec![vectorcraft_doc::NodeId(id)]));
+        egui::DragAndDrop::set_payload(&ctx, PanelDrag::Art(vec![logocraft_doc::NodeId(id)]));
         let release = Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE };
         frame(&mut app, &ctx, vec![Event::PointerMoved(at), release], 1.0, show);
         let patterns = app.run("pattern.list", json!({})).unwrap();
         assert_eq!(patterns["patterns"].as_array().map(Vec::len), Some(1), "{patterns}");
         assert_eq!(patterns["editing"], Value::Null, "no pattern editing mode");
         let st = app.session.doc().unwrap();
-        assert_eq!(st.doc.node(vectorcraft_doc::NodeId(id)), before.node(vectorcraft_doc::NodeId(id)), "the art stays as it was");
+        assert_eq!(st.doc.node(logocraft_doc::NodeId(id)), before.node(logocraft_doc::NodeId(id)), "the art stays as it was");
         assert!(egui::DragAndDrop::payload::<PanelDrag>(&ctx).is_none());
     }
 
@@ -1529,10 +1529,10 @@ mod tests {
         frame(&mut app, &ctx, vec![], 0.0, show);
         let grad = |c: &str| {
             let stops =
-                vec![vectorcraft_color::GradientStop::new(0.0, Color::from_hex(c).unwrap()), vectorcraft_color::GradientStop::new(1.0, Color::WHITE)];
-            Paint::Gradient(Box::new(vectorcraft_color::GradientPaint::new(vectorcraft_color::Gradient { kind: GradientKind::Radial, stops })))
+                vec![logocraft_color::GradientStop::new(0.0, Color::from_hex(c).unwrap()), logocraft_color::GradientStop::new(1.0, Color::WHITE)];
+            Paint::Gradient(Box::new(logocraft_color::GradientPaint::new(logocraft_color::Gradient { kind: GradientKind::Radial, stops })))
         };
-        let drop_on = |app: &mut VectorcraftApp, name: &str, paint: Paint, m: Modifiers, time: f64| {
+        let drop_on = |app: &mut LogocraftApp, name: &str, paint: Paint, m: Modifiers, time: f64| {
             let at = tile_center(&ctx, name);
             egui::DragAndDrop::set_payload(&ctx, PanelDrag::paint(paint));
             let release = Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: false, modifiers: m };
@@ -1562,7 +1562,7 @@ mod tests {
     #[test]
     fn kind_filter() {
         let solid = Paint::solid(Color::BLACK);
-        let grad = Paint::Gradient(Box::new(vectorcraft_color::GradientPaint::new(Default::default())));
+        let grad = Paint::Gradient(Box::new(logocraft_color::GradientPaint::new(Default::default())));
         assert!(Kind::All.accepts(&grad, false));
         assert!(Kind::Color.accepts(&solid, false));
         assert!(!Kind::Color.accepts(&grad, false));
@@ -1599,7 +1599,7 @@ mod tests {
         let mut app = app();
         let lab = Color::lab(60.0, 50.0, 20.0);
         app.run("swatch.new", json!({"name": "Ink", "color": lab, "spot": true})).unwrap();
-        let tile = |app: &VectorcraftApp| {
+        let tile = |app: &LogocraftApp| {
             let ink = entries(app, Kind::All, "Ink").into_iter().find(|e| e.name() == "Ink");
             let Some(Entry::Swatch { paint, .. }) = ink else { panic!("the Ink tile") };
             paint.color().unwrap()

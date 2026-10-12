@@ -9,9 +9,9 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use logocraft_doc::{Artboard, Document, LAYER_COLORS, LayerColor, Node, NodeId, NodeKind, Scaling};
+use logocraft_geom::{Affine, Rect};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Artboard, Document, LAYER_COLORS, LayerColor, Node, NodeId, NodeKind, Scaling};
-use vectorcraft_geom::{Affine, Rect};
 
 use super::*;
 use crate::EngineError;
@@ -264,7 +264,7 @@ fn layer_color_param(v: &Value) -> std::result::Result<LayerColor, String> {
             if let Some(i) = LAYER_COLORS.iter().position(|(name, _)| name.eq_ignore_ascii_case(s.trim())) {
                 return Ok(LayerColor::Preset(i as u8));
             }
-            let c = vectorcraft_color::Color::from_hex(s).ok_or_else(|| format!("`{s}` is not a colour (#rrggbb or a preset name)"))?;
+            let c = logocraft_color::Color::from_hex(s).ok_or_else(|| format!("`{s}` is not a colour (#rrggbb or a preset name)"))?;
             let [r, g, b, _] = c.to_rgba8(1.0);
             Ok(LayerColor::Custom([r, g, b]))
         }
@@ -790,7 +790,7 @@ fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
     // Position fields honor Move Artwork independently of Scale Artwork. A resize still
     // leaves the art alone unless scaling was requested. Fit-to-art callers keep the default.
     let delta = now.origin() - was.origin();
-    let moving = !resized && bool_or(p, "moveArt", false) && delta != vectorcraft_geom::Vec2::ZERO;
+    let moving = !resized && bool_or(p, "moveArt", false) && delta != logocraft_geom::Vec2::ZERO;
     let transform = fit.or_else(|| moving.then(|| Affine::translate(delta)));
     let art = if transform.is_some() {
         // Locked and hidden art too? Noted in the journal, so a replay transforms the same objects
@@ -847,7 +847,7 @@ fn rect_map(from: Rect, to: Rect) -> Option<Affine> {
 /// layers don't count.
 fn artboard_fit_art(s: &mut Session, p: &Value) -> Result<Value> {
     let i = p.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-    let b = vectorcraft_render::encode::art_bounds(&s.doc()?.doc).ok_or_else(|| EngineError::Other("no artwork".into()))?;
+    let b = logocraft_render::encode::art_bounds(&s.doc()?.doc).ok_or_else(|| EngineError::Other("no artwork".into()))?;
     s.execute("artboard.setProps", &json!({"index": i, "x": b.x0, "y": b.y0, "width": b.width(), "height": b.height()}))
 }
 

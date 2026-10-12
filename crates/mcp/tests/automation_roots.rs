@@ -1,4 +1,4 @@
-//! `vectorcraft-cli mcp --automation-read-root <dir> --automation-write-root <dir>` (#832): through
+//! `logocraft-cli mcp --automation-read-root <dir> --automation-write-root <dir>` (#832): through
 //! the MCP protocol, files open only from inside the read root and are saved, exported and
 //! captured only inside the write root; paths that leave a root (`..`, another folder, a sibling
 //! with the same prefix) are refused, and nothing is written outside.
@@ -7,16 +7,16 @@
 
 use std::path::{Path, PathBuf};
 
+use logocraft_engine::file_access::AutomationRoots;
+use logocraft_mcp::{Headless, Server};
 use serde_json::{Value, json};
-use vectorcraft_engine::file_access::AutomationRoots;
-use vectorcraft_mcp::{Headless, Server};
 
 const SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="20" height="10" fill="red"/></svg>"#;
 
 /// A folder holding `in` (the read root, with `a.svg`), `out` (the write root), `outside` (with
 /// `b.svg`) and `in2`, and a server confined to `in` and `out` (either may be left out).
 fn confined(tag: &str, read: bool, write: bool) -> (Server, PathBuf) {
-    let base = vectorcraft_testkit::temp_dir(&format!("roots-{tag}"));
+    let base = logocraft_testkit::temp_dir(&format!("roots-{tag}"));
     for d in ["in", "out", "outside", "in2"] {
         std::fs::create_dir_all(base.join(d)).unwrap();
     }

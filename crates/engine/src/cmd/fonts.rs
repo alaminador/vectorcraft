@@ -4,8 +4,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use logocraft_doc::{Document, Node, NodeId, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind};
 
 use super::typecmd::refresh_bounds;
 use super::*;
@@ -64,7 +64,7 @@ pub fn specs() -> Vec<CommandSpec> {
 fn scope(s: &Session, selection_only: bool) -> Result<Vec<NodeId>> {
     let st = s.doc()?;
     let mut v = vec![];
-    let mut add = |n: &vectorcraft_doc::Node| {
+    let mut add = |n: &logocraft_doc::Node| {
         n.walk(&mut |c| {
             if matches!(c.kind, NodeKind::Text(_)) && !v.contains(&c.id) {
                 v.push(c.id);
@@ -106,10 +106,10 @@ pub(super) fn used_fonts(d: &Document) -> BTreeSet<UsedFont> {
 /// What an export that draws type (as outlines, embedded fonts or pixels) says when `d` uses font
 /// families that aren't available: their type is drawn in the fallback font, not the font it names.
 pub(super) fn substitution_warning(d: &Document) -> Option<String> {
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     let mut missing: Vec<String> = used_fonts(d)
         .into_iter()
-        .filter(|(family, style, _)| db.resolve(family, style).is_none_or(|(_, m)| m == vectorcraft_text::FontMatch::Missing))
+        .filter(|(family, style, _)| db.resolve(family, style).is_none_or(|(_, m)| m == logocraft_text::FontMatch::Missing))
         .map(|(family, _, _)| family)
         .collect();
     // Sorted by family: its styles and versions are neighbours.
@@ -117,13 +117,13 @@ pub(super) fn substitution_warning(d: &Document) -> Option<String> {
     (!missing.is_empty()).then(|| {
         format!(
             "fonts that aren't available were written in the fallback font, {}: {} (install them, or replace them with Find Font)",
-            vectorcraft_text::FALLBACK_FAMILY,
+            logocraft_text::FALLBACK_FAMILY,
             missing.join(", ")
         )
     })
 }
 
-fn text(d: &Document, id: NodeId) -> Option<&vectorcraft_doc::TextObject> {
+fn text(d: &Document, id: NodeId) -> Option<&logocraft_doc::TextObject> {
     match d.node(id).map(|n| &n.kind) {
         Some(NodeKind::Text(t)) => Some(t),
         _ => None,
@@ -133,7 +133,7 @@ fn text(d: &Document, id: NodeId) -> Option<&vectorcraft_doc::TextObject> {
 fn fonts(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = scope(s, bool_or(p, "selectionOnly", false))?;
     let d = &s.doc()?.doc;
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     let mut found: BTreeMap<UsedFont, (usize, Vec<NodeId>, String)> = BTreeMap::new();
     for id in ids {
         for r in text(d, id).map(|t| t.runs.as_slice()).unwrap_or_default() {
@@ -150,14 +150,14 @@ fn fonts(s: &mut Session, p: &Value) -> Result<Value> {
         .map(|((family, style, version), (runs, objects, chars))| {
             // The face the type is set in: the version it names when that one is installed.
             let resolved = db.resolve(&family, &style).map(|(f, m)| (db.face_version(&family, &style, version.as_deref()).unwrap_or(f), m));
-            let status = resolved.as_ref().map(|(_, m)| *m).unwrap_or(vectorcraft_text::FontMatch::Missing);
+            let status = resolved.as_ref().map(|(_, m)| *m).unwrap_or(logocraft_text::FontMatch::Missing);
             let mut lacking: Vec<char> = chars.chars().filter(|c| !c.is_whitespace() && !c.is_control()).collect();
             lacking.sort_unstable();
             lacking.dedup();
             lacking.retain(|c| !resolved.as_ref().is_some_and(|(f, _)| f.covers(*c)));
             let mut row = json!({
                 "family": family, "style": style, "runs": runs, "objects": objects.len(),
-                "missing": status == vectorcraft_text::FontMatch::Missing,
+                "missing": status == logocraft_text::FontMatch::Missing,
                 "status": status.as_str(),
                 "resolved": resolved.as_ref().map(|(f, _)| json!({ "family": f.family, "style": f.style })),
                 "missingGlyphs": lacking.len(),
@@ -182,16 +182,15 @@ fn replace(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "text.replaceFont";
     let (ff, fs) = font_param(p, "from", C)?;
     let (tf, ts) = font_param(p, "to", C)?;
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     // Any name of the family (ヒラギノ角ゴシック) is stored as its own name (Hiragino Sans).
     let tf = match db.resolve(&tf, ts.as_deref().unwrap_or("Regular")) {
-        Some((f, m)) if m != vectorcraft_text::FontMatch::Missing => f.family.clone(),
+        Some((f, m)) if m != logocraft_text::FontMatch::Missing => f.family.clone(),
         _ => return Err(bad(C, format!("font family `{tf}` is not available"))),
     };
     let ids = scope(s, bool_or(p, "selectionOnly", false))?;
-    let matches = |st: &vectorcraft_doc::CharStyle| {
-        st.font_family.eq_ignore_ascii_case(&ff) && fs.as_ref().is_none_or(|x| st.font_style.eq_ignore_ascii_case(x))
-    };
+    let matches =
+        |st: &logocraft_doc::CharStyle| st.font_family.eq_ignore_ascii_case(&ff) && fs.as_ref().is_none_or(|x| st.font_style.eq_ignore_ascii_case(x));
     let n = s.edit("Replace Font", |d, _| {
         let mut n = 0;
         for id in &ids {
@@ -213,7 +212,7 @@ fn replace(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
             if changed {
-                vectorcraft_text::edit::normalize(&mut t.runs);
+                logocraft_text::edit::normalize(&mut t.runs);
                 refresh_bounds(t);
             }
         }
@@ -243,7 +242,7 @@ fn select_font(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn font_list(_: &mut Session, p: &Value) -> Result<Value> {
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     match str_param(p, "family") {
         Some(family) => {
             if !db.has_family(family) {
@@ -258,7 +257,7 @@ fn font_list(_: &mut Session, p: &Value) -> Result<Value> {
 }
 
 pub(crate) fn rescan(s: &mut Session, _: &Value) -> Result<Value> {
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     #[cfg(not(target_arch = "wasm32"))]
     let faces = db.load_system_fonts();
     #[cfg(target_arch = "wasm32")]
@@ -298,14 +297,14 @@ mod tests {
     #[test]
     fn the_additional_fonts_folder_joins_the_font_scan() {
         let mut s = Session::new();
-        let dir = std::env::temp_dir().join("vectorcraft-fonts-folder-pref");
+        let dir = std::env::temp_dir().join("logocraft-fonts-folder-pref");
         s.execute("prefs.set", &json!({"key": "fontsFolder", "value": format!("  {}  ", dir.display())})).unwrap();
-        assert_eq!(vectorcraft_text::user_font_dirs(), std::slice::from_ref(&dir));
+        assert_eq!(logocraft_text::user_font_dirs(), std::slice::from_ref(&dir));
         if !cfg!(target_arch = "wasm32") {
-            assert!(vectorcraft_text::system_font_dirs().contains(&dir));
+            assert!(logocraft_text::system_font_dirs().contains(&dir));
         }
         s.execute("prefs.set", &json!({"key": "fontsFolder", "value": ""})).unwrap();
-        assert!(vectorcraft_text::user_font_dirs().is_empty() && !vectorcraft_text::system_font_dirs().contains(&dir));
+        assert!(logocraft_text::user_font_dirs().is_empty() && !logocraft_text::system_font_dirs().contains(&dir));
     }
 
     #[test]
@@ -362,7 +361,7 @@ mod open_tests {
         assert_eq!(row("Semibold").1, "exact");
         assert_eq!(row("Black Wide").1, "substitute", "{rows:?}");
         assert_eq!(row("Black Wide").2, "Source Sans 3");
-        assert_eq!((row("Regular").1.as_str(), row("Regular").2.as_str()), ("missing", vectorcraft_text::FALLBACK_FAMILY));
+        assert_eq!((row("Regular").1.as_str(), row("Regular").2.as_str()), ("missing", logocraft_text::FALLBACK_FAMILY));
         s.execute("text.create", &json!({"x": 10, "y": 90, "text": "Ab 雅楽", "font": "Inter"})).unwrap();
         let inter = s.execute("text.fonts", &json!({})).unwrap().as_array().unwrap().iter().find(|f| f["family"] == "Inter").cloned().unwrap();
         assert_eq!(inter["missingGlyphs"], 2, "雅 and 楽 come from a fallback font: {inter}");
@@ -376,8 +375,8 @@ mod open_tests {
         s.execute("text.setStyle", &json!({"tracking": 400})).unwrap();
         let want = s.doc().unwrap().doc.node(NodeId(id)).unwrap().geometric_bounds().unwrap();
         // Save and reopen: the cache isn't in the file, yet the bounds must match.
-        let bytes = vectorcraft_format::save(&s.doc().unwrap().doc, false);
-        let reopened = vectorcraft_format::load(&bytes).unwrap();
+        let bytes = logocraft_format::save(&s.doc().unwrap().doc, false);
+        let reopened = logocraft_format::load(&bytes).unwrap();
         let mut t = Session::new();
         t.add_document(reopened, None);
         let got = t.doc().unwrap().doc.node(NodeId(id)).unwrap().geometric_bounds().unwrap();

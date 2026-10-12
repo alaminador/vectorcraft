@@ -1,14 +1,14 @@
 //! Type → Type on a Path → Type on a Path Options… (#429): the dialog shows the selected type's
 //! options (Effect, Flip, Align to Path, Spacing) and OK leaves its brackets where they are.
 
+use logocraft_doc::{NodeId, NodeKind, TextKind};
+use logocraft_engine::Session;
 use serde_json::{Value, json};
-use vectorcraft_doc::{NodeId, NodeKind, TextKind};
-use vectorcraft_engine::Session;
 
-use crate::{VectorcraftApp, dialogs, menus};
+use crate::{LogocraftApp, dialogs, menus};
 
 /// The start and end brackets of type on a path `id`.
-fn brackets(app: &VectorcraftApp, id: NodeId) -> (f64, Option<f64>) {
+fn brackets(app: &LogocraftApp, id: NodeId) -> (f64, Option<f64>) {
     match app.session.doc().unwrap().doc.node(id).map(|n| &n.kind) {
         Some(NodeKind::Text(t)) => match t.kind {
             TextKind::OnPath { start, end, .. } => (start, end),
@@ -19,7 +19,7 @@ fn brackets(app: &VectorcraftApp, id: NodeId) -> (f64, Option<f64>) {
 }
 
 /// Open Type on a Path Options… from its menu item.
-fn open_options(app: &mut VectorcraftApp) {
+fn open_options(app: &mut LogocraftApp) {
     let entry = menus::menu_entries(app).into_iter().find(|e| e.label == "Type on a Path Options…").expect("menu item");
     assert_eq!(entry.path, ["Type", "Type on a Path"]);
     assert!(entry.enabled);
@@ -29,7 +29,7 @@ fn open_options(app: &mut VectorcraftApp) {
 
 #[test]
 fn type_on_a_path_options_keep_the_type_where_it_is() {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 600, "height": 400})).unwrap();
     let path = app.run("path.create", json!({"d": "M100 200 L500 200"})).unwrap()["id"].as_u64().unwrap();
     let r = app.run("text.createInPath", json!({"path": path, "mode": "onPath", "text": "Along", "at": [300, 210]})).unwrap();

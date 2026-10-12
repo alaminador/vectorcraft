@@ -10,11 +10,11 @@ use serde_json::{Value, json};
 use super::{pstate, set_pstate};
 use crate::theme::Tokens;
 use crate::widgets::{self, menu_item};
-use crate::{VectorcraftApp, icons};
+use crate::{LogocraftApp, icons};
 
 /// The Artboard tool's Move Artwork with Artboard and Scale Artwork with Artboard options (#602) as
 /// check boxes: the Control bar and Properties show them while the tool is in use.
-pub(crate) fn art_options(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub(crate) fn art_options(app: &mut LogocraftApp, ui: &mut Ui) {
     let opts = app.session.tool_options();
     for (key, label, default) in [("moveArt", tl!("Move Artwork with Artboard"), true), ("scaleArt", tl!("Scale Artwork with Artboard"), false)] {
         let on = opts[key].as_bool().unwrap_or(default);
@@ -26,23 +26,23 @@ pub(crate) fn art_options(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// Whether artboards resized while the Artboard tool is in use take their art along (its Scale
 /// Artwork with Artboard option): the panels' sizes pass it to `artboard.setProps` as `scaleArt`.
-pub(crate) fn scale_art(app: &VectorcraftApp) -> bool {
+pub(crate) fn scale_art(app: &LogocraftApp) -> bool {
     app.session.tool_id() == "artboard" && app.session.tool_options()["scaleArt"].as_bool().unwrap_or(false)
 }
 
 /// Whether position edits take their art along, matching the Artboard tool's move option.
-pub(crate) fn move_art(app: &VectorcraftApp) -> bool {
+pub(crate) fn move_art(app: &LogocraftApp) -> bool {
     app.session.tool_id() == "artboard" && app.session.tool_options()["moveArt"].as_bool().unwrap_or(true)
 }
 
 /// The active artboard (of `n`).
-pub(crate) fn selected(app: &VectorcraftApp, n: usize) -> usize {
+pub(crate) fn selected(app: &LogocraftApp, n: usize) -> usize {
     app.view().map_or(0, |v| v.artboard).min(n.saturating_sub(1))
 }
 
 /// The selected artboards (of `n`): while the Artboard tool is in use, those it has selected
 /// (Shift-click, #1139), else the active one.
-pub(crate) fn picked(app: &VectorcraftApp, n: usize) -> Vec<usize> {
+pub(crate) fn picked(app: &LogocraftApp, n: usize) -> Vec<usize> {
     let tool = (app.session.tool_id() == "artboard").then(|| app.session.tool_options()["selected"].clone());
     let mut all: Vec<usize> = tool
         .iter()
@@ -62,7 +62,7 @@ pub(crate) fn picked(app: &VectorcraftApp, n: usize) -> Vec<usize> {
 
 /// Shift- or Ctrl/Cmd-click on artboard `i`'s row while the Artboard tool is in use: into its
 /// selection or out of it (the active one stays the navigator's).
-fn toggle(app: &mut VectorcraftApp, i: usize, n: usize) {
+fn toggle(app: &mut LogocraftApp, i: usize, n: usize) {
     let mut all = picked(app, n);
     match all.iter().position(|j| *j == i) {
         Some(at) if all.len() > 1 => {
@@ -82,7 +82,7 @@ fn toggle(app: &mut VectorcraftApp, i: usize, n: usize) {
 
 /// Make artboard `i` the active one, leaving the view where it is: the navigator's and, while it
 /// is the tool, the Artboard tool's.
-pub(crate) fn select(app: &mut VectorcraftApp, i: usize) {
+pub(crate) fn select(app: &mut LogocraftApp, i: usize) {
     if let Some(v) = app.view_mut() {
         v.artboard = i;
     }
@@ -96,7 +96,7 @@ pub(crate) fn select(app: &mut VectorcraftApp, i: usize) {
 struct RowDrag(usize);
 
 /// Duplicate artboard `i` (`artboard.duplicate`) and make the copy the active artboard.
-fn duplicate(app: &mut VectorcraftApp, i: usize) {
+fn duplicate(app: &mut LogocraftApp, i: usize) {
     if let Ok(r) = app.run("artboard.duplicate", json!({ "index": i }))
         && let Some(copy) = r["index"].as_u64()
     {
@@ -104,7 +104,7 @@ fn duplicate(app: &mut VectorcraftApp, i: usize) {
     }
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let abs: Vec<String> = app.session.active().map(|d| d.doc.artboards.iter().map(|a| a.name.clone()).collect()).unwrap_or_default();
     if abs.is_empty() {
@@ -212,11 +212,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 }
 
 /// Open Rearrange All Artboards (#681).
-pub(crate) fn open_rearrange(app: &mut VectorcraftApp) {
+pub(crate) fn open_rearrange(app: &mut LogocraftApp) {
     app.run("ui.menuDialog", json!({ "command": "artboard.rearrange" })).ok();
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let n = app.session.active().map(|d| d.doc.artboards.len()).unwrap_or(0);
     let sel = selected(app, n);
     if menu_item(ui, tl!("New Artboard"), n > 0, false) {
@@ -249,17 +249,17 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_engine::Session;
+    use logocraft_engine::Session;
 
     /// Clicking a row makes its artboard the active one (the navigator's, Fit Artboard in Window's).
     #[test]
     fn clicking_a_row_makes_its_artboard_active() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
         app.session.execute("artboard.new", &json!({"x": 400, "y": 300, "width": 200, "height": 150})).unwrap();
         app.view_mut().unwrap().artboard = 0;
         let ctx = egui::Context::default();
-        let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+        let frame = |app: &mut LogocraftApp, events: Vec<egui::Event>| {
             let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| show(app, ui));
             out.textures_delta.clear();
             out.shapes
@@ -286,11 +286,11 @@ mod tests {
     /// and an explicit artboard still wins.
     #[test]
     fn all_on_active_artboard_takes_the_active_artboard() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 100, "height": 100, "units": "Points", "artboards": 2})).unwrap();
         let mut rect = |x| app.session.execute("shape.rectangle", &json!({"x": x, "y": 10, "width": 20, "height": 20})).unwrap()["id"].clone();
         let (a, b) = (rect(10), rect(130));
-        let picked = |app: &mut VectorcraftApp, params| {
+        let picked = |app: &mut LogocraftApp, params| {
             crate::menus::invoke(app, "select.allOnArtboard", params);
             let ids: Vec<u64> = app.session.active().unwrap().selection.objects.iter().map(|n| n.0).collect();
             json!(ids)
@@ -305,7 +305,7 @@ mod tests {
     /// takes it out (#1139), and every selected row is highlighted.
     #[test]
     fn shift_clicking_rows_selects_several_artboards() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
         for x in [400, 800] {
             app.session.execute("artboard.new", &json!({"x": x, "y": 0, "width": 200, "height": 150})).unwrap();
@@ -314,7 +314,7 @@ mod tests {
         select(&mut app, 0);
         let ctx = egui::Context::default();
         let screen = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(240.0, 400.0)));
-        let frame = |app: &mut VectorcraftApp, time: f64, events: Vec<egui::Event>| {
+        let frame = |app: &mut LogocraftApp, time: f64, events: Vec<egui::Event>| {
             let raw = egui::RawInput { events, time: Some(time), screen_rect: screen, ..Default::default() };
             let mut out = ctx.run_ui(raw, |ui| show(app, ui));
             out.textures_delta.clear();
@@ -349,13 +349,13 @@ mod tests {
     /// active one.
     #[test]
     fn double_clicks_go_to_or_rename_and_options_edits_the_rows_artboard() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
         app.session.execute("artboard.new", &json!({"x": 400, "y": 300, "width": 200, "height": 150})).unwrap();
         app.view_mut().unwrap().artboard = 0;
         let ctx = egui::Context::default();
         let screen = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(240.0, 400.0)));
-        let frame = |app: &mut VectorcraftApp, time: f64, events: Vec<egui::Event>| {
+        let frame = |app: &mut LogocraftApp, time: f64, events: Vec<egui::Event>| {
             let mut out = ctx.run_ui(egui::RawInput { events, time: Some(time), screen_rect: screen, ..Default::default() }, |ui| show(app, ui));
             out.textures_delta.clear();
             out.shapes
@@ -399,8 +399,8 @@ mod tests {
         assert_eq!(app.session.tool_options()["active"], json!(1));
         // And clicking an artboard with the tool makes it the active one, highlighted in the panel.
         let view = app.view_info();
-        for kind in [vectorcraft_tools::PointerKind::Down, vectorcraft_tools::PointerKind::Up] {
-            crate::canvas::dispatch(&mut app, &vectorcraft_tools::PointerEvent::new(kind, 100.0, 100.0), view);
+        for kind in [logocraft_tools::PointerKind::Down, logocraft_tools::PointerKind::Up] {
+            crate::canvas::dispatch(&mut app, &logocraft_tools::PointerEvent::new(kind, 100.0, 100.0), view);
         }
         assert_eq!((app.session.tool_options()["active"].clone(), selected(&app, 2)), (json!(0), 0));
     }
@@ -411,7 +411,7 @@ mod tests {
     /// selected.
     #[test]
     fn choosing_the_artboard_tool_starts_it_on_the_active_artboard() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
         for x in [400, 800] {
             app.session.execute("artboard.new", &json!({"x": x, "y": 0, "width": 200, "height": 150})).unwrap();
@@ -422,9 +422,9 @@ mod tests {
         app.run("tool.options", json!({"tool": "artboard"})).unwrap();
         assert_eq!(app.ui.dialog.take().unwrap().str("name"), "Artboard 2");
         let view = app.view_info();
-        crate::canvas::dispatch(&mut app, &vectorcraft_tools::PointerEvent::new(vectorcraft_tools::PointerKind::Move, 100.0, 75.0), view);
+        crate::canvas::dispatch(&mut app, &logocraft_tools::PointerEvent::new(logocraft_tools::PointerKind::Move, 100.0, 75.0), view);
         assert_eq!(selected(&app, 3), 1, "the pointer over Artboard 1 leaves Artboard 2 active");
-        let r = app.session.tool_key(vectorcraft_tools::ToolKey::Delete, Default::default(), view);
+        let r = app.session.tool_key(logocraft_tools::ToolKey::Delete, Default::default(), view);
         crate::canvas::apply_requests(&mut app, r);
         let names: Vec<String> = app.session.active().unwrap().doc.artboards.iter().map(|a| a.name.clone()).collect();
         assert_eq!(names, ["Artboard 1", "Artboard 3"], "Delete removes Artboard 2");
@@ -441,12 +441,12 @@ mod tests {
     /// button while it is held over it, and the copy becomes the active artboard.
     #[test]
     fn dragging_a_row_onto_new_artboard_duplicates_it() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
         app.session.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap();
         let ctx = egui::Context::default();
         let screen = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(240.0, 400.0)));
-        let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+        let frame = |app: &mut LogocraftApp, events: Vec<egui::Event>| {
             let mut out = ctx.run_ui(egui::RawInput { events, screen_rect: screen, ..Default::default() }, |ui| show(app, ui));
             out.textures_delta.clear();
             out.shapes

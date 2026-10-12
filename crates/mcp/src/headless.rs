@@ -2,12 +2,12 @@
 
 use std::sync::Arc;
 
+use logocraft_engine::file_access::{self, AutomationRoots};
+use logocraft_engine::{Session, UiRequest, ViewInfo};
+use logocraft_geom::Point;
+use logocraft_render::Renderer;
+use logocraft_tools::{Mods, PointerEvent, PointerKind, TOOL_GROUPS, ToolKey};
 use serde_json::{Value, json};
-use vectorcraft_engine::file_access::{self, AutomationRoots};
-use vectorcraft_engine::{Session, UiRequest, ViewInfo};
-use vectorcraft_geom::Point;
-use vectorcraft_render::Renderer;
-use vectorcraft_tools::{Mods, PointerEvent, PointerKind, TOOL_GROUPS, ToolKey};
 
 use crate::backend::Backend;
 
@@ -35,7 +35,7 @@ const HOST_COMMANDS: &[(&str, &str, &str)] = &[
     (
         "file.save",
         "Save",
-        "{path?, format?, options?, svg?: {…SVG options}} = document.save: .vectorcraft, .ai (a PDF that reopens editable), .pdf, .svg or .svgz (default: the document's own path and format)",
+        "{path?, format?, options?, svg?: {…SVG options}} = document.save: .logocraft, .ai (a PDF that reopens editable), .pdf, .svg or .svgz (default: the document's own path and format)",
     ),
     ("file.export", "Export…", "{path?, format?, artboard?, range?, scale?, …} = document.export (no path → dataBase64)"),
     (
@@ -146,7 +146,7 @@ impl Headless {
 
     fn select_tool(&mut self, p: &Value) -> Result<Value, String> {
         let t = s(p, "tool").ok_or("missing `tool`")?;
-        if vectorcraft_tools::tool_info(t).is_none() {
+        if logocraft_tools::tool_info(t).is_none() {
             return Err(format!("unknown tool `{t}` (see ui.tool.list)"));
         }
         self.session.select_tool(t, self.view).map_err(|e| e.to_string())?;
@@ -209,7 +209,7 @@ impl Headless {
             self.apply_ui_requests(reqs, &mut out)?;
             return Ok(json!({"handledBy": "tool", "requests": out}));
         }
-        if let Some(c) = vectorcraft_engine::command_specs().iter().find(|c| c.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods))) {
+        if let Some(c) = logocraft_engine::command_specs().iter().find(|c| c.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods))) {
             let r = self.exec(c.id, &json!({}))?;
             return Ok(json!({"handledBy": "command", "command": c.id, "result": r}));
         }
@@ -237,21 +237,21 @@ impl Headless {
         let idx = p.get("artboard").and_then(Value::as_u64).unwrap_or(0) as usize;
         let r = doc.artboards.get(idx).map(|a| a.rect).ok_or("no such artboard")?;
         let scale = p.get("scale").and_then(Value::as_f64).unwrap_or(1.0).clamp(0.01, 16.0);
-        vectorcraft_render::raster_size(r, scale)?;
+        logocraft_render::raster_size(r, scale)?;
         let img = self.renderer.render_region(&doc, r, scale, true);
         let png = img.to_png()?;
         let mut out = json!({"width": img.width, "height": img.height});
         match s(p, "path") {
             Some(path) => {
                 file_access::check_write(path)?;
-                vectorcraft_format::write_atomic(std::path::Path::new(path), &png).map_err(|e| format!("write {path}: {e}"))?;
+                logocraft_format::write_atomic(std::path::Path::new(path), &png).map_err(|e| format!("write {path}: {e}"))?;
                 out["path"] = json!(path);
                 // `data: true` asks for the image as well as the file.
                 if p.get("data").and_then(Value::as_bool) == Some(true) {
-                    out["pngBase64"] = json!(vectorcraft_format::base64_encode(&png));
+                    out["pngBase64"] = json!(logocraft_format::base64_encode(&png));
                 }
             }
-            None => out["pngBase64"] = json!(vectorcraft_format::base64_encode(&png)),
+            None => out["pngBase64"] = json!(logocraft_format::base64_encode(&png)),
         }
         Ok(out)
     }
@@ -319,7 +319,7 @@ impl Headless {
             "app.export" => self.export(p),
             "app.quit" => Ok(Value::Null),
             m if m.starts_with("ui.") => {
-                Err(format!("`{m}` needs the desktop app (start `vectorcraft --control 7979` and use `vectorcraft-cli mcp --connect`)"))
+                Err(format!("`{m}` needs the desktop app (start `logocraft --control 7979` and use `logocraft-cli mcp --connect`)"))
             }
             other => Err(format!("unknown method `{other}`")),
         }

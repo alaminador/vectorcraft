@@ -14,15 +14,15 @@
 use std::sync::OnceLock;
 
 use egui::{Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
+use logocraft_color::{BlendMode, Paint};
+use logocraft_doc::{AppearanceItem, Effect, Node, NodeId};
 use serde_json::{Value, json};
-use vectorcraft_color::{BlendMode, Paint};
-use vectorcraft_doc::{AppearanceItem, Effect, Node, NodeId};
 
 use super::{live_run, pstate, set_pstate};
 use crate::panels::stroke::paint_profile;
 use crate::theme::Tokens;
 use crate::widgets::{self, PanelDrag, TransparencyEdit, menu_item};
-use crate::{VectorcraftApp, icons};
+use crate::{LogocraftApp, icons};
 
 const ROW: f32 = 30.0;
 pub(super) const EYE_W: f32 = 26.0;
@@ -67,7 +67,7 @@ impl Sel {
 
 /// The selected row of `node` (the first selected object): a selected effect row while that
 /// effect still exists and agrees with the engine's active item, else the active item's row.
-fn current_sel(app: &VectorcraftApp, ctx: &egui::Context, node: Option<&Node>) -> Sel {
+fn current_sel(app: &LogocraftApp, ctx: &egui::Context, node: Option<&Node>) -> Sel {
     let Some(n) = node else { return Sel::None };
     let (owner, sel): (Option<NodeId>, Sel) = pstate(ctx, "ap-sel");
     let exists = |item: Option<usize>, k: usize| owner == Some(n.id) && n.appearance.effects_at(item).is_some_and(|fx| k < fx.len());
@@ -82,7 +82,7 @@ fn current_sel(app: &VectorcraftApp, ctx: &egui::Context, node: Option<&Node>) -
 
 /// Select a row; its fill/stroke becomes the active item that paint and effect edits target.
 /// Other selected fills/strokes are deselected.
-pub(crate) fn select_row(app: &mut VectorcraftApp, ctx: &egui::Context, sel: Sel) {
+pub(crate) fn select_row(app: &mut LogocraftApp, ctx: &egui::Context, sel: Sel) {
     if app.session.appearance_item() != sel.item() {
         app.run("appearance.setActiveItem", json!({ "index": sel.item() })).ok();
     }
@@ -107,7 +107,7 @@ fn selected_items(ctx: &egui::Context, n: Option<&Node>, sel: Sel) -> Vec<usize>
 
 /// Click on fill/stroke row `i`: Shift extends the selection from the active row, Cmd toggles
 /// the row, a plain click selects only it.
-fn click_item(app: &mut VectorcraftApp, ctx: &egui::Context, n: &Node, sel: Sel, i: usize, m: egui::Modifiers) {
+fn click_item(app: &mut LogocraftApp, ctx: &egui::Context, n: &Node, sel: Sel, i: usize, m: egui::Modifiers) {
     let mut set = selected_items(ctx, Some(n), sel);
     let active = match sel {
         Sel::Item(a) if m.shift => {
@@ -134,13 +134,13 @@ fn click_item(app: &mut VectorcraftApp, ctx: &egui::Context, n: &Node, sel: Sel,
 }
 
 /// An effect as the fx menu lists it: (id, label without the ellipsis, Effect-menu path).
-fn catalog_entry(e: vectorcraft_effects::EffectInfo) -> (String, String, Vec<String>) {
+fn catalog_entry(e: logocraft_effects::EffectInfo) -> (String, String, Vec<String>) {
     (e.id.to_string(), e.label.trim_end_matches('…').to_string(), e.menu.iter().map(|s| s.to_string()).collect())
 }
 
 fn catalog() -> &'static [(String, String, Vec<String>)] {
     static C: OnceLock<Vec<(String, String, Vec<String>)>> = OnceLock::new();
-    C.get_or_init(|| vectorcraft_effects::effect_catalog().into_iter().map(catalog_entry).collect())
+    C.get_or_init(|| logocraft_effects::effect_catalog().into_iter().map(catalog_entry).collect())
 }
 
 /// Display label of an effect id ("stylize.dropShadow" → "Drop Shadow"; plug-in effects by their
@@ -150,7 +150,7 @@ pub fn effect_label(id: &str) -> String {
         .iter()
         .find(|c| c.0 == id)
         .map(|c| c.1.clone())
-        .or_else(|| vectorcraft_effects::effect_info(id).map(|e| e.label.trim_end_matches('…').to_string()))
+        .or_else(|| logocraft_effects::effect_info(id).map(|e| e.label.trim_end_matches('…').to_string()))
         .unwrap_or_else(|| id.rsplit('.').next().unwrap_or(id).to_string())
 }
 
@@ -242,7 +242,7 @@ fn link(ui: &mut Ui, pos: egui::Pos2, id: impl std::hash::Hash + std::fmt::Debug
     resp.clicked()
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let node = first_subject(app);
     let sel = current_sel(app, ui.ctx(), node.as_ref());
@@ -301,14 +301,14 @@ fn thumbnail_drag(ui: &mut Ui, th: Rect, id: NodeId) {
 
 /// The object the panel lists: the targeted layer, group or object (`layer.target`), else the
 /// first selected one.
-fn first_subject(app: &VectorcraftApp) -> Option<Node> {
+fn first_subject(app: &LogocraftApp) -> Option<Node> {
     let st = app.session.active()?;
     st.selection.subjects().first().and_then(|id| st.doc.node(*id)).cloned()
 }
 
 /// The selection as the Control bar and the object row name it: "No Selection", "Mixed Objects"
 /// or the kind ("Path", "Type", "Layer"…) of the object, or targeted layer, the panel lists.
-pub(crate) fn object_label(app: &VectorcraftApp) -> &'static str {
+pub(crate) fn object_label(app: &LogocraftApp) -> &'static str {
     let Some(st) = app.session.active() else { return "No Selection" };
     match st.selection.subjects() {
         [] => "No Selection",
@@ -318,7 +318,7 @@ pub(crate) fn object_label(app: &VectorcraftApp) -> &'static str {
 }
 
 /// Do the selected objects differ in appearance (fills, strokes, effects, opacity or blend mode)?
-fn mixed_appearances(app: &VectorcraftApp) -> bool {
+fn mixed_appearances(app: &LogocraftApp) -> bool {
     let Some(st) = app.session.active() else { return false };
     let mut nodes = st.selection.subjects().iter().filter_map(|id| st.doc.node(*id));
     let Some(first) = nodes.next() else { return false };
@@ -328,7 +328,7 @@ fn mixed_appearances(app: &VectorcraftApp) -> bool {
 /// What the next object drawn gets when nothing is selected (`Session::new_art`): its fills and
 /// strokes, effects and transparency as read-only rows; "Stroke:" opens the Stroke panel, which
 /// sets up its stroke.
-fn default_stack(app: &mut VectorcraftApp, ui: &mut Ui) {
+fn default_stack(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let ap = app.session.new_art();
     let (opacity, blend, _) = app.session.new_art_transparency();
@@ -393,7 +393,7 @@ enum Slot {
     Contents,
 }
 
-fn stack(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, sel: Sel, object_row: Rect) {
+fn stack(app: &mut LogocraftApp, ui: &mut Ui, n: &Node, sel: Sel, object_row: Rect) {
     let t = Tokens::get(ui.ctx());
     let ctx = ui.ctx().clone();
     let dragging: Option<Dragged> = pstate(&ctx, "ap-drag");
@@ -614,11 +614,11 @@ fn drop_command(n: &Node, rows: &[(Slot, Rect)], what: Dragged, p: egui::Pos2, c
 /// The Contents (type: Characters) row of `n`: clicking it sends paint edits to the members
 /// (characters); double-clicking Contents targets the members, Characters opens the Color panel
 /// on the characters' paint (whose chips it shows). Returns its rect and response (for dragging).
-fn contents_row(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, label: &str, sel: Sel) -> (Rect, egui::Response) {
+fn contents_row(app: &mut LogocraftApp, ui: &mut Ui, n: &Node, label: &str, sel: Sel) -> (Rect, egui::Response) {
     let (r, resp) = row(ui, sel == Sel::Contents);
     eye(ui, r, "ap-contents-eye", true, false);
     text(ui, pos2(r.left() + EYE_W + 24.0, r.center().y), tl!(label), false);
-    let characters = matches!(n.kind, vectorcraft_doc::NodeKind::Text(_));
+    let characters = matches!(n.kind, logocraft_doc::NodeKind::Text(_));
     if characters {
         for (k, stroke) in [false, true].into_iter().enumerate() {
             let cr = Rect::from_min_size(pos2(r.left() + EYE_W + 100.0 + 24.0 * k as f32, r.center().y - 9.0), vec2(18.0, 18.0));
@@ -641,7 +641,7 @@ fn contents_row(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, label: &str, se
 }
 
 /// A stroke row's notes after the weight: its brush, "Dashed" and its width profile (drawn).
-fn stroke_notes(ui: &Ui, r: Rect, st: &vectorcraft_doc::StrokeLayer) {
+fn stroke_notes(ui: &Ui, r: Rect, st: &logocraft_doc::StrokeLayer) {
     let t = Tokens::get(ui.ctx());
     let painter = ui.painter_at(r);
     let dashed = st.dash.as_ref().is_some_and(|d| d.is_dashed()).then_some(tl!("Dashed"));
@@ -663,7 +663,7 @@ fn stroke_notes(ui: &Ui, r: Rect, st: &vectorcraft_doc::StrokeLayer) {
 /// The Opacity row of the object (`item: None`) or, indented, of fill/stroke `item`. Clicking it
 /// opens a popup with the shared opacity and blend controls (`transparency.set` on that item).
 /// Returns the row's rect.
-fn opacity_row(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, opacity: f32, blend: BlendMode) -> Rect {
+fn opacity_row(app: &mut LogocraftApp, ui: &mut Ui, item: Option<usize>, opacity: f32, blend: BlendMode) -> Rect {
     let (r, resp) = row(ui, false);
     eye(ui, r, ("ap-op-eye", item), true, false);
     let lx = r.left() + EYE_W + 24.0 + if item.is_some() { 12.0 } else { 0.0 };
@@ -682,7 +682,7 @@ fn opacity_row(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, opaci
 /// An effect row: of the object (`item: None`) or, indented under it, of fill/stroke `item`.
 /// Clicking the name opens the effect's dialog to edit it (the disclosure: an inline editor).
 /// Returns the row's rect and response (for dragging).
-fn effect_row(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: usize, e: &Effect, selected: bool) -> (Rect, egui::Response) {
+fn effect_row(app: &mut LogocraftApp, ui: &mut Ui, item: Option<usize>, k: usize, e: &Effect, selected: bool) -> (Rect, egui::Response) {
     let t = Tokens::get(ui.ctx());
     let open_key = format!("ap-fx-open-{item:?}-{k}");
     let open: bool = pstate(ui.ctx(), &open_key);
@@ -721,14 +721,14 @@ fn effect_row(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: usi
 
 /// Does the effect have a dialog (any parameters)?
 fn has_options(id: &str) -> bool {
-    vectorcraft_effects::default_params(id).is_some_and(|d| d.as_object().is_some_and(|o| !o.is_empty()))
+    logocraft_effects::default_params(id).is_some_and(|d| d.as_object().is_some_and(|o| !o.is_empty()))
 }
 
 /// Inline editor for an applied effect's parameters (numbers, booleans, strings, colours);
 /// edits go through `effect.setParams`.
-fn effect_editor(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: usize, e: &Effect) {
+fn effect_editor(app: &mut LogocraftApp, ui: &mut Ui, item: Option<usize>, k: usize, e: &Effect) {
     let t = Tokens::get(ui.ctx());
-    let defaults = vectorcraft_effects::default_params(&e.id).unwrap_or(Value::Null);
+    let defaults = logocraft_effects::default_params(&e.id).unwrap_or(Value::Null);
     let mut params = defaults.as_object().cloned().unwrap_or_default();
     if let Some(cur) = e.params.as_object() {
         for (key, v) in cur {
@@ -763,7 +763,7 @@ fn effect_editor(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: 
                     }
                     Value::Number(n) => {
                         let (x, id) = (n.as_f64().unwrap_or(0.0), ("fx", item, k, key.as_str()));
-                        let nx = if vectorcraft_effects::is_length(&e.id, key, relative) {
+                        let nx = if logocraft_effects::is_length(&e.id, key, relative) {
                             widgets::num_field(ui, id, Some(x), unit, 70.0)
                         } else {
                             widgets::plain_field(ui, id, x, "", 2, 70.0)
@@ -808,7 +808,7 @@ pub fn humanize(key: &str) -> String {
 }
 
 /// Small swatch grid inside the appearance chip popup.
-fn swatch_picker(app: &mut VectorcraftApp, ui: &mut Ui, index: usize) {
+fn swatch_picker(app: &mut LogocraftApp, ui: &mut Ui, index: usize) {
     let Some(st) = app.session.active() else { return };
     let mut all: Vec<(String, Paint)> = st.doc.swatches.iter().map(|s| (s.name.clone(), s.paint.clone())).collect();
     for g in &st.doc.swatch_groups {
@@ -833,7 +833,7 @@ fn swatch_picker(app: &mut VectorcraftApp, ui: &mut Ui, index: usize) {
     }
 }
 
-fn bottom(app: &mut VectorcraftApp, ui: &mut Ui, node: Option<&Node>, sel: Sel) {
+fn bottom(app: &mut LogocraftApp, ui: &mut Ui, node: Option<&Node>, sel: Sel) {
     let has = node.is_some();
     widgets::bottom_bar(ui, |ui| {
         if widgets::icon_button_enabled(ui, "dc-new-stroke", tl!("Add New Stroke"), false, has, 24.0).clicked() {
@@ -863,7 +863,7 @@ fn bottom(app: &mut VectorcraftApp, ui: &mut Ui, node: Option<&Node>, sel: Sel) 
 }
 
 /// Duplicate the selected fills/strokes (each copy right above its row) or the selected effect.
-fn duplicate_selected(app: &mut VectorcraftApp, ui: &Ui, node: Option<&Node>, sel: Sel) {
+fn duplicate_selected(app: &mut LogocraftApp, ui: &Ui, node: Option<&Node>, sel: Sel) {
     match sel.effect() {
         Some(fx) => app.run("effect.duplicate", fx).ok(),
         None if sel.item().is_some() => app.run("appearance.duplicateItem", json!({"indices": selected_items(ui.ctx(), node, sel)})).ok(),
@@ -871,7 +871,7 @@ fn duplicate_selected(app: &mut VectorcraftApp, ui: &Ui, node: Option<&Node>, se
     };
 }
 
-fn delete_selected(app: &mut VectorcraftApp, ui: &Ui, node: Option<&Node>, sel: Sel) {
+fn delete_selected(app: &mut LogocraftApp, ui: &Ui, node: Option<&Node>, sel: Sel) {
     let ok = match sel.effect() {
         Some(fx) => app.run("effect.remove", fx).is_ok(),
         None if sel.item().is_some() => app.run("appearance.removeItem", json!({"indices": selected_items(ui.ctx(), node, sel)})).is_ok(),
@@ -886,7 +886,7 @@ fn delete_selected(app: &mut VectorcraftApp, ui: &Ui, node: Option<&Node>, sel: 
 
 /// The fx menu (Appearance panel, Properties): effects grouped by their Effect-menu submenu;
 /// opens the effect dialog.
-pub(crate) fn fx_menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub(crate) fn fx_menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let mut groups: Vec<(String, Vec<(String, String)>)> = vec![];
     // Built-in effects in the UI language.
     for (id, label, menu) in catalog().iter().map(|(id, label, menu)| (id, tl!(label), menu)) {
@@ -910,7 +910,7 @@ pub(crate) fn fx_menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let node = first_subject(app);
     let has = node.is_some();
     let sel = current_sel(app, ui.ctx(), node.as_ref());
@@ -980,9 +980,9 @@ mod tests {
 
     #[test]
     fn drops_pick_the_command() {
-        use vectorcraft_doc::{Appearance, FillLayer};
+        use logocraft_doc::{Appearance, FillLayer};
         let fx = |id: &str| Effect { id: id.into(), params: Value::Null, visible: true };
-        let mut n = Node::path(NodeId(1), vectorcraft_geom::PathData::default(), Appearance::default_art());
+        let mut n = Node::path(NodeId(1), logocraft_geom::PathData::default(), Appearance::default_art());
         n.appearance.items.push(AppearanceItem::Fill(FillLayer::new(Paint::None))); // [F, S, F]
         n.appearance.items[1].effects_mut().extend([fx("distort.twist"), fx("distort.roughen")]);
         n.appearance.effects.push(fx("stylize.dropShadow"));
@@ -1019,7 +1019,7 @@ mod tests {
     }
 
     /// One headless frame of the panel: the texts drawn, top to bottom.
-    fn frame(app: &mut VectorcraftApp) -> Vec<String> {
+    fn frame(app: &mut LogocraftApp) -> Vec<String> {
         fn texts(s: &egui::Shape, out: &mut Vec<(f32, String)>) {
             match s {
                 egui::Shape::Text(t) => out.push((t.pos.y, t.galley.text().to_string())),
@@ -1038,8 +1038,8 @@ mod tests {
 
     #[test]
     fn groups_show_a_contents_row_and_type_a_characters_row_in_their_slot() {
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        let run = |app: &mut VectorcraftApp, id: &str, p: Value| app.session.execute(id, &p).unwrap();
+        let mut app = LogocraftApp::new(logocraft_engine::Session::new(), Default::default());
+        let run = |app: &mut LogocraftApp, id: &str, p: Value| app.session.execute(id, &p).unwrap();
         run(&mut app, "file.new", json!({"width": 100, "height": 100}));
         let a = run(&mut app, "shape.rectangle", json!({"x": 0, "y": 0, "width": 20, "height": 20}))["id"].clone();
         let b = run(&mut app, "shape.rectangle", json!({"x": 30, "y": 0, "width": 20, "height": 20}))["id"].clone();
@@ -1061,7 +1061,7 @@ mod tests {
 
     #[test]
     fn drops_move_items_across_the_contents_row_and_the_row_itself() {
-        use vectorcraft_doc::FillLayer;
+        use logocraft_doc::FillLayer;
         // A group [F0 | F1 F2]: the Contents row sits above item 0.
         let mut n = Node::group(NodeId(1), vec![]);
         n.appearance.items = (0..3).map(|_| AppearanceItem::Fill(FillLayer::new(Paint::None))).collect();

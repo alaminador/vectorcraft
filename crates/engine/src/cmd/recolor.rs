@@ -5,11 +5,11 @@
 
 use std::collections::HashMap;
 
+use logocraft_color::recolor::{ColorKey, Method, Preserve, Rng, RowMap, cluster};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::swatches::node_colors;
+use logocraft_doc::{AppearanceItem, Document, NodeId, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_color::recolor::{ColorKey, Method, Preserve, Rng, RowMap, cluster};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::swatches::node_colors;
-use vectorcraft_doc::{AppearanceItem, Document, NodeId, NodeKind};
 
 use super::colorcmds::{Recolor, Scope};
 use super::*;

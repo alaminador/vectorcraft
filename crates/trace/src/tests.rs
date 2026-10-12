@@ -1,5 +1,5 @@
 use super::*;
-use vectorcraft_geom::Point;
+use logocraft_geom::Point;
 
 const BLACK: [u8; 4] = [0, 0, 0, 255];
 const WHITE: [u8; 4] = [255, 255, 255, 255];
@@ -16,7 +16,7 @@ fn disc(size: u32, cx: f64, cy: f64, r: f64) -> Raster {
 }
 
 /// Net filled area (outer contours positive, holes negative).
-fn net_area(p: &vectorcraft_geom::PathData) -> f64 {
+fn net_area(p: &logocraft_geom::PathData) -> f64 {
     p.subpaths.iter().map(|s| s.area()).sum()
 }
 
@@ -504,7 +504,7 @@ fn strokes(fills: bool) -> TraceParams {
 }
 
 /// Endpoints (first and last anchor) of each open subpath of the stroked paths.
-fn stroked(res: &TraceResult) -> Vec<(&TracedPath, &vectorcraft_geom::SubPath)> {
+fn stroked(res: &TraceResult) -> Vec<(&TracedPath, &logocraft_geom::SubPath)> {
     res.paths.iter().filter(|p| p.stroke.is_some()).flat_map(|p| p.path.subpaths.iter().map(move |s| (p, s))).collect()
 }
 

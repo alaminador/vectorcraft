@@ -3,11 +3,11 @@
 
 use serde_json::{Value, json};
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::state::Dialog;
 
 /// A click with a shape tool opens its size dialog.
-pub fn open_tool_dialog(app: &mut VectorcraftApp, kind: &str, p: Value) {
+pub fn open_tool_dialog(app: &mut LogocraftApp, kind: &str, p: Value) {
     let x = p.get("x").and_then(Value::as_f64).unwrap_or(0.0);
     let y = p.get("y").and_then(Value::as_f64).unwrap_or(0.0);
     let d = match kind {

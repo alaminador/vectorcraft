@@ -13,10 +13,10 @@
 //! to loses its characters' own fill (stroke) when the style has fills (strokes), so the style's
 //! paint shows instead of the character colour under it.
 
+use logocraft_color::Paint;
+use logocraft_doc::{Appearance, Document, GraphicStyle, Node, NodeKind};
+use logocraft_geom::Rect;
 use serde_json::{Value, json};
-use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, Document, GraphicStyle, Node, NodeKind};
-use vectorcraft_geom::Rect;
 
 use super::*;
 use crate::EngineError;

@@ -1,6 +1,6 @@
-//! VectorCraft text: font database, shaping, layout, glyph outlines.
+//! LogoCraft text: font database, shaping, layout, glyph outlines.
 //!
-//! API contract used by `vectorcraft-render`, `vectorcraft-tools` and the UI:
+//! API contract used by `logocraft-render`, `logocraft-tools` and the UI:
 //! - [`FontDb::global`]: process-wide database preloaded with the bundled OFL fonts.
 //! - [`layout`]: lays out a [`TextObject`] into glyph outlines in *text space* (apply `t.xf` to
 //!   get document coordinates), plus line and caret information.
@@ -34,12 +34,12 @@ pub use fontdb::{
 pub use hyphen::{hyphenation_exceptions, set_hyphenation_exceptions};
 use kurbo::{Affine, BezPath, Point, Rect, Vec2};
 pub use layout::{decorations, layout, layout_with};
-pub use vectorcraft_doc::TextObject;
+pub use logocraft_doc::TextObject;
 
-pub use vectorcraft_doc::{AreaFit, FirstBaseline, VerticalAlign};
+pub use logocraft_doc::{AreaFit, FirstBaseline, VerticalAlign};
 
-/// Paragraph composer; stored per text object in [`vectorcraft_doc::ParaStyle::composer`].
-pub use vectorcraft_doc::Composer;
+/// Paragraph composer; stored per text object in [`logocraft_doc::ParaStyle::composer`].
+pub use logocraft_doc::Composer;
 
 /// Layout parameters that the document model doesn't store per object (Area Type Options,
 /// composer, OpenType features). [`layout`] takes rows/columns/inset/first baseline from the object.
@@ -140,7 +140,7 @@ pub struct LineInfo {
     pub region: usize,
 }
 
-/// An inline graphic ([`vectorcraft_doc::TextRun::inline`]) placed by the layout: draw the art of
+/// An inline graphic ([`logocraft_doc::TextRun::inline`]) placed by the layout: draw the art of
 /// the run's symbol through `xf`. Missing symbols reserve their room but get no entry.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InlineGlyph {
@@ -484,7 +484,7 @@ pub fn caret_horizontal(layout: &TextLayout, byte: usize, right: bool) -> usize 
 
 /// Does paragraph `text` run right to left: its `direction`, else (None) from its first strong
 /// character (numbers and punctuation don't count)?
-pub fn paragraph_is_rtl(text: &str, direction: Option<vectorcraft_doc::ParaDirection>) -> bool {
+pub fn paragraph_is_rtl(text: &str, direction: Option<logocraft_doc::ParaDirection>) -> bool {
     layout::is_rtl(layout::para_bidi(text, direction).as_ref())
 }
 

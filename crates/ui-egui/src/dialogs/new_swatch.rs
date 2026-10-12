@@ -7,12 +7,12 @@
 //! pattern or tint; absent for a colour) and `__auto` (the default name, which follows the colour until
 //! the name is edited).
 
+use logocraft_color::Paint;
 use serde_json::{Value, json};
-use vectorcraft_color::Paint;
 
 use super::swatch_options::{color_of, editor, grid, mode_id, name_row};
 use super::{DialogSpec, run_and_close};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::panels::color::Mode;
 use crate::state::Dialog;
 
@@ -22,7 +22,7 @@ pub const KIND: &str = "newSwatch";
 pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("New Swatch").into(), body, confirm, min_width: 340.0, ..DialogSpec::FORM };
 
 /// Open New Swatch for the active paint: a spot colour with `spot`, going into colour `group`.
-pub fn open(app: &mut VectorcraftApp, spot: bool, group: Option<&str>) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp, spot: bool, group: Option<&str>) -> Result<Value, String> {
     let paint = crate::panels::active_paint(app);
     let name = app.session.active().ok_or("no document open")?.doc.new_swatch_name(&paint);
     let mut fields = match &paint {
@@ -41,7 +41,7 @@ pub fn open(app: &mut VectorcraftApp, spot: bool, group: Option<&str>) -> Result
     Ok(Value::Null)
 }
 
-fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     if d.fields.contains_key("__paint") {
         grid(ui, |ui| name_row(ui, d));
     } else if editor(ui, d)
@@ -70,7 +70,7 @@ fn params(d: &Dialog) -> Value {
     p
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     run_and_close(app, "swatch.new", params(d))
 }
 
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn a_tint_opens_as_a_named_tint_swatch() {
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        let mut app = LogocraftApp::new(logocraft_engine::Session::new(), Default::default());
         app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
         app.run("swatch.new", json!({"name": "Ink", "color": "#cc0066", "spot": true})).unwrap();
         app.run("paint.setFill", json!({"swatch": "Ink", "tint": 40})).unwrap();

@@ -8,9 +8,9 @@
 use std::sync::Arc;
 
 use kurbo::{Rect, Shape};
-use vectorcraft_color::blend::MASK_LUM;
-use vectorcraft_color::{BlendMode, Color, Paint};
-use vectorcraft_doc::{AppearanceItem, Node, NodeKind, OpacityMask};
+use logocraft_color::blend::MASK_LUM;
+use logocraft_color::{BlendMode, Color, Paint};
+use logocraft_doc::{AppearanceItem, Node, NodeKind, OpacityMask};
 
 /// What a soft mask does to what it masks.
 #[derive(Clone, Debug, PartialEq)]

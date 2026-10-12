@@ -1,0 +1,42 @@
+[package]
+name = "logocraft-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LogoCraft command line: MCP server (stdio) and headless batch runs"
+
+[[bin]]
+name = "logocraft-cli"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+logocraft-color = { workspace = true }
+logocraft-doc = { workspace = true }
+logocraft-engine = { workspace = true }
+logocraft-format = { workspace = true }
+logocraft-geom = { workspace = true }
+logocraft-svg = { workspace = true }
+logocraft-mcp = { workspace = true }
+logocraft-render = { workspace = true }
+logocraft-text = { workspace = true }
+serde_json = { workspace = true }
+log = { workspace = true }
+
+# DirectWrite's system font collection (the desktop app's src/system_fonts.rs, shared): fonts that
+# font services such as Adobe Fonts load in place (#579). MIT OR Apache-2.0.
+[target.'cfg(all(windows, not(target_vendor = "win7")))'.dependencies]
+windows = { version = "0.62", features = ["Win32_Graphics_DirectWrite"] }
+
+# CoreText's font manager (the desktop app's src/mac_fonts.rs, shared): fonts that apps and font
+# managers register from their own folders (#579). Zlib OR Apache-2.0 OR MIT.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFArray", "CFString", "CFURL"] }
+objc2-core-text = { version = "0.3", default-features = false, features = ["std", "CTFontManager"] }
+
+[dev-dependencies]
+logocraft-testkit = { workspace = true }
+serde_json = { workspace = true }

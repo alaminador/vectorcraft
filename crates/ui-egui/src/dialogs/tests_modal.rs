@@ -2,8 +2,8 @@
 //! the form dialogs' choice fields are dropdowns (Offset Path's Joins).
 
 use egui::{Event, Pos2, Rect, Vec2, vec2};
+use logocraft_engine::Session;
 use serde_json::json;
-use vectorcraft_engine::Session;
 
 use super::*;
 use crate::theme;
@@ -19,7 +19,7 @@ fn ctx() -> egui::Context {
 }
 
 /// One frame of the dialog layer with `events`: every text drawn, with its screen rect.
-fn frame(ctx: &egui::Context, app: &mut VectorcraftApp, events: Vec<Event>) -> Vec<(String, Rect)> {
+fn frame(ctx: &egui::Context, app: &mut LogocraftApp, events: Vec<Event>) -> Vec<(String, Rect)> {
     let input = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, SCREEN)), events, ..Default::default() };
     let mut out = ctx.run_ui(input, |ui| show(app, ui.ctx()));
     out.textures_delta.clear();
@@ -40,7 +40,7 @@ fn button(pos: Pos2, pressed: bool) -> Event {
 }
 
 /// Drag with the mouse from `from` by `by`, in steps, then let go.
-fn drag(ctx: &egui::Context, app: &mut VectorcraftApp, from: Pos2, by: Vec2) {
+fn drag(ctx: &egui::Context, app: &mut LogocraftApp, from: Pos2, by: Vec2) {
     frame(ctx, app, vec![Event::PointerMoved(from), button(from, true)]);
     for i in 1..=6 {
         frame(ctx, app, vec![Event::PointerMoved(from + by * (i as f32 / 6.0))]);
@@ -49,14 +49,14 @@ fn drag(ctx: &egui::Context, app: &mut VectorcraftApp, from: Pos2, by: Vec2) {
     frame(ctx, app, vec![]);
 }
 
-fn click(ctx: &egui::Context, app: &mut VectorcraftApp, pos: Pos2) -> Vec<(String, Rect)> {
+fn click(ctx: &egui::Context, app: &mut LogocraftApp, pos: Pos2) -> Vec<(String, Rect)> {
     frame(ctx, app, vec![Event::PointerMoved(pos), button(pos, true)]);
     frame(ctx, app, vec![button(pos, false)]);
     frame(ctx, app, vec![])
 }
 
 /// Frames until a window that just opened has measured and placed itself.
-fn settle(ctx: &egui::Context, app: &mut VectorcraftApp) {
+fn settle(ctx: &egui::Context, app: &mut LogocraftApp) {
     for _ in 0..6 {
         frame(ctx, app, vec![]);
     }
@@ -66,8 +66,8 @@ fn rect_of(ctx: &egui::Context, id: egui::Id) -> Rect {
     ctx.memory(|m| m.area_rect(id)).expect("the dialog window was shown")
 }
 
-fn app_with_selection() -> VectorcraftApp {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+fn app_with_selection() -> LogocraftApp {
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 400, "height": 400})).unwrap();
     app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 80, "height": 60})).unwrap();
     app
@@ -78,7 +78,7 @@ fn close_to(a: Vec2, b: Vec2) -> bool {
 }
 
 /// Opens a dialog.
-type Open = fn(&mut VectorcraftApp);
+type Open = fn(&mut LogocraftApp);
 
 /// Every kind of modal window: the shared frame (Offset Path), and the ones drawing their own
 /// window (New Document without a heading, Preferences, Keyboard Shortcuts).
@@ -142,7 +142,7 @@ fn offset_path_joins_is_a_dropdown() {
     // OK: the same result as the command with round joins (not miter).
     confirm(&mut app).unwrap();
     assert!(app.ui.dialog.is_none());
-    let made = |app: &VectorcraftApp| {
+    let made = |app: &LogocraftApp| {
         let st = app.session.doc().unwrap();
         format!("{:?}", st.doc.node(st.selection.objects[0]).unwrap().kind)
     };
@@ -175,7 +175,7 @@ fn form_dialog_axes_are_dropdowns() {
 fn offset_path_previews() {
     let (ctx, mut app) = (ctx(), app_with_selection());
     app.run("select.all", json!({})).unwrap();
-    let count = |app: &VectorcraftApp| app.session.doc().unwrap().doc.layers.iter().map(|l| l.children().map_or(0, |c| c.len())).sum::<usize>();
+    let count = |app: &LogocraftApp| app.session.doc().unwrap().doc.layers.iter().map(|l| l.children().map_or(0, |c| c.len())).sum::<usize>();
     crate::menus::invoke(&mut app, "object.path.offsetPath", json!({}));
     let texts = frame(&ctx, &mut app, vec![]);
     let texts = if texts.is_empty() { frame(&ctx, &mut app, vec![]) } else { texts };
@@ -203,8 +203,8 @@ fn offset_path_remembers_its_last_values() {
     assert_eq!((d.f64("offset", 0.0), d.str("joins"), d.f64("miterLimit", 0.0)), (-4.5, "round".to_string(), 4.0));
 }
 
-fn app_with_dense_path() -> VectorcraftApp {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+fn app_with_dense_path() -> LogocraftApp {
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
     let anchors: Vec<_> = (0..20).map(|i| json!({"x": 30 + i * 15, "y": 100.0 + (i % 2) as f64 * 0.1})).collect();
     let id = app.run("path.create", json!({"anchors": anchors})).unwrap()["id"].as_u64().unwrap();

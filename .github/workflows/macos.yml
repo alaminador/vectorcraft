@@ -1,0 +1,40 @@
+# Builds LogoCraft.app on macOS for every push to main and to claude/* branches, and on demand
+# (Actions › macOS app › Run workflow). The zipped app is attached to the run as the artifact
+# `LogoCraft-mac`. It is not signed or notarized (that needs an Apple Developer account and its
+# certificates as repository secrets): the first launch needs right-click › Open.
+name: macOS app
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: Build LogoCraft.app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: macos-app
+      - name: Build the app bundle
+        env:
+          LOGOCRAFT_BUILD_SHA: ${{ github.sha }}
+        run: cargo xtask bundle
+      - name: Zip it
+        run: ditto -c -k --sequesterRsrc --keepParent dist/LogoCraft.app LogoCraft-mac.zip
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: LogoCraft-mac
+          path: LogoCraft-mac.zip
+          if-no-files-found: error
+          retention-days: 30

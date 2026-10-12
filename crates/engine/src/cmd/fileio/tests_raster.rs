@@ -12,7 +12,7 @@ fn session(width: f64, height: f64, artboards: usize) -> Session {
 }
 
 fn b64(v: &Value) -> Vec<u8> {
-    vectorcraft_format::base64_decode(v["dataBase64"].as_str().expect("dataBase64")).unwrap()
+    logocraft_format::base64_decode(v["dataBase64"].as_str().expect("dataBase64")).unwrap()
 }
 
 fn rgba(bytes: &[u8]) -> image::RgbaImage {
@@ -95,13 +95,13 @@ fn screens_and_rasterize_take_anti_aliasing() {
     s.execute("select.set", &json!({"ids": [id]})).unwrap();
     s.execute("object.rasterize", &json!({"ppi": 72, "antiAlias": "none", "background": "transparent"})).unwrap();
     let doc = &s.doc().unwrap().doc;
-    let vectorcraft_doc::NodeKind::Image(im) = &doc.layers[0].children().unwrap()[0].kind else { panic!("rasterized to an image") };
+    let logocraft_doc::NodeKind::Image(im) = &doc.layers[0].children().unwrap()[0].kind else { panic!("rasterized to an image") };
     assert!(hard(&rgba(&doc.images[&im.key].bytes)));
     s.execute("edit.undo", &json!({})).unwrap();
     s.execute("select.set", &json!({"ids": [id]})).unwrap();
     s.execute("object.rasterize", &json!({"ppi": 72, "background": "black"})).unwrap();
     let doc = &s.doc().unwrap().doc;
-    let vectorcraft_doc::NodeKind::Image(im) = &doc.layers[0].children().unwrap()[0].kind else { panic!("rasterized to an image") };
+    let logocraft_doc::NodeKind::Image(im) = &doc.layers[0].children().unwrap()[0].kind else { panic!("rasterized to an image") };
     assert_eq!(rgba(&doc.images[&im.key].bytes).get_pixel(0, 0).0, [0, 0, 0, 255]);
     assert!(s.execute("object.rasterize", &json!({"antiAlias": "fuzzy"})).is_err());
 }
@@ -134,7 +134,7 @@ fn a_300_ppi_export_places_back_at_its_physical_size() {
     let png = b64(&s.execute("document.export", &json!({"format": "png", "ppi": 300, "background": "white"})).unwrap());
     assert_eq!(rgba(&png).dimensions(), (300, 150));
     assert_eq!(super::ppi::resolution(&png), Some((300.0, 300.0)), "the place reader reads the writer's pHYs");
-    let r = s.execute("file.place", &json!({"name": "art.png", "dataBase64": vectorcraft_format::base64_encode(&png)})).unwrap();
+    let r = s.execute("file.place", &json!({"name": "art.png", "dataBase64": logocraft_format::base64_encode(&png)})).unwrap();
     assert!((r["width"].as_f64().unwrap() - 72.0).abs() < 1e-6 && (r["height"].as_f64().unwrap() - 36.0).abs() < 1e-6, "100%: {r}");
 }
 
@@ -155,7 +155,7 @@ fn an_image_opens_at_the_size_its_resolution_declares() {
     let lo = b64(&s.execute("document.export", &json!({"format": "png", "background": "white"})).unwrap());
     let lo = super::ppi::with_png_resolution(&lo, (72.0, 72.0));
     for (png, w, h, what) in [(hi, 72.0, 36.0, "300 ppi: 300 x 150 px is 1 x 0.5 in"), (lo, 72.0, 36.0, "72 ppi: 1 px = 1 pt")] {
-        s.execute("document.open", &json!({"name": "art.png", "dataBase64": vectorcraft_format::base64_encode(&png)})).unwrap();
+        s.execute("document.open", &json!({"name": "art.png", "dataBase64": logocraft_format::base64_encode(&png)})).unwrap();
         let doc = &s.doc().unwrap().doc;
         let ab = doc.artboards[0].rect;
         assert!((ab.width() - w).abs() < 1e-6 && (ab.height() - h).abs() < 1e-6, "{what}: artboard {ab:?}");

@@ -1,9 +1,9 @@
 //! #1212: ruler coordinates are saved metadata, independent of the artwork's coordinates.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use logocraft_engine::Session;
+use logocraft_format::{SaveOptions, load, save, save_with};
 use serde_json::{Value, json};
-use vectorcraft_engine::Session;
-use vectorcraft_format::{SaveOptions, load, save, save_with};
 
 fn session() -> Session {
     let mut s = Session::new();
@@ -65,7 +65,7 @@ fn reset_uses_the_requested_artboards_top_left_and_ignores_noops() {
 #[test]
 fn native_versions_and_compression_keep_the_origin_and_old_files_default_to_zero() {
     let mut s = session();
-    let legacy = String::from_utf8(save(&s.doc().unwrap().doc, false)).unwrap().replacen("\"format\":\"vectorcraft\"", "\"format\":\"drawcraft\"", 1);
+    let legacy = String::from_utf8(save(&s.doc().unwrap().doc, false)).unwrap().replacen("\"format\":\"logocraft\"", "\"format\":\"drawcraft\"", 1);
     assert!(serde_json::to_value(load(legacy.as_bytes()).unwrap()).unwrap().get("ruler_origin").is_none());
     let p = json!({"x": -12.5, "y": 27.75});
     s.execute("document.setRulerOrigin", &p).unwrap();

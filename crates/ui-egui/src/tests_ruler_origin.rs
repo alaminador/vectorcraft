@@ -1,15 +1,15 @@
 //! #1212: real ruler gestures and position fields share the document's zero point.
 
 use egui::{Event, Key, PointerButton, Pos2, Rect, Ui, pos2, vec2};
+use logocraft_doc::{NodeId, Unit};
+use logocraft_engine::Session;
+use logocraft_geom::Point;
 use serde_json::json;
-use vectorcraft_doc::{NodeId, Unit};
-use vectorcraft_engine::Session;
-use vectorcraft_geom::Point;
 
-use crate::{VectorcraftApp, canvas, chrome, panels};
+use crate::{LogocraftApp, canvas, chrome, panels};
 
-fn app() -> VectorcraftApp {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+fn app() -> LogocraftApp {
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
     app.ui.view.rulers = true;
     app.ui.control_bar = true;
@@ -22,7 +22,7 @@ fn context() -> egui::Context {
     ctx
 }
 
-fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<Event>, draw: fn(&mut VectorcraftApp, &mut Ui)) -> Vec<(String, Rect)> {
+fn frame(app: &mut LogocraftApp, ctx: &egui::Context, events: Vec<Event>, draw: fn(&mut LogocraftApp, &mut Ui)) -> Vec<(String, Rect)> {
     let raw = egui::RawInput {
         screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 900.0))),
         time: Some(ctx.input(|i| i.time) + 0.05),
@@ -51,7 +51,7 @@ fn key(key: Key) -> Event {
     Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() }
 }
 
-fn start_drag(app: &mut VectorcraftApp, ctx: &egui::Context, to: Pos2) {
+fn start_drag(app: &mut LogocraftApp, ctx: &egui::Context, to: Pos2) {
     let at = pos2(8.0, 8.0);
     frame(app, ctx, vec![Event::PointerMoved(at)], canvas::show);
     frame(app, ctx, vec![press(at, true)], canvas::show);
@@ -157,7 +157,7 @@ fn ruler_origin_cancelled_drags_do_not_modify_either_document() {
 
 #[test]
 fn ruler_origin_position_fields_show_relative_values_and_edit_absolute_positions() {
-    for draw in [panels::properties::show as fn(&mut VectorcraftApp, &mut Ui), panels::transform::show, chrome::control_bar] {
+    for draw in [panels::properties::show as fn(&mut LogocraftApp, &mut Ui), panels::transform::show, chrome::control_bar] {
         for (label, arrow) in [("X:", (1.0, 0.0)), ("Y:", (0.0, 1.0))] {
             let mut app = app();
             let id = NodeId(app.run("shape.rectangle", json!({"x": 100, "y": 50, "width": 80, "height": 40})).unwrap()["id"].as_u64().unwrap());
@@ -182,7 +182,7 @@ fn ruler_origin_position_fields_show_relative_values_and_edit_absolute_positions
 
 #[test]
 fn ruler_origin_artboard_fields_preserve_the_absolute_reference_point() {
-    for draw in [panels::properties::show as fn(&mut VectorcraftApp, &mut Ui), panels::transform::show] {
+    for draw in [panels::properties::show as fn(&mut LogocraftApp, &mut Ui), panels::transform::show] {
         for label in ["X:", "Y:"] {
             let mut app = app();
             app.run("document.setRulerOrigin", json!({"x": 120, "y": 50})).unwrap();

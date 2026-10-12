@@ -4,8 +4,8 @@
 //!
 //! Pure and platform-free, so it is tested everywhere and builds for the web; only the backend
 //! touches AppKit. What the layout does ([`mac_layout`], Illustrator on the Mac as the reference):
-//! - an **app menu** named VectorCraft: About; Settings, a submenu with one item per Preferences
-//!   page (General… ⌘K first); Language; Appearance (the UI brightness); Services; Hide VectorCraft
+//! - an **app menu** named LogoCraft: About; Settings, a submenu with one item per Preferences
+//!   page (General… ⌘K first); Language; Appearance (the UI brightness); Services; Hide LogoCraft
 //!   ⌃⌘H (⌘H stays View › Hide Edges), Hide Others ⌥⌘H, Show All; and Quit ⌘Q, still the app's own
 //!   `app.quit`, so documents with unsaved changes are asked about. Language and Appearance have
 //!   no in-window menu (as in PhotoCraft) and are synthesized here; Quit is File › Exit in the
@@ -16,7 +16,7 @@
 //! - a system key already bound to a command keeps the command's: the system item goes without.
 //!
 //! **Keys stay with egui.** AppKit runs a menu's key equivalents before the window sees the key,
-//! which would skip VectorCraft's key rules (a focused text field takes ⌘A, ⌘C, ⌘V and ⌘Z; dialogs
+//! which would skip LogoCraft's key rules (a focused text field takes ⌘A, ⌘C, ⌘V and ⌘Z; dialogs
 //! and the Type tool's input method have the keyboard). So the backend reports a key equivalent as
 //! [`Event::Key`], and [`key_events`] feeds it to egui as the key press it was (the clipboard
 //! events egui's window integration makes of ⌘X, ⌘C and ⌘V): the shortcut runs through
@@ -33,13 +33,13 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use egui::{Key, KeyboardShortcut};
 use serde_json::{Value, json};
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::i18n::{Lang, tr, tr_ctx};
 use crate::menus::{self, Entry};
 use crate::theme::Brightness;
 
-pub const APP_NAME: &str = "VectorCraft";
-/// Hide VectorCraft: an item of ours (AppKit's always takes ⌘H, which is View › Hide Edges).
+pub const APP_NAME: &str = "LogoCraft";
+/// Hide LogoCraft: an item of ours (AppKit's always takes ⌘H, which is View › Hide Edges).
 pub const HIDE: &str = "app.hide";
 /// Hide Others: an item of ours, so a command bound to ⌥⌘H keeps it.
 pub const HIDE_OTHERS: &str = "app.hideOthers";
@@ -49,7 +49,7 @@ pub const MINIMIZE: &str = "window.minimize";
 /// The labels the Mac layout adds to the menus (translated like every menu string:
 /// [`crate::menus::menu_strings`]).
 pub const MAC_LABELS: &[&str] =
-    &["Settings", "Appearance", "Services", "Hide VectorCraft", "Hide Others", "Show All", "Minimize", "Zoom", "Bring All to Front"];
+    &["Settings", "Appearance", "Services", "Hide LogoCraft", "Hide Others", "Show All", "Minimize", "Zoom", "Bring All to Front"];
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct MenuBar {
@@ -160,8 +160,8 @@ impl MenuBar {
 
 /// The menus as the in-window bar shows them now, as a tree: `tree`'s items through
 /// [`crate::menus::entry`] (labels in the UI language, live state, empty slots left out).
-pub fn from_tree(app: &VectorcraftApp, tree: &[(&'static str, Vec<menus::Item>)]) -> MenuBar {
-    fn level(app: &VectorcraftApp, items: &[menus::Item]) -> Vec<Node> {
+pub fn from_tree(app: &LogocraftApp, tree: &[(&'static str, Vec<menus::Item>)]) -> MenuBar {
+    fn level(app: &LogocraftApp, items: &[menus::Item]) -> Vec<Node> {
         let nodes = items
             .iter()
             .filter_map(|it| menus::entry(app, it))
@@ -278,7 +278,7 @@ pub fn key_events(sc: KeyboardShortcut, paste_text: impl FnOnce() -> Option<Stri
 
 // ----------------------------------------------------------------------------- macOS layout
 
-/// A system key equivalent VectorCraft already uses for a command.
+/// A system key equivalent LogoCraft already uses for a command.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Clash {
     pub shortcut: &'static str,
@@ -297,7 +297,7 @@ pub struct Layout {
 /// The Mac menu bar of `bar` (the in-window menus, [`from_tree`]): see the module docs.
 /// Language and Appearance have no in-window menu (as in PhotoCraft); when the tree doesn't
 /// carry them they are synthesized below, so the App menu keeps them.
-pub fn mac_layout(app: &VectorcraftApp, bar: &MenuBar, lang: Lang) -> Layout {
+pub fn mac_layout(app: &LogocraftApp, bar: &MenuBar, lang: Lang) -> Layout {
     let mut bar = bar.clone();
     let mut clashes = Vec::new();
     let bound = crate::shortcuts::all_shortcuts();
@@ -312,7 +312,7 @@ pub fn mac_layout(app: &VectorcraftApp, bar: &MenuBar, lang: Lang) -> Layout {
             None => Some(sc),
         }
     };
-    let hide = Item::system(HIDE, "Hide VectorCraft", key("Ctrl+Cmd+H", "Hide"), lang);
+    let hide = Item::system(HIDE, "Hide LogoCraft", key("Ctrl+Cmd+H", "Hide"), lang);
     let hide_others = Item::system(HIDE_OTHERS, "Hide Others", key("Cmd+Alt+H", "Hide Others"), lang);
     let minimize = Item::system(MINIMIZE, "Minimize", key("Ctrl+Cmd+M", "Minimize"), lang);
 
@@ -342,7 +342,7 @@ pub fn mac_layout(app: &VectorcraftApp, bar: &MenuBar, lang: Lang) -> Layout {
     app.extend([Node::Item(hide), Node::Item(hide_others), Node::Standard(Standard::ShowAll), Node::Separator]);
     // Quit is File › Exit in the window; in the App menu it reads as a Mac Quit item.
     app.extend(quit.map(|mut q| {
-        q.label = tr(lang, "Quit VectorCraft").into();
+        q.label = tr(lang, "Quit LogoCraft").into();
         Node::Item(q)
     }));
     bar.menus.insert(0, Menu { title: APP_NAME.into(), role: MenuRole::App, children: app });
@@ -363,14 +363,14 @@ pub fn mac_layout(app: &VectorcraftApp, bar: &MenuBar, lang: Lang) -> Layout {
 
 /// Language in the app menu, after Settings: Automatic, then every UI language in its own name,
 /// with the `interfaceLanguage` preference checked.
-fn language_node(app: &VectorcraftApp, lang: Lang) -> Node {
+fn language_node(app: &LogocraftApp, lang: Lang) -> Node {
     let mut children = vec![Node::Item(native_item(app, "Automatic", "app.language", json!({"lang": "auto"}))), Node::Separator];
     children.extend(Lang::all().map(|l| Node::Item(native_item(app, l.name(), "app.language", json!({"lang": l.code()})))));
     Node::Submenu { label: tr(lang, "Language").into(), children }
 }
 
 /// Appearance in the app menu (the UI-brightness theme, as Mac apps call it).
-fn appearance_node(app: &VectorcraftApp, lang: Lang) -> Node {
+fn appearance_node(app: &LogocraftApp, lang: Lang) -> Node {
     let children =
         Brightness::ALL.iter().map(|b| Node::Item(native_item(app, b.label(), "window.brightness", json!({"brightness": b.id()})))).collect();
     Node::Submenu { label: tr_ctx(lang, "theme", "Appearance").into(), children }
@@ -378,7 +378,7 @@ fn appearance_node(app: &VectorcraftApp, lang: Lang) -> Node {
 
 /// A native item running `command`, built like [`from_tree`] builds it (translated label,
 /// shortcut, enabled and checked as they read now).
-fn native_item(app: &VectorcraftApp, label: &'static str, command: &'static str, params: Value) -> Item {
+fn native_item(app: &LogocraftApp, label: &'static str, command: &'static str, params: Value) -> Item {
     let item = menus::Item::Cmd(label, command, params);
     match menus::entry(app, &item) {
         Some(Entry::Item(row)) => Item {
@@ -398,7 +398,7 @@ fn native_item(app: &VectorcraftApp, label: &'static str, command: &'static str,
 /// Settings ▸: one item per page of the Preferences dialog (its own list), each opening it there;
 /// the first (General…) has Preferences' shortcut (⌘K), as in Illustrator.
 fn settings_pages(preferences: &Item, lang: Lang) -> Vec<Node> {
-    vectorcraft_engine::cmd::prefscmds::PREF_CATEGORIES
+    logocraft_engine::cmd::prefscmds::PREF_CATEGORIES
         .iter()
         .enumerate()
         .map(|(i, page)| {
@@ -456,8 +456,8 @@ fn take_submenu(bar: &mut MenuBar, command: &str) -> Option<Node> {
     sub
 }
 
-/// VectorCraft's menus as a Mac menu bar, as they show now.
-pub fn layout(app: &VectorcraftApp) -> Layout {
+/// LogoCraft's menus as a Mac menu bar, as they show now.
+pub fn layout(app: &LogocraftApp) -> Layout {
     let mut layout = mac_layout(app, &from_tree(app, &menus::menu_tree_named(app.session.prefs.font_names_in_english)), crate::i18n::current());
     if app.file_dialog_open() {
         for menu in &mut layout.bar.menus {
@@ -507,7 +507,7 @@ pub trait Backend {
     fn drain(&mut self) -> Vec<Event>;
 }
 
-/// The native menu bar, while VectorCraft uses one (the in-window menus are hidden then).
+/// The native menu bar, while LogoCraft uses one (the in-window menus are hidden then).
 pub struct NativeMenu {
     backend: Box<dyn Backend>,
     /// Hash of the state the menus were last read in ([`state_hash`]).
@@ -539,7 +539,7 @@ impl NativeMenu {
 }
 
 /// Run the items clicked in the native menu since the last frame, like in-window menu clicks.
-pub fn run(app: &mut VectorcraftApp, ctx: &egui::Context) {
+pub fn run(app: &mut LogocraftApp, ctx: &egui::Context) {
     let picking = app.file_dialog_open();
     let Some(menu) = app.services.native_menu.as_mut() else { return };
     for it in std::mem::take(&mut menu.clicks) {
@@ -561,7 +561,7 @@ pub fn run(app: &mut VectorcraftApp, ctx: &egui::Context) {
 /// Bring the native menu up to date when anything it shows may have changed: a command ran, the
 /// document, its history or selection changed, the user clicked or pressed a key. Reading the rows
 /// asks every command whether it is enabled, so frames that only animate or scroll skip it.
-pub fn sync(app: &mut VectorcraftApp, ctx: &egui::Context) {
+pub fn sync(app: &mut LogocraftApp, ctx: &egui::Context) {
     let Some(menu) = app.services.native_menu.as_ref() else { return };
     let input = ctx
         .input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Key { pressed: true, .. } | egui::Event::PointerButton { pressed: false, .. })));
@@ -573,7 +573,7 @@ pub fn sync(app: &mut VectorcraftApp, ctx: &egui::Context) {
     let Some(menu) = app.services.native_menu.as_mut() else { return };
     if !menu.logged {
         for c in &layout.clashes {
-            log::info!("menu: {} is {} on macOS and {} in VectorCraft, which keeps it", c.shortcut, c.system, c.command);
+            log::info!("menu: {} is {} on macOS and {} in LogoCraft, which keeps it", c.shortcut, c.system, c.command);
         }
         menu.logged = true;
     }
@@ -586,7 +586,7 @@ pub fn sync(app: &mut VectorcraftApp, ctx: &egui::Context) {
 /// its revision (edits, selection and view changes), history and clipboard, the language,
 /// shortcuts, plug-ins and an open file dialog. `input` forces a change on frames with a click or
 /// a key press, which covers what the hash doesn't list (panels shown, a tool picked).
-fn state_hash(app: &VectorcraftApp, input: Option<u64>) -> u64 {
+fn state_hash(app: &LogocraftApp, input: Option<u64>) -> u64 {
     let mut h = DefaultHasher::new();
     input.hash(&mut h);
     app.run_count.hash(&mut h);

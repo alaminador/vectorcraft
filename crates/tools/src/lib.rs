@@ -1,4 +1,4 @@
-//! VectorCraft tools: pointer events in → commands and overlays out.
+//! LogoCraft tools: pointer events in → commands and overlays out.
 //!
 //! Tools never mutate the document directly. They emit [`Action`]s that the engine executes:
 //! `Begin` snapshots the document, each `Preview` re-applies one command on top of that snapshot
@@ -29,11 +29,11 @@ pub mod text;
 pub mod typewidget;
 pub mod xform;
 
+use logocraft_color::Paint;
+use logocraft_doc::{Document, NodeId, Selection, Unit};
+use logocraft_geom::{BezPath, Point, Rect, Vec2};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use vectorcraft_color::Paint;
-use vectorcraft_doc::{Document, NodeId, Selection, Unit};
-use vectorcraft_geom::{BezPath, Point, Rect, Vec2};
 
 pub use catalog::{TOOL_GROUPS, ToolInfo, tool_info};
 
@@ -154,10 +154,10 @@ pub struct PaintDefaults {
     /// The appearance new art takes (stroke options, more fills and strokes, effects), its top
     /// fill and stroke repainted with `fill`, `stroke` and `stroke_width`; `None`: one plain fill
     /// and stroke. Its placed gradients are relative to the unit box.
-    pub appearance: Option<vectorcraft_doc::Appearance>,
+    pub appearance: Option<logocraft_doc::Appearance>,
     /// New art's opacity and blend mode.
     pub opacity: f32,
-    pub blend: vectorcraft_color::BlendMode,
+    pub blend: logocraft_color::BlendMode,
     /// The graphic style the template came from (by name): new art is linked to it.
     pub style: Option<String>,
     /// The template is the last selection's appearance (New Art Has Basic Appearance off): with
@@ -169,8 +169,8 @@ impl Default for PaintDefaults {
     /// White fill, 1 pt black stroke, nothing else.
     fn default() -> Self {
         Self {
-            fill: Paint::solid(vectorcraft_color::Color::WHITE),
-            stroke: Paint::solid(vectorcraft_color::Color::BLACK),
+            fill: Paint::solid(logocraft_color::Color::WHITE),
+            stroke: Paint::solid(logocraft_color::Color::BLACK),
             stroke_width: 1.0,
             appearance: None,
             opacity: 1.0,
@@ -365,8 +365,8 @@ impl ToolContext<'_> {
         let half = (5.0 + f64::from(self.anchor_size.clamp(1, 7)) - 3.0) / 2.0;
         self.tol(self.selection_tolerance.max(half + 2.0))
     }
-    pub fn hit_options(&self) -> vectorcraft_doc::hit::HitOptions {
-        vectorcraft_doc::hit::HitOptions {
+    pub fn hit_options(&self) -> logocraft_doc::hit::HitOptions {
+        logocraft_doc::hit::HitOptions {
             tol: self.pick_tol(),
             outline: self.outline,
             path_only: self.path_only,
@@ -621,8 +621,8 @@ pub(crate) fn json_ids(ids: &[NodeId]) -> Value {
 #[cfg(test)]
 pub(crate) mod testutil {
     use super::*;
-    use vectorcraft_doc::{Appearance, Node};
-    use vectorcraft_geom::shapes;
+    use logocraft_doc::{Appearance, Node};
+    use logocraft_geom::shapes;
 
     pub fn doc_with_rect() -> (Document, NodeId) {
         let mut d = Document::new(500.0, 500.0);
@@ -637,9 +637,9 @@ pub(crate) mod testutil {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        let mut t = vectorcraft_doc::TextObject::point(Point::new(300.0, 300.0), "Some words", Default::default());
-        t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 120.0, 40.0)) };
-        d.insert(Some(l), 1, Node::new(id, vectorcraft_doc::NodeKind::Text(Box::new(t)))).unwrap();
+        let mut t = logocraft_doc::TextObject::point(Point::new(300.0, 300.0), "Some words", Default::default());
+        t.kind = logocraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 120.0, 40.0)) };
+        d.insert(Some(l), 1, Node::new(id, logocraft_doc::NodeKind::Text(Box::new(t)))).unwrap();
         (d, id)
     }
 
@@ -648,13 +648,13 @@ pub(crate) mod testutil {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        let mut t = vectorcraft_doc::TextObject::point(Point::ZERO, "Path type", Default::default());
-        let path = vectorcraft_geom::PathData::from_bezpath(&vectorcraft_geom::BezPath::from_vec(vec![
-            vectorcraft_geom::PathEl::MoveTo(Point::new(100.0, 300.0)),
-            vectorcraft_geom::PathEl::LineTo(Point::new(400.0, 300.0)),
+        let mut t = logocraft_doc::TextObject::point(Point::ZERO, "Path type", Default::default());
+        let path = logocraft_geom::PathData::from_bezpath(&logocraft_geom::BezPath::from_vec(vec![
+            logocraft_geom::PathEl::MoveTo(Point::new(100.0, 300.0)),
+            logocraft_geom::PathEl::LineTo(Point::new(400.0, 300.0)),
         ]));
-        t.kind = vectorcraft_doc::TextKind::OnPath { path, start: 0.2, end: None };
-        d.insert(Some(l), 1, Node::new(id, vectorcraft_doc::NodeKind::Text(Box::new(t)))).unwrap();
+        t.kind = logocraft_doc::TextKind::OnPath { path, start: 0.2, end: None };
+        d.insert(Some(l), 1, Node::new(id, logocraft_doc::NodeKind::Text(Box::new(t)))).unwrap();
         (d, id)
     }
 

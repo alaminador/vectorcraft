@@ -1,20 +1,20 @@
 [package]
-name = "vectorcraft-pdf"
+name = "logocraft-pdf"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "VectorCraft PDF export and import"
+description = "LogoCraft PDF export and import"
 
 [lints]
 workspace = true
 
 [dependencies]
-vectorcraft-geom = { workspace = true }
-vectorcraft-doc = { workspace = true }
-vectorcraft-effects = { workspace = true }
-vectorcraft-brush = { workspace = true }
-vectorcraft-color = { workspace = true }
-vectorcraft-text = { workspace = true }
+logocraft-geom = { workspace = true }
+logocraft-doc = { workspace = true }
+logocraft-effects = { workspace = true }
+logocraft-brush = { workspace = true }
+logocraft-color = { workspace = true }
+logocraft-text = { workspace = true }
 skrifa = { workspace = true }
 kurbo = { workspace = true }
 thiserror = { workspace = true }
@@ -34,7 +34,7 @@ md-5 = { version = "0.10", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 
 [dev-dependencies]
-vectorcraft-testkit = { workspace = true }
+logocraft-testkit = { workspace = true }
 # A variable font built in code (no font file is committed).
-vectorcraft-text = { workspace = true, features = ["test-fonts"] }
+logocraft-text = { workspace = true, features = ["test-fonts"] }
 serde_json = { workspace = true }

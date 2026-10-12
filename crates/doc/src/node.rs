@@ -2,11 +2,11 @@
 
 use std::sync::Arc;
 
+use logocraft_color::BlendMode;
+use logocraft_geom::corners::cut_corners;
+use logocraft_geom::shapes::{self, CornerKind};
+use logocraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect};
 use serde::{Deserialize, Serialize};
-use vectorcraft_color::BlendMode;
-use vectorcraft_geom::corners::cut_corners;
-use vectorcraft_geom::shapes::{self, CornerKind};
-use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect};
 
 use crate::appearance::Appearance;
 use crate::live::{BlendSpec, EnvelopeKind, GradientMesh, Outliner};
@@ -482,7 +482,7 @@ pub enum NodeKind {
     Mesh(GradientMesh),
     /// Live Repeat (radial / grid / mirror) of source art.
     Repeat(RepeatSpec),
-    /// A placed document: an artboard of another VectorCraft file, linked and locked (see
+    /// A placed document: an artboard of another LogoCraft file, linked and locked (see
     /// [`crate::placed_document`]).
     PlacedDocument(Box<crate::placed_document::PlacedDocument>),
 }
@@ -991,11 +991,11 @@ impl Node {
         }
     }
     /// The path a path's or compound path's own strokes follow (a compound's members' together).
-    pub fn stroke_path(&self) -> Option<vectorcraft_geom::BezPath> {
+    pub fn stroke_path(&self) -> Option<logocraft_geom::BezPath> {
         match &self.kind {
             NodeKind::Path { path, .. } => Some(path.to_bezpath()),
             NodeKind::Compound { children, .. } => {
-                let mut bp = vectorcraft_geom::BezPath::new();
+                let mut bp = logocraft_geom::BezPath::new();
                 children.iter().filter_map(|c| c.path_data()).for_each(|pd| bp.extend(pd.to_bezpath()));
                 Some(bp)
             }
@@ -1025,13 +1025,13 @@ impl Node {
                 .iter()
                 .skip(usize::from(self.extras().shaper.is_some()))
                 .filter(|c| c.visible || !matches!(self.kind, NodeKind::Layer { .. }))
-                .fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.geometric_bounds())),
+                .fold(None, |acc, c| logocraft_geom::union_opt(acc, c.geometric_bounds())),
             NodeKind::Text(t) => self.projected(t.bounds()),
             NodeKind::Image(im) => Some(im.xf.transform_rect_bbox(Rect::new(0.0, 0.0, im.width as f64, im.height as f64))),
             NodeKind::SymbolInstance { xf, .. } => self.projected(Some(xf.transform_rect_bbox(Rect::new(-10.0, -10.0, 10.0, 10.0)))),
             NodeKind::Blend { children, spec } => {
                 let b = crate::live::nodes_bounds(children);
-                vectorcraft_geom::union_opt(b, spec.spine.as_ref().and_then(|s| s.bounds()))
+                logocraft_geom::union_opt(b, spec.spine.as_ref().and_then(|s| s.bounds()))
             }
             NodeKind::Envelope { content, kind, frame, .. } => crate::live::envelope_bounds(content, kind, **frame),
             NodeKind::Mesh(m) => m.bounds(),
@@ -1058,13 +1058,13 @@ impl Node {
                 children
                     .iter()
                     .skip(usize::from(self.extras().shaper.is_some()))
-                    .fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual_bounds()))
+                    .fold(None, |acc, c| logocraft_geom::union_opt(acc, c.visual_bounds()))
                     .map(|b| b.inflate(o, o))
             }
             NodeKind::Blend { children, spec } => {
-                let b = children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual_bounds()));
+                let b = children.iter().fold(None, |acc, c| logocraft_geom::union_opt(acc, c.visual_bounds()));
                 let o = crate::live::max_outset(children);
-                vectorcraft_geom::union_opt(b, spec.spine.as_ref().and_then(|s| s.bounds()).map(|r| r.inflate(o, o)))
+                logocraft_geom::union_opt(b, spec.spine.as_ref().and_then(|s| s.bounds()).map(|r| r.inflate(o, o)))
             }
             NodeKind::Envelope { content, .. } | NodeKind::Repeat(RepeatSpec { source: content, .. }) => {
                 let o = crate::live::max_outset(content);
@@ -1210,7 +1210,7 @@ impl Node {
     /// type objects paint their runs (the first run speaks for all) in text space, fitted to the
     /// layout bounds; everything else paints its fill or stroke in the document, fitted to the
     /// geometric bounds. Strokes fit the box grown by half their weight.
-    pub fn proxy_paint(&self, stroke: bool, item: Option<usize>) -> Option<(&vectorcraft_color::Paint, Affine, Rect)> {
+    pub fn proxy_paint(&self, stroke: bool, item: Option<usize>) -> Option<(&logocraft_color::Paint, Affine, Rect)> {
         let item = self.appearance.item_of_kind(item, !stroke);
         if item.is_none()
             && let NodeKind::Text(t) = &self.kind
@@ -1229,9 +1229,9 @@ impl Node {
     }
     /// The gradient behind the Fill (or Stroke) proxy and its placement in document coordinates
     /// (see [`Node::proxy_paint`]): what the gradient annotator shows and edits.
-    pub fn proxy_gradient(&self, stroke: bool, item: Option<usize>) -> Option<(&vectorcraft_color::GradientPaint, vectorcraft_color::GradientGeom)> {
+    pub fn proxy_gradient(&self, stroke: bool, item: Option<usize>) -> Option<(&logocraft_color::GradientPaint, logocraft_color::GradientGeom)> {
         let (paint, to_doc, b) = self.proxy_paint(stroke, item)?;
-        let vectorcraft_color::Paint::Gradient(g) = paint else { return None };
+        let logocraft_color::Paint::Gradient(g) = paint else { return None };
         let mut geom = g.resolve(b);
         if to_doc != Affine::IDENTITY {
             geom.transform(to_doc, g.gradient.kind);
@@ -1241,14 +1241,14 @@ impl Node {
     /// The freeform gradient behind the Fill (or Stroke) proxy, its points in document coordinates
     /// (the automatic ones while unplaced), and the length its spreads are fractions of there
     /// (see [`Node::proxy_paint`]): what the Gradient tool's freeform annotator shows and edits.
-    pub fn proxy_freeform(&self, stroke: bool, item: Option<usize>) -> Option<(vectorcraft_color::Freeform, f64)> {
+    pub fn proxy_freeform(&self, stroke: bool, item: Option<usize>) -> Option<(logocraft_color::Freeform, f64)> {
         let (paint, to_doc, b) = self.proxy_paint(stroke, item)?;
-        let vectorcraft_color::Paint::Gradient(g) = paint else { return None };
-        if g.gradient.kind != vectorcraft_color::GradientKind::Freeform {
+        let logocraft_color::Paint::Gradient(g) = paint else { return None };
+        if g.gradient.kind != logocraft_color::GradientKind::Freeform {
             return None;
         }
         let mut f = g.freeform_on(b).into_owned();
-        let mut scale = vectorcraft_color::freeform::spread_scale(b);
+        let mut scale = logocraft_color::freeform::spread_scale(b);
         if to_doc != Affine::IDENTITY {
             f.transform(to_doc);
             scale *= to_doc.determinant().abs().sqrt();
@@ -1258,7 +1258,7 @@ impl Node {
 }
 
 /// Unites filled regions (each under its own fill rule) into one path filled non-zero. Booleans
-/// live above this crate (`vectorcraft-pathops`), so callers supply it.
+/// live above this crate (`logocraft-pathops`), so callers supply it.
 pub type Uniter<'a> = &'a dyn Fn(&[(BezPath, FillRule)]) -> BezPath;
 
 impl Node {
@@ -1356,7 +1356,7 @@ impl Node {
                 }
                 if let NodeKind::Text(t) = &mut n.kind {
                     for r in &mut t.runs {
-                        *(if fill { &mut r.style.stroke } else { &mut r.style.fill }) = vectorcraft_color::Paint::None;
+                        *(if fill { &mut r.style.stroke } else { &mut r.style.fill }) = logocraft_color::Paint::None;
                     }
                 }
                 n
@@ -1603,7 +1603,7 @@ impl Node {
     /// stroke opacity below 100%, a blend mode, an opacity mask, effects or transparent gradient
     /// stops. Hidden objects show none.
     pub fn shows_transparency(&self) -> bool {
-        use vectorcraft_color::Paint;
+        use logocraft_color::Paint;
         let see_through = |p: &Paint| matches!(p, Paint::Gradient(g) if g.gradient.stops.iter().any(|s| s.opacity < 1.0));
         let effects = |fx: &[crate::Effect]| fx.iter().any(|e| e.visible);
         self.visible
@@ -1632,7 +1632,7 @@ impl Node {
     /// everywhere for objects without them, such as type, whose boxes stand in).
     pub fn contains_fn(&self) -> impl Fn(Point) -> bool + use<> {
         let shapes = self.clip_shapes(None);
-        move |p| shapes.is_empty() || shapes.iter().any(|(bp, rule)| vectorcraft_geom::hit::fill_contains(bp, *rule, p))
+        move |p| shapes.is_empty() || shapes.iter().any(|(bp, rule)| logocraft_geom::hit::fill_contains(bp, *rule, p))
     }
 }
 
@@ -1645,10 +1645,10 @@ mod kind_de {
     use std::fmt;
     use std::sync::Arc;
 
+    use logocraft_geom::{Affine, FillRule, PathData};
     use serde::de::value::{MapAccessDeserializer, StringDeserializer};
     use serde::de::{self, DeserializeSeed, Deserializer, EnumAccess, IntoDeserializer, MapAccess, VariantAccess, Visitor};
     use serde::{Deserialize, forward_to_deserialize_any};
-    use vectorcraft_geom::{Affine, FillRule, PathData};
 
     use super::{LayerColor, LiveShape, Node, NodeKind, yes};
     use crate::live::{BlendSpec, EnvelopeKind, GradientMesh};
@@ -2139,7 +2139,7 @@ mod tests {
 
     #[test]
     fn unplaced_gradients_pin_only_when_a_refit_would_differ() {
-        use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, Paint};
+        use logocraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, Paint};
         let grad = || Paint::Gradient(Box::new(GradientPaint::new(Gradient::default())));
         let fresh = || Node::path(NodeId(2), shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)), Appearance::basic(grad(), grad(), 2.0));
         let geoms = |n: &Node| match (n.appearance.fill_paint(), n.appearance.stroke_paint()) {

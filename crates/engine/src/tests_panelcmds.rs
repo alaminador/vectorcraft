@@ -1,8 +1,8 @@
 //! Panel-support commands (`cmd/{panelcmds,gradient,appearance,stroke,swatch,style}.rs`).
 
+use logocraft_color::{GradientKind, Paint};
+use logocraft_doc::{AppearanceItem, NodeKind};
 use serde_json::json;
-use vectorcraft_color::{GradientKind, Paint};
-use vectorcraft_doc::{AppearanceItem, NodeKind};
 
 use super::*;
 
@@ -17,7 +17,7 @@ fn rect(s: &mut Session) -> NodeId {
     NodeId(r["id"].as_u64().unwrap())
 }
 
-fn node(s: &Session, id: NodeId) -> vectorcraft_doc::Node {
+fn node(s: &Session, id: NodeId) -> logocraft_doc::Node {
     s.doc().unwrap().doc.node(id).unwrap().clone()
 }
 
@@ -243,15 +243,15 @@ fn text_set_format() {
     assert_eq!(t.first_style().kerning, None);
     assert!(s.execute("text.setFormat", &json!({"ids": [id.0]})).is_err());
     // Paragraph composer: Every-line by default, undoable.
-    assert_eq!(t.para.composer, vectorcraft_doc::Composer::EveryLine);
+    assert_eq!(t.para.composer, logocraft_doc::Composer::EveryLine);
     s.execute("text.setFormat", &json!({"ids": [id.0], "composer": "singleLine"})).unwrap();
     let NodeKind::Text(t) = node(&s, id).kind else { panic!() };
-    assert_eq!(t.para.composer, vectorcraft_doc::Composer::SingleLine);
+    assert_eq!(t.para.composer, logocraft_doc::Composer::SingleLine);
     assert!(s.execute("text.setFormat", &json!({"ids": [id.0], "composer": "best"})).is_err());
     assert!(s.execute("text.setFormat", &json!({"ids": [id.0], "composer": 1})).is_err());
     s.execute("edit.undo", &json!({})).unwrap();
     let NodeKind::Text(t) = node(&s, id).kind else { panic!() };
-    assert_eq!(t.para.composer, vectorcraft_doc::Composer::EveryLine);
+    assert_eq!(t.para.composer, logocraft_doc::Composer::EveryLine);
 }
 
 #[test]
@@ -265,9 +265,9 @@ fn stroke_advanced_scale_swap_flip() {
     let n = node(&s, id);
     let st = n.appearance.stroke().unwrap();
     assert_eq!(st.start_arrow, None);
-    assert_eq!(st.end_arrow, Some(vectorcraft_doc::Arrowhead::Triangle));
+    assert_eq!(st.end_arrow, Some(logocraft_doc::Arrowhead::Triangle));
     assert_eq!(st.arrow_scale, (200.0, 50.0));
-    assert_eq!(st.profile.as_ref().unwrap().points, vectorcraft_doc::WidthProfile::taper_start().points);
+    assert_eq!(st.profile.as_ref().unwrap().points, logocraft_doc::WidthProfile::taper_start().points);
     assert!(s.execute("stroke.setAdvanced", &json!({})).is_err());
     assert!(s.execute("stroke.setAdvanced", &json!({"flipProfile": "sideways"})).is_err());
 }

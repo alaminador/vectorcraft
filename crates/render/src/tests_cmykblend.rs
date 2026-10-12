@@ -1,10 +1,10 @@
 //! Blending in CMYK documents ([`crate::ink`]): blend modes and opacity composite inks.
 
 use super::*;
-use vectorcraft_color::blend::MASK_LUM;
-use vectorcraft_color::{BlendMode as Blend, Color, Paint};
-use vectorcraft_doc::{Appearance, ColorMode, ImageBlob, ImageObject, Node, OpacityMask};
-use vectorcraft_geom::shapes;
+use logocraft_color::blend::MASK_LUM;
+use logocraft_color::{BlendMode as Blend, Color, Paint};
+use logocraft_doc::{Appearance, ColorMode, ImageBlob, ImageObject, Node, OpacityMask};
+use logocraft_geom::shapes;
 
 fn rect(d: &mut Document, r: Rect, c: Color) -> Node {
     Node::path(d.alloc_id(), shapes::rectangle(r), Appearance::basic(Paint::solid(c), Paint::None, 0.0))
@@ -127,7 +127,7 @@ fn placed_images_are_separated_not_blackened() {
     );
     add(&mut d, n);
     let got = Renderer::new().render_region(&d, d.artboards[0].rect, 1.0, true).pixel(1, 1);
-    let cms = vectorcraft_color::cms::active();
+    let cms = logocraft_color::cms::active();
     let [r, g, b] = cms.cmyk_to_srgb(cms.srgb_to_cmyk([1.0, 0.0, 0.0], cms.settings().intent), false).map(|v| (v * 255.0).round() as u8);
     assert!(near(got, [r, g, b, 255], 4), "{got:?} ≠ {:?}", [r, g, b]);
 }

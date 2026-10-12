@@ -2,26 +2,26 @@
 //! through the CMS, gamut checks, View → Proof Setup / Proof Colors / Overprint Preview, the
 //! Separations Preview panel, Overprint Black and spot swatches.
 //!
-//! Colour settings and the proof view are process-wide (`vectorcraft_color::cms::active`,
-//! `vectorcraft_render::proof::view`). A document's assigned profiles are stored in
+//! Colour settings and the proof view are process-wide (`logocraft_color::cms::active`,
+//! `logocraft_render::proof::view`). A document's assigned profiles are stored in
 //! `Document::color_profiles` (files before format v3: `Document.unknown["colorProfiles"]`) and
 //! become active when assigned.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+use logocraft_color::cms::{self, ColorSettings, Intent, Model, ProofTarget};
+use logocraft_color::recolor::Neutral;
+use logocraft_color::{Color, Paint};
+use logocraft_doc::ColorMode;
+use logocraft_render::proof;
 use serde_json::{Value, json};
-use vectorcraft_color::cms::{self, ColorSettings, Intent, Model, ProofTarget};
-use vectorcraft_color::recolor::Neutral;
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::ColorMode;
-use vectorcraft_render::proof;
 
 use super::*;
 
 /// `Document.unknown` key under which files before format v3 kept the assigned profiles (migrated
 /// to `Document::color_profiles` on load).
-pub const PROFILES_KEY: &str = vectorcraft_doc::profiles::LEGACY_PROFILES_KEY;
+pub const PROFILES_KEY: &str = logocraft_doc::profiles::LEGACY_PROFILES_KEY;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
@@ -183,7 +183,7 @@ fn load_profile(_: &mut Session, _: &Value) -> Result<Value> {
 }
 
 /// The document's assigned profiles (`None` = working space).
-pub fn doc_profiles(d: &vectorcraft_doc::Document) -> (Option<String>, Option<String>) {
+pub fn doc_profiles(d: &logocraft_doc::Document) -> (Option<String>, Option<String>) {
     let get = |n: &Option<String>| n.as_deref().map(|n| cms::canonical_name(n).to_string());
     (get(&d.color_profiles.rgb), get(&d.color_profiles.cmyk))
 }
@@ -208,7 +208,7 @@ fn assign_profile(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let changed = pick("rgb", &mut rgb, cms::ProfileKind::Rgb)? | pick("cmyk", &mut cmyk, cms::ProfileKind::Cmyk)?;
     if changed {
-        let profiles = vectorcraft_doc::ColorProfiles { rgb: rgb.clone(), cmyk: cmyk.clone() };
+        let profiles = logocraft_doc::ColorProfiles { rgb: rgb.clone(), cmyk: cmyk.clone() };
         s.edit("Assign Profile", |d, _| {
             d.color_profiles = profiles;
             Ok(())
@@ -280,7 +280,7 @@ pub(crate) fn convert_mode(s: &mut Session, p: &Value) -> Result<Value> {
 /// CMYK profile, unless `grays` puts them on the black plate. Lab colours (spot colour
 /// definitions) are device independent and fit either mode. Document Color Mode and
 /// `document.open {colorMode}` both convert this way.
-pub(crate) fn set_color_mode(d: &mut vectorcraft_doc::Document, mode: ColorMode, convert: bool, intent: Option<Intent>, grays: Grays) -> usize {
+pub(crate) fn set_color_mode(d: &mut logocraft_doc::Document, mode: ColorMode, convert: bool, intent: Option<Intent>, grays: Grays) -> usize {
     d.color_mode = mode;
     if !convert {
         return 0;
@@ -370,7 +370,7 @@ fn gamut_check(s: &mut Session, p: &Value) -> Result<Value> {
     } else {
         let st = s.doc()?;
         let ids = targets(s, p)?;
-        let mut collect = |n: &vectorcraft_doc::Node| {
+        let mut collect = |n: &logocraft_doc::Node| {
             let mut n = n.clone();
             proof::map_node_colors(&mut n, &mut |c, _| {
                 cols.push(*c);

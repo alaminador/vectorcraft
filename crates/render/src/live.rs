@@ -1,7 +1,7 @@
 //! Live objects in the renderer.
 //!
-//! Blends and envelopes are evaluated by `vectorcraft_doc::live` (through
-//! `vectorcraft_effects::expand_live`, as the exporters do) and the resulting objects cached by
+//! Blends and envelopes are evaluated by `logocraft_doc::live` (through
+//! `logocraft_effects::expand_live`, as the exporters do) and the resulting objects cached by
 //! `Arc` identity of the live node and of the symbols and patterns it draws (so the steps keep
 //! stable `Arc`s and hit the geometry cache frame after frame, and editing a symbol redraws an
 //! envelope around an instance of it). Gradient meshes are tessellated into many small solid-colour quads (vello
@@ -11,9 +11,9 @@
 
 use std::sync::Arc;
 
-use vectorcraft_doc::live::{GradientMesh, MeshQuad};
-use vectorcraft_doc::{Document, Node, NodeKind};
-use vectorcraft_geom::{BezPath, Vec2};
+use logocraft_doc::live::{GradientMesh, MeshQuad};
+use logocraft_doc::{Document, Node, NodeKind};
+use logocraft_geom::{BezPath, Vec2};
 use vello_cpu::RenderContext;
 use vello_cpu::peniko;
 
@@ -63,7 +63,7 @@ fn resources_key(doc: &Document, n: &Node) -> u64 {
             (Arc::as_ptr(&s.art) as usize).hash(&mut h);
         }
         for i in &c.appearance.items {
-            if let vectorcraft_color::Paint::Pattern { pattern, .. } = i.paint()
+            if let logocraft_color::Paint::Pattern { pattern, .. } = i.paint()
                 && let Some(def) = doc.pattern(pattern)
             {
                 def.art.iter().for_each(|a| (Arc::as_ptr(a) as usize).hash(&mut h));
@@ -125,9 +125,9 @@ impl Renderer {
         let knockout = !f.opts.outline
             && matches!(a.kind, NodeKind::Blend { .. })
             && a.knockout.resolve(self.knockout)
-            && vectorcraft_doc::live::steps_knockout_shows(&self.live_expanded(f.doc, a, true));
+            && logocraft_doc::live::steps_knockout_shows(&self.live_expanded(f.doc, a, true));
         let enclosing = std::mem::replace(&mut self.knockout, knockout);
-        if !f.opts.outline && (opacity < 1.0 || a.blend != vectorcraft_color::BlendMode::Normal || a.isolate || knockout) {
+        if !f.opts.outline && (opacity < 1.0 || a.blend != logocraft_color::BlendMode::Normal || a.isolate || knockout) {
             let blends = self.blends_through(a);
             let bounds = if blends { self.bounds_of(a) } else { None };
             let comp = crate::group::Composite { blend: a.blend, opacity, isolated: a.isolate, blends, bounds, ..Default::default() };

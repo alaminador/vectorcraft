@@ -3,13 +3,13 @@
 
 use std::sync::Mutex;
 
+use logocraft_color::cms::{self, Intent, Lab, delta_e2000};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{ColorMode, Document};
+use logocraft_geom::Affine;
+use logocraft_render::proof::{ProofSetup, ProofTarget};
+use logocraft_render::{RenderOptions, Renderer};
 use serde_json::{Value, json};
-use vectorcraft_color::cms::{self, Intent, Lab, delta_e2000};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{ColorMode, Document};
-use vectorcraft_geom::Affine;
-use vectorcraft_render::proof::{ProofSetup, ProofTarget};
-use vectorcraft_render::{RenderOptions, Renderer};
 
 use super::*;
 
@@ -40,7 +40,7 @@ fn lab_of_rgb(rgb: [f32; 3]) -> Lab {
     cms::lab::srgb_to_lab(rgb)
 }
 
-fn render(doc: &Document, opts: RenderOptions) -> vectorcraft_render::Rendered {
+fn render(doc: &Document, opts: RenderOptions) -> logocraft_render::Rendered {
     let mut r = Renderer::new();
     r.threads = 0;
     r.render(doc, 100, 100, Affine::IDENTITY, &RenderOptions { background: Some([255, 255, 255, 255]), ..opts })
@@ -263,8 +263,7 @@ fn has_cmyk_op(pdf: &str) -> bool {
 }
 
 fn pdf_text(doc: &Document) -> String {
-    let bytes =
-        vectorcraft_pdf::export(doc, &vectorcraft_pdf::PdfOptions { created: Some(0), ..vectorcraft_pdf::PdfOptions::uncompressed() }).unwrap();
+    let bytes = logocraft_pdf::export(doc, &logocraft_pdf::PdfOptions { created: Some(0), ..logocraft_pdf::PdfOptions::uncompressed() }).unwrap();
     String::from_utf8_lossy(&bytes).into_owned()
 }
 

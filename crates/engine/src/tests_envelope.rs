@@ -1,11 +1,11 @@
 //! Envelope Distort: Reset with Warp / Mesh, Envelope Options, Release, Expand and Object → Expand,
 //! driven through `Session::execute`.
 
+use logocraft_color::BlendMode;
+use logocraft_doc::live::{self, EnvelopeKind, EnvelopeOptions, PreserveShape};
+use logocraft_doc::{Knockout, Node, NodeKind, OpacityMask};
+use logocraft_geom::Rect;
 use serde_json::{Value, json};
-use vectorcraft_color::BlendMode;
-use vectorcraft_doc::live::{self, EnvelopeKind, EnvelopeOptions, PreserveShape};
-use vectorcraft_doc::{Knockout, Node, NodeKind, OpacityMask};
-use vectorcraft_geom::Rect;
 
 use super::*;
 
@@ -96,7 +96,7 @@ fn reset_with_warp_and_mesh_switch_the_kind_and_keep_the_content() {
     assert!(s.execute("object.envelope.resetWithWarp", &json!({"style": "nope"})).is_err());
     // Back to a mesh that keeps the arch's shape: the top middle point is where the warp put it.
     s.execute("object.envelope.resetWithWarp", &json!({"style": "arch", "bend": 50, "horizontal": true})).unwrap();
-    let top = live::EnvelopeMap::of(&node(&s, e)).unwrap().surface_mesh(2, 2, vectorcraft_color::Color::BLACK);
+    let top = live::EnvelopeMap::of(&node(&s, e)).unwrap().surface_mesh(2, 2, logocraft_color::Color::BLACK);
     s.execute("object.envelope.resetWithMesh", &json!({"rows": 2, "cols": 2})).unwrap();
     let EnvelopeKind::Mesh { rows: 2, cols: 2, points, .. } = kind(&s, e) else { panic!("{:?}", kind(&s, e)) };
     assert!(points[1].distance(top.points[1].p) < 1e-9 && points[1].y < 99.0, "{:?}", points[1]);
@@ -120,7 +120,7 @@ fn release_gives_back_the_warp_shape_as_a_mesh_and_keeps_the_transparency() {
     let mut s = session();
     let (a, e) = enveloped(&mut s, "object.envelope.makeWithWarp", json!({"style": "arc", "bend": 50}));
     s.execute("transparency.set", &json!({"opacity": 40, "blend": "multiply"})).unwrap();
-    let mask = Node::path(NodeId(0), vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Default::default());
+    let mask = Node::path(NodeId(0), logocraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Default::default());
     s.edit("mask", |d, _| {
         d.node_mut(e).unwrap().extras_mut().mask = Some(Box::new(OpacityMask::new(mask, true)));
         Ok(())
@@ -160,7 +160,7 @@ fn expand_keeps_name_transparency_knockout_and_mask() {
     let mut s = session();
     let (_, e) = enveloped(&mut s, "object.envelope.makeWithWarp", json!({"style": "bulge", "bend": 40}));
     s.execute("transparency.set", &json!({"opacity": 70, "isolate": true, "knockout": "on"})).unwrap();
-    let mask = Node::path(NodeId(0), vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Default::default());
+    let mask = Node::path(NodeId(0), logocraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Default::default());
     s.edit("name and mask", |d, _| {
         let n = d.node_mut(e).unwrap();
         n.name = Some("Banner".into());
@@ -198,7 +198,7 @@ fn envelope_options_round_trip_natively_and_old_files_load() {
     let (_, e) = enveloped(&mut s, "object.envelope.makeWithWarp", json!({}));
     s.execute("object.envelope.options", &json!({"preserveShape": "transparency", "distortPatternFills": true})).unwrap();
     let d = &s.doc().unwrap().doc;
-    let back = vectorcraft_format::load(&vectorcraft_format::save(d, false)).unwrap();
+    let back = logocraft_format::load(&logocraft_format::save(d, false)).unwrap();
     assert_eq!(back.node(e), d.node(e));
     // An envelope saved before the options existed loads with its old behaviour.
     let mut old = serde_json::to_value(node(&s, e)).unwrap();
@@ -220,8 +220,8 @@ fn enveloped_type_keeps_each_runs_colour_on_the_canvas() {
     let t = id_of(&s.execute("text.create", &json!({"x": 100, "y": 200, "text": "MMMMMMMM", "size": 60, "fill": "#000000"})).unwrap());
     s.edit("red half", |d, _| {
         if let NodeKind::Text(tx) = &mut d.node_mut(t).unwrap().kind {
-            vectorcraft_text::edit::style_range(&mut tx.runs, 0, 4, |st| {
-                st.fill = vectorcraft_color::Paint::solid(vectorcraft_color::Color::rgb(1.0, 0.0, 0.0))
+            logocraft_text::edit::style_range(&mut tx.runs, 0, 4, |st| {
+                st.fill = logocraft_color::Paint::solid(logocraft_color::Color::rgb(1.0, 0.0, 0.0))
             });
         }
         Ok(())
@@ -230,7 +230,7 @@ fn enveloped_type_keeps_each_runs_colour_on_the_canvas() {
     sel(&mut s, &[t]);
     s.execute("object.envelope.makeWithWarp", &json!({"style": "flag", "bend": 0})).unwrap();
     let b = node(&s, t).geometric_bounds().unwrap();
-    let img = vectorcraft_render::Renderer::new().render_region(&s.doc().unwrap().doc, Rect::new(0.0, 0.0, 800.0, 400.0), 1.0, true);
+    let img = logocraft_render::Renderer::new().render_region(&s.doc().unwrap().doc, Rect::new(0.0, 0.0, 800.0, 400.0), 1.0, true);
     // Inked pixels of each half of the line: red at the start, black at the end.
     let (mut red, mut black) = (0, 0);
     for y in (b.y0 as u32)..(b.y1 as u32) {

@@ -194,7 +194,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 ## G15 Performance budgets and a GPU renderer
 
 - **Improved (#1257):** Craquelure, Mosaic Tiles and Stained Glass reuse squared distances during nearest-cell searches, with the original distance ordering retained near rounding/tie boundaries. A brute-force boundary regression and full-viewport pixel comparisons agree with the old result. `texture_drag_perf` reproduces a moved CMYK rounded rectangle at 190.07% and DPI 1.5; timings from a busy development machine are supporting evidence, with idle Windows drag QA still pending.
-- **Missing:** an idle-machine run of `vectorcraft-cli perf` at 50k paths (last: 2026-10-11 at 25k paths, every
+- **Missing:** an idle-machine run of `logocraft-cli perf` at 50k paths (last: 2026-10-11 at 25k paths, every
   budget met, 400% zoom 12.3 ms against 16 ms, measured), a spatial index for zoomed-in frames, dirty-region
   rendering, the GPU backend spike (M5). Large-selection edits, cached live effects and Pathfinder Trim, Merge,
   Crop and Outline landed in #1173.
@@ -211,7 +211,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 ## G17 Ecosystem: third-party plug-ins
 
-- **Missing:** Illustrator's ecosystem is a C++ plug-in SDK and a large commercial plug-in market. VectorCraft
+- **Missing:** Illustrator's ecosystem is a C++ plug-in SDK and a large commercial plug-in market. LogoCraft
   has sandboxed WebAssembly plug-ins for object filters and live effects ([plugins.md](plugins.md)) and MCP;
   missing are tool plug-ins, panel plug-ins, a plug-in directory and any third-party plug-ins (#710).
 - **Estimate:** 20–45 h for the APIs; the ecosystem itself isn't agent work.

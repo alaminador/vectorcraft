@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn the_original_file_survives_a_failed_write() {
         let d = dir("fail");
-        let path = d.join("doc.vectorcraft");
+        let path = d.join("doc.logocraft");
         std::fs::write(&path, b"original").unwrap();
         let r = write_atomic_with(&path, |f| {
             f.write_all(b"half a fi")?;
@@ -128,12 +128,12 @@ mod tests {
         });
         assert!(r.is_err());
         assert_eq!(std::fs::read(&path).unwrap(), b"original");
-        assert!(leftovers(&d, "doc.vectorcraft").is_empty(), "the temporary file is removed");
+        assert!(leftovers(&d, "doc.logocraft").is_empty(), "the temporary file is removed");
         write_atomic(&path, b"new").unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"new");
-        assert!(leftovers(&d, "doc.vectorcraft").is_empty());
+        assert!(leftovers(&d, "doc.logocraft").is_empty());
         // A folder that doesn't exist: an error, nothing written.
-        assert!(write_atomic(&d.join("missing").join("x.vectorcraft"), b"x").is_err());
+        assert!(write_atomic(&d.join("missing").join("x.logocraft"), b"x").is_err());
         let _ = std::fs::remove_dir_all(&d);
     }
 

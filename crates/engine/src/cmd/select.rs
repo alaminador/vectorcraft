@@ -2,9 +2,9 @@
 
 use std::collections::BTreeSet;
 
+use logocraft_color::Paint;
+use logocraft_doc::{Document, Node, NodeId, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_color::Paint;
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind};
 
 use super::*;
 
@@ -531,8 +531,8 @@ fn select_where(s: &mut Session, cmd: &str, p: &Value, f: impl Fn(&Document, &No
 
 /// An appearance attribute Select > Same > Appearance Attribute matches.
 enum Attribute {
-    Item(vectorcraft_doc::AppearanceItem),
-    Effect(vectorcraft_doc::Effect),
+    Item(logocraft_doc::AppearanceItem),
+    Effect(logocraft_doc::Effect),
 }
 
 fn same_attribute(s: &mut Session, p: &Value) -> Result<Value> {

@@ -2,14 +2,14 @@
 //! the Control bar, the Info panel, dialogs, the Preferences dialog itself and New Document; the
 //! Type unit in the Character panel; the change showing in the next frame.
 
+use logocraft_doc::Unit;
 use serde_json::json;
-use vectorcraft_doc::Unit;
 
 use super::tests_appearance::{app_with_rect, frame_events, run};
 use super::*;
 
 /// Every text drawn in the second headless frame of `f` (windows size themselves in the first).
-fn texts(app: &mut VectorcraftApp, mut f: impl FnMut(&mut VectorcraftApp, &mut Ui)) -> Vec<String> {
+fn texts(app: &mut LogocraftApp, mut f: impl FnMut(&mut LogocraftApp, &mut Ui)) -> Vec<String> {
     let ctx = egui::Context::default();
     crate::theme::install_fonts(&ctx);
     frame_events(&ctx, app, vec![], &mut f);
@@ -17,7 +17,7 @@ fn texts(app: &mut VectorcraftApp, mut f: impl FnMut(&mut VectorcraftApp, &mut U
 }
 
 /// Every text drawn by the open dialog in one headless frame.
-fn dialog_texts(app: &mut VectorcraftApp) -> Vec<String> {
+fn dialog_texts(app: &mut LogocraftApp) -> Vec<String> {
     texts(app, |app, ui| crate::dialogs::show(app, ui.ctx()))
 }
 
@@ -30,7 +30,7 @@ fn side_mm() -> String {
     Unit::Millimeters.format(100.0)
 }
 
-fn general_mm(app: &mut VectorcraftApp) {
+fn general_mm(app: &mut LogocraftApp) {
     app.run("prefs.set", json!({"key": "unitsGeneral", "value": "Millimeters"})).unwrap();
 }
 
@@ -69,7 +69,7 @@ fn dialog_lengths_show_in_the_general_unit() {
     crate::dialogs::open_tool_dialog(&mut app, "rectangle", json!({"x": 0, "y": 0}));
     assert!(shows(&dialog_texts(&mut app), &side_mm()), "Rectangle");
     app.run("effect.dialog", json!({"effect": "stylize.dropShadow"})).unwrap();
-    let x = vectorcraft_effects::default_params("stylize.dropShadow").unwrap()["x"].as_f64().unwrap();
+    let x = logocraft_effects::default_params("stylize.dropShadow").unwrap()["x"].as_f64().unwrap();
     let t = dialog_texts(&mut app);
     assert!(shows(&t, &Unit::Millimeters.format(x)), "Drop Shadow: {t:?}");
     crate::dialogs::cancel(&mut app);
@@ -94,7 +94,7 @@ fn the_preferences_dialog_shows_the_documents_units() {
     crate::prefs_dialog::open(&mut app, Some("General"));
     assert_eq!(app.ui.dialog.as_ref().unwrap().fields["unitsGeneral"], json!("millimeters"));
     let inc = app.session.prefs.keyboard_increment;
-    let frame = |app: &mut VectorcraftApp| texts(app, |app, ui| crate::prefs_dialog::show(app, ui.ctx()));
+    let frame = |app: &mut LogocraftApp| texts(app, |app, ui| crate::prefs_dialog::show(app, ui.ctx()));
     assert!(shows(&frame(&mut app), &Unit::Millimeters.format(inc)), "Keyboard Increment in mm");
     // Choosing another General unit in the dialog shows at once, and OK applies it.
     app.ui.dialog.as_mut().unwrap().fields.insert("unitsGeneral".into(), json!("inches"));
@@ -106,7 +106,7 @@ fn the_preferences_dialog_shows_the_documents_units() {
 
 #[test]
 fn new_documents_start_in_the_general_preference() {
-    let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+    let mut app = LogocraftApp::new(logocraft_engine::Session::new(), Default::default());
     general_mm(&mut app);
     app.run("file.newDialog", json!({})).unwrap();
     assert_eq!(app.ui.dialog.as_ref().unwrap().fields["units"], json!("Millimeters"));

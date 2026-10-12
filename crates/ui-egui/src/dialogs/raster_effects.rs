@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 use super::DialogSpec;
 use super::document_setup::{LABEL, check, choice};
 use crate::state::Dialog;
-use crate::{VectorcraftApp, widgets};
+use crate::{LogocraftApp, widgets};
 
 pub(super) const KIND: &str = "rasterEffectsSettings";
 const CMD: &str = "document.rasterEffectsSettings";
@@ -26,13 +26,13 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 };
 
 /// Open the dialog on the active document's settings.
-pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp) -> Result<Value, String> {
     let fields = app.session.execute(CMD, &json!({})).map_err(|e| e.to_string())?;
     app.ui.dialog = Some(Dialog::new(KIND, fields));
     Ok(Value::Null)
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let r = app.run(CMD, Value::Object(d.fields.clone()));
     if r.is_ok() {
         app.ui.dialog = None;
@@ -40,7 +40,7 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     r
 }
 
-fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     // Resolution: a preset, or Other with its own value.
     let ppi = d.f64("resolution", 72.0);
     let preset = RESOLUTIONS.iter().position(|(p, _)| (*p - ppi).abs() < 1e-9);
@@ -63,7 +63,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     });
     ui.add_space(4.0);
     let own =
-        if app.session.active().is_some_and(|s| s.doc.color_mode == vectorcraft_doc::ColorMode::Cmyk) { ("cmyk", "CMYK") } else { ("rgb", "RGB") };
+        if app.session.active().is_some_and(|s| s.doc.color_mode == logocraft_doc::ColorMode::Cmyk) { ("cmyk", "CMYK") } else { ("rgb", "RGB") };
     choice(ui, d, "colorModel", tl!("Color Model:"), &[own, ("grayscale", tl!("Grayscale")), ("bitmap", tl!("Bitmap"))]);
     ui.add_space(6.0);
     widgets::label_row(ui, tl!("Background:"), LABEL, |ui| {
@@ -96,12 +96,12 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use logocraft_engine::Session;
     use serde_json::json;
-    use vectorcraft_engine::Session;
 
-    use crate::VectorcraftApp;
+    use crate::LogocraftApp;
 
-    fn frame(app: &mut VectorcraftApp) {
+    fn frame(app: &mut LogocraftApp) {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         crate::theme::apply(&ctx, Default::default());
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn raster_effects_settings_draw_and_ok_is_one_undo_step() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
         crate::menus::invoke(&mut app, "document.rasterEffectsSettings", json!({}));
         let d = app.ui.dialog.as_mut().unwrap();
@@ -128,8 +128,8 @@ mod tests {
         assert!(app.ui.dialog.is_none());
         let st = app.session.active().unwrap();
         let r = &st.doc.raster_effects;
-        assert_eq!((st.doc.raster_effects_ppi, r.add_around, r.background), (200.0, 36.0, vectorcraft_doc::Background::White));
-        assert_eq!(r.color_model, vectorcraft_doc::RasterColorModel::Grayscale);
+        assert_eq!((st.doc.raster_effects_ppi, r.add_around, r.background), (200.0, 36.0, logocraft_doc::Background::White));
+        assert_eq!(r.color_model, logocraft_doc::RasterColorModel::Grayscale);
         assert_eq!(st.history.undo.len(), 1);
         // A bad value keeps the dialog open.
         app.run("ui.rasterEffectsSettingsDialog", json!({})).unwrap();
@@ -147,6 +147,6 @@ mod tests {
         );
         crate::dialogs::confirm(&mut app).unwrap();
         let st = app.session.active().unwrap();
-        assert!(st.selection.objects.iter().any(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(vectorcraft_doc::NodeKind::Image(_)))));
+        assert!(st.selection.objects.iter().any(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(logocraft_doc::NodeKind::Image(_)))));
     }
 }

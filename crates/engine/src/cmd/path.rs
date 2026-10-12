@@ -2,9 +2,9 @@
 
 use std::collections::BTreeSet;
 
+use logocraft_doc::{NodeId, NodeKind, Scaling};
+use logocraft_geom::{AnchorKind, PathData, Point, SubPath, Vec2};
 use serde_json::{Value, json};
-use vectorcraft_doc::{NodeId, NodeKind, Scaling};
-use vectorcraft_geom::{AnchorKind, PathData, Point, SubPath, Vec2};
 
 use super::create::anchor_from_json;
 use super::*;
@@ -107,7 +107,7 @@ pub fn specs() -> Vec<CommandSpec> {
     ]
 }
 
-pub(super) fn path_mut(d: &mut vectorcraft_doc::Document, id: NodeId) -> Result<&mut PathData> {
+pub(super) fn path_mut(d: &mut logocraft_doc::Document, id: NodeId) -> Result<&mut PathData> {
     let n = d.node_mut(id).ok_or(EngineError::NoNode(id))?;
     match &mut n.kind {
         NodeKind::Path { path, live, .. } => {
@@ -180,7 +180,7 @@ pub(crate) fn move_anchors(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 None => {
                     if let Some(n) = doc.node_mut(*id) {
-                        n.transform(vectorcraft_geom::Affine::translate(d), sc);
+                        n.transform(logocraft_geom::Affine::translate(d), sc);
                     }
                 }
             }
@@ -241,7 +241,7 @@ fn selected_paths(s: &Session) -> Result<Vec<NodeId>> {
 }
 
 /// The paths in the subtrees of `ids` (in groups and compound paths too), each once.
-pub(super) fn paths_in(d: &vectorcraft_doc::Document, ids: &[NodeId]) -> Vec<NodeId> {
+pub(super) fn paths_in(d: &logocraft_doc::Document, ids: &[NodeId]) -> Vec<NodeId> {
     let mut out = BTreeSet::new();
     for n in ids.iter().filter_map(|id| d.node(*id)) {
         n.walk(&mut |c| {
@@ -520,7 +520,7 @@ fn without_segments(sp: SubPath, removed: &BTreeSet<usize>) -> Vec<SubPath> {
     result
 }
 
-fn open_run(mut anchors: Vec<vectorcraft_geom::Anchor>) -> Option<SubPath> {
+fn open_run(mut anchors: Vec<logocraft_geom::Anchor>) -> Option<SubPath> {
     if anchors.len() < 2 {
         return None;
     }

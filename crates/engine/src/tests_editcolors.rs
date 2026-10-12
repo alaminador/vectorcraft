@@ -1,8 +1,8 @@
 //! Edit → Edit Colors: Adjust Color Balance modes and the live preview.
 
+use logocraft_color::{Color, Paint};
+use logocraft_doc::Node;
 use serde_json::{Value, json};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::Node;
 
 use super::*;
 
@@ -135,16 +135,10 @@ fn pixels(s: &Session, id: NodeId) -> Vec<[u8; 4]> {
 fn image_node(s: &mut Session) -> NodeId {
     let bytes = png([[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255], [255, 255, 255, 128]]);
     s.edit("Place", |d, sel| {
-        d.images.insert("pic".into(), vectorcraft_doc::ImageBlob::png(bytes));
+        d.images.insert("pic".into(), logocraft_doc::ImageBlob::png(bytes));
         let id = d.alloc_id();
-        let im = vectorcraft_doc::ImageObject {
-            key: "pic".into(),
-            width: 2,
-            height: 2,
-            xf: Default::default(),
-            link: None,
-            placement: Default::default(),
-        };
+        let im =
+            logocraft_doc::ImageObject { key: "pic".into(), width: 2, height: 2, xf: Default::default(), link: None, placement: Default::default() };
         d.insert(d.default_layer(), 0, Node::new(id, NodeKind::Image(Box::new(im))))?;
         sel.set([id]);
         Ok(id)

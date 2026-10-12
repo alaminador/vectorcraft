@@ -26,10 +26,10 @@
 
 use std::sync::mpsc::Sender;
 
+use logocraft_tools::{Mods, PointerEvent, PointerKind};
 use serde_json::{Value, json};
-use vectorcraft_tools::{Mods, PointerEvent, PointerKind};
 
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::canvas::Xf;
 
 pub type ControlResponse = Value;
@@ -70,7 +70,7 @@ fn wrap(r: Result<Value, String>) -> Outcome {
     }
 }
 
-pub fn all_commands(app: &VectorcraftApp) -> Value {
+pub fn all_commands(app: &LogocraftApp) -> Value {
     let mut v: Vec<Value> = app.session.commands().into_iter().map(|c| serde_json::to_value(c).unwrap_or_default()).collect();
     for (id, label, sc, params) in crate::menus::UI_COMMANDS {
         v.push(json!({"id": id, "label": label, "shortcut": sc, "params": params, "enabled": crate::menus::enabled(app, id), "ui": true}));
@@ -78,7 +78,7 @@ pub fn all_commands(app: &VectorcraftApp) -> Value {
     Value::Array(v)
 }
 
-pub fn inspect(app: &VectorcraftApp, ctx: &egui::Context) -> Value {
+pub fn inspect(app: &LogocraftApp, ctx: &egui::Context) -> Value {
     let r = ctx.content_rect();
     json!({
         "tool": app.session.tool_id(),
@@ -135,7 +135,7 @@ fn modifiers(p: &Value) -> egui::Modifiers {
     egui::Modifiers { alt: b("alt"), ctrl: b("ctrl"), shift: b("shift"), mac_cmd: b("cmd") && cfg!(target_os = "macos"), command: b("cmd") }
 }
 
-pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context, req: &ControlRequest) -> Outcome {
+pub fn handle(app: &mut LogocraftApp, ctx: &egui::Context, req: &ControlRequest) -> Outcome {
     let p = &req.params;
     let s = |k: &str| p.get(k).and_then(Value::as_str);
     match req.method.as_str() {
@@ -151,7 +151,7 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context, req: &ControlReques
         "ui.menu.list" => ok(serde_json::to_value(crate::menus::menu_entries(app)).unwrap_or_default()),
         "ui.contextMenu.list" => ok(serde_json::to_value(crate::menus::context_entries(app)).unwrap_or_default()),
         "ui.tool.select" => wrap(app.run("tool.select", json!({"tool": s("tool").unwrap_or("")}))),
-        "ui.tool.list" => ok(serde_json::to_value(vectorcraft_tools::TOOL_GROUPS).unwrap_or_default()),
+        "ui.tool.list" => ok(serde_json::to_value(logocraft_tools::TOOL_GROUPS).unwrap_or_default()),
         "ui.pointer" => {
             let Some(events) = p.get("events").and_then(Value::as_array) else { return err("missing `events`") };
             let base_mods: Mods = p.get("mods").and_then(|m| serde_json::from_value(m.clone()).ok()).unwrap_or_default();
@@ -174,7 +174,7 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context, req: &ControlReques
                         None => return err("no canvas yet"),
                     }
                 } else {
-                    vectorcraft_geom::Point::new(x, y)
+                    logocraft_geom::Point::new(x, y)
                 };
                 let mods = e.get("mods").and_then(|m| serde_json::from_value(m.clone()).ok()).unwrap_or(base_mods);
                 crate::canvas::dispatch(app, &PointerEvent { kind, pos, mods, pressure: PointerEvent::json_pressure(e) }, view);
@@ -314,7 +314,7 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context, req: &ControlReques
         }
         "ui.screenshot" => {
             // Refused now rather than once the frame comes (it is checked again then).
-            if let Some(Err(e)) = s("path").map(vectorcraft_engine::file_access::check_write) {
+            if let Some(Err(e)) = s("path").map(logocraft_engine::file_access::check_write) {
                 return err(e);
             }
             if p.get("focus").and_then(Value::as_bool).unwrap_or(true) {
@@ -330,7 +330,7 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context, req: &ControlReques
             let index = p.get("artboard").and_then(Value::as_u64).map_or(Some(0), |i| usize::try_from(i).ok());
             let Some(r) = index.and_then(|i| doc.artboards.get(i)).map(|a| a.rect) else { return err("no such artboard") };
             let scale = p.get("scale").and_then(Value::as_f64).unwrap_or(1.0);
-            if let Err(e) = vectorcraft_render::raster_size(r, scale) {
+            if let Err(e) = logocraft_render::raster_size(r, scale) {
                 return err(e);
             }
             let img = app.canvas.renderer.render_region(&doc, r, scale, true);
@@ -367,20 +367,20 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context, req: &ControlReques
 /// `result` with the PNG as `pngBase64` when there is one.
 fn with_data(mut result: Value, png: Option<&[u8]>) -> Value {
     if let Some(png) = png {
-        result["pngBase64"] = json!(vectorcraft_format::base64_encode(png));
+        result["pngBase64"] = json!(logocraft_format::base64_encode(png));
     }
     result
 }
 
 /// The reply to `ui.screenshot`: the window capture `image` written to `path`, and sent back as
 /// `pngBase64` with `data`.
-pub fn save_screenshot(app: &mut VectorcraftApp, image: &egui::ColorImage, path: Option<&str>, data: bool) -> Value {
+pub fn save_screenshot(app: &mut LogocraftApp, image: &egui::ColorImage, path: Option<&str>, data: bool) -> Value {
     let [w, h] = image.size;
     if path.is_none() && !data {
         return json!({"ok": true, "result": {"width": w, "height": h}});
     }
     let rgba: Vec<u8> = image.pixels.iter().flat_map(|c| c.to_array()).collect();
-    let img = vectorcraft_render::Rendered { width: w as u32, height: h as u32, pixels: rgba };
+    let img = logocraft_render::Rendered { width: w as u32, height: h as u32, pixels: rgba };
     let png = match img.to_png() {
         Ok(png) => png,
         Err(e) => return json!({"ok": false, "error": e}),
@@ -400,18 +400,18 @@ pub fn save_screenshot(app: &mut VectorcraftApp, image: &egui::ColorImage, path:
 
 #[cfg(test)]
 mod tests {
+    use logocraft_engine::Session;
     use serde_json::{Value, json};
-    use vectorcraft_engine::Session;
 
     use super::{ControlRequest, Outcome, handle};
-    use crate::{Services, VectorcraftApp};
+    use crate::{LogocraftApp, Services};
 
     /// #1004: `ui.render` (the MCP `screenshot` of a connected app) renders the artboard asked
     /// for, at the scale asked for; the first without one.
     #[test]
     fn render_takes_the_artboard_asked_for() {
         let (tx, rx) = std::sync::mpsc::channel();
-        let mut app = VectorcraftApp::new(Session::new(), Services::default()).with_control(rx);
+        let mut app = LogocraftApp::new(Session::new(), Services::default()).with_control(rx);
         let mut request = |method: &str, params: Value| {
             let (req, reply) = ControlRequest::new(method, params);
             tx.send(req).unwrap();
@@ -440,14 +440,14 @@ mod tests {
     /// the key, and a click on the key again lets it go.
     #[test]
     fn pointer_replies_name_the_key_object() {
-        let mut app = VectorcraftApp::new(Session::new(), Services::default());
+        let mut app = LogocraftApp::new(Session::new(), Services::default());
         app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
         let a = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap()["id"].clone();
         let b = app.run("shape.rectangle", json!({"x": 100, "y": 10, "width": 20, "height": 20})).unwrap()["id"].clone();
         app.run("select.set", json!({"ids": [a, b]})).unwrap();
         app.run("tool.select", json!({"tool": "selection"})).unwrap();
         let ctx = egui::Context::default();
-        let click = |app: &mut VectorcraftApp| {
+        let click = |app: &mut LogocraftApp| {
             let events = json!([{"kind": "down", "x": 110, "y": 20}, {"kind": "up", "x": 110, "y": 20}]);
             let (req, _) = ControlRequest::new("ui.pointer", json!({"events": events}));
             let Outcome::Done(r) = handle(app, &ctx, &req) else { panic!("not done") };

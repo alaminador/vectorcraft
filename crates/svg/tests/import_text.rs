@@ -3,11 +3,11 @@
 // Integration tests: unwrapping and panicking on failure is fine here, unlike in shipped code (AGENTS.md › Robustness).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use vectorcraft_color::{GradientKind, Paint};
-use vectorcraft_doc::{CharStyle, Document, Justify, Node, NodeKind, TextKind, TextObject};
-use vectorcraft_geom::{Point, Rect};
-use vectorcraft_svg::{import, import_with_report};
-use vectorcraft_text::{FontDb, layout};
+use logocraft_color::{GradientKind, Paint};
+use logocraft_doc::{CharStyle, Document, Justify, Node, NodeKind, TextKind, TextObject};
+use logocraft_geom::{Point, Rect};
+use logocraft_svg::{import, import_with_report};
+use logocraft_text::{FontDb, layout};
 
 fn svg(body: &str) -> String {
     format!(r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400" height="300">{body}</svg>"#)
@@ -340,9 +340,9 @@ fn white_space_handling() {
 
 #[test]
 fn placeholder_ids_never_clash_with_the_files() {
-    let d = open(r#"<rect id="vectorcraft-text-0" width="5" height="5"/><text y="20">Safe</text>"#);
+    let d = open(r#"<rect id="logocraft-text-0" width="5" height="5"/><text y="20">Safe</text>"#);
     assert_eq!(only_text(&d).plain_text(), "Safe");
-    assert_eq!(art(&d)[0].name.as_deref(), Some("vectorcraft-text-0"));
+    assert_eq!(art(&d)[0].name.as_deref(), Some("logocraft-text-0"));
 }
 
 #[test]
@@ -354,7 +354,7 @@ fn linked_text_keeps_its_url_and_stroke_style() {
     assert_eq!(n.url(), Some("https://example.com/t"));
     let st = only_text(&d).first_style();
     assert!(close(st.stroke_width, 1.2, 1e-9), "{}", st.stroke_width);
-    assert_eq!(st.stroke_join, vectorcraft_doc::LineJoin::Round);
+    assert_eq!(st.stroke_join, logocraft_doc::LineJoin::Round);
     assert_eq!(st.stroke_dash.as_ref().map(|d| d.pattern.clone()), Some(vec![2.0, 1.0]));
 }
 

@@ -5,18 +5,18 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use egui::{Sense, Stroke, StrokeKind, Ui, vec2};
+use logocraft_doc::{Document, Node, NodeKind};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeKind};
 
 use super::{pstate, set_pstate};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::theme::Tokens;
 use crate::widgets::{self, PanelDrag, menu_item};
 
 /// A thumbnail of symbol `name` (an instance at its natural size), cached by the art's identity.
 fn thumb(ui: &Ui, doc: &Document, name: &str, size: f32) -> Option<egui::TextureHandle> {
     thread_local! {
-        static RENDERER: RefCell<vectorcraft_render::Renderer> = RefCell::new(vectorcraft_render::Renderer::new());
+        static RENDERER: RefCell<logocraft_render::Renderer> = RefCell::new(logocraft_render::Renderer::new());
         static CACHE: crate::graphics::TexCache<HashMap<(usize, String, u32), egui::TextureHandle>> = crate::graphics::TexCache::default();
     }
     let sym = doc.symbols.iter().find(|s| s.name == name)?;
@@ -34,7 +34,7 @@ fn thumb(ui: &Ui, doc: &Document, name: &str, size: f32) -> Option<egui::Texture
     let mut d = Document::new(w.max(1.0), h.max(1.0));
     d.symbols.push(sym.clone());
     let id = d.alloc_id();
-    let xf = vectorcraft_geom::Affine::scale_non_uniform(w / 20.0, h / 20.0);
+    let xf = logocraft_geom::Affine::scale_non_uniform(w / 20.0, h / 20.0);
     let l = d.layers[0].id;
     d.insert(Some(l), 0, Node::new(id, NodeKind::SymbolInstance { symbol: name.into(), xf })).ok()?;
     let img = RENDERER.with(|r| r.borrow_mut().render_thumbnail(&d, id, px))?;
@@ -59,11 +59,11 @@ pub(crate) fn chip(ui: &Ui, doc: &Document, r: egui::Rect, name: &str) {
     }
 }
 
-fn current(app: &mut VectorcraftApp) -> Option<String> {
+fn current(app: &mut LogocraftApp) -> Option<String> {
     app.run("symbol.list", json!({})).ok().and_then(|v| v["current"].as_str().map(str::to_string))
 }
 
-fn has_instances_selected(app: &VectorcraftApp) -> bool {
+fn has_instances_selected(app: &LogocraftApp) -> bool {
     app.session.active().is_some_and(|st| {
         st.selection.objects.iter().any(|id| {
             let mut any = false;
@@ -75,7 +75,7 @@ fn has_instances_selected(app: &VectorcraftApp) -> bool {
     })
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some(doc) = app.session.active().map(|d| d.doc.clone()) else { return };
     let names: Vec<String> = doc.symbols.iter().map(|s| s.name.clone()).collect();
@@ -165,7 +165,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     });
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let sel = current(app);
     let has_sel = app.session.active().is_some_and(|d| !d.selection.is_empty());
     let inst = has_instances_selected(app);
@@ -199,13 +199,13 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 #[cfg(test)]
 mod tests {
     use egui::{Pos2, Rect, pos2};
-    use vectorcraft_doc::NodeId;
-    use vectorcraft_engine::Session;
+    use logocraft_doc::NodeId;
+    use logocraft_engine::Session;
 
     use super::*;
 
     /// One headless frame of the panel, 236 pt wide as in the dock.
-    fn frame(ctx: &egui::Context, app: &mut VectorcraftApp, events: Vec<egui::Event>) {
+    fn frame(ctx: &egui::Context, app: &mut LogocraftApp, events: Vec<egui::Event>) {
         let raw = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(236.0, 400.0))), events, ..Default::default() };
         let mut out = ctx.run_ui(raw, |ui| show(app, ui));
         out.textures_delta.clear();
@@ -215,14 +215,14 @@ mod tests {
         egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() }
     }
 
-    fn symbols(app: &mut VectorcraftApp) -> Vec<String> {
+    fn symbols(app: &mut LogocraftApp) -> Vec<String> {
         let list = app.run("symbol.list", json!({})).unwrap();
         list["symbols"].as_array().unwrap().iter().map(|s| s["name"].as_str().unwrap_or_default().to_string()).collect()
     }
 
     #[test]
     fn art_dropped_on_the_panel_becomes_a_symbol_and_a_symbol_drags_out() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
         let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap()["id"].as_u64().unwrap();
         // Selected, as art dragged off the canvas is.

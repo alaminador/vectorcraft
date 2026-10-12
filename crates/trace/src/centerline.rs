@@ -17,7 +17,7 @@
 
 use std::collections::HashSet;
 
-use vectorcraft_geom::{PathData, Point};
+use logocraft_geom::{PathData, Point};
 
 use crate::fit::{self, FitOptions};
 

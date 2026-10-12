@@ -1,8 +1,8 @@
 //! Hosting the active tool: pointer/key events → actions → commands.
 
+use logocraft_geom::Point;
+use logocraft_tools::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, settings};
 use serde_json::{Map, Value};
-use vectorcraft_geom::Point;
-use vectorcraft_tools::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, settings};
 
 use crate::{EngineError, Prefs, Result, Session};
 
@@ -23,7 +23,7 @@ pub struct ViewInfo {
     /// View → Show Corner Widget.
     pub corner_widgets: bool,
     /// The document window (none headless): screen-fixed widgets sit in it.
-    pub screen: Option<vectorcraft_tools::ScreenFrame>,
+    pub screen: Option<logocraft_tools::ScreenFrame>,
 }
 
 impl Default for ViewInfo {
@@ -45,7 +45,7 @@ impl Default for ViewInfo {
 
 /// The RGB of a colour preference (`#rrggbb`), or `fallback` when it doesn't parse.
 fn rgb(hex: &str, fallback: [u8; 3]) -> [u8; 3] {
-    vectorcraft_color::Color::from_hex(hex).map_or(fallback, |c| {
+    logocraft_color::Color::from_hex(hex).map_or(fallback, |c| {
         let [r, g, b, _] = c.to_rgba8(1.0);
         [r, g, b]
     })
@@ -82,7 +82,7 @@ impl Session {
         self.apply_actions(acts)?;
         self.keep_tool_settings();
         self.tool = self.make_tool(id);
-        if vectorcraft_tools::catalog::is_selection_tool(id) {
+        if logocraft_tools::catalog::is_selection_tool(id) {
             self.last_selection_tool = Some(self.tool.id());
         }
         Ok(())
@@ -92,7 +92,7 @@ impl Session {
     /// Direct Selection to the tools that edit anchors (the Pen) and Selection to the others.
     /// None for the selection tools themselves and the view tools.
     fn lent_tool(&self, id: &str) -> Option<&'static str> {
-        use vectorcraft_tools::catalog::{edits_anchors, is_selection_tool};
+        use logocraft_tools::catalog::{edits_anchors, is_selection_tool};
         if is_selection_tool(id) || matches!(id, "hand" | "zoom" | "rotateView") {
             return None;
         }
@@ -126,7 +126,7 @@ impl Session {
     /// A fresh `id` tool with the options it keeps ([`settings`]): its last values, from this
     /// session or a saved one.
     pub(crate) fn make_tool(&self, id: &str) -> Box<dyn Tool> {
-        let mut t = vectorcraft_tools::create(id);
+        let mut t = logocraft_tools::create(id);
         Self::restore_tool_settings(&self.prefs, t.as_mut());
         t
     }
@@ -162,7 +162,7 @@ impl Session {
         Self::store_tool_settings(&mut self.prefs, self.tool.as_ref());
     }
 
-    pub(crate) fn with_tool_cx<R>(&mut self, view: ViewInfo, f: impl FnOnce(&mut dyn vectorcraft_tools::Tool, &ToolContext) -> R) -> R
+    pub(crate) fn with_tool_cx<R>(&mut self, view: ViewInfo, f: impl FnOnce(&mut dyn logocraft_tools::Tool, &ToolContext) -> R) -> R
     where
         R: Default,
     {
@@ -208,7 +208,7 @@ impl Session {
             pen_rubber_band: self.prefs.pen_rubber_band,
             curvature_rubber_band: self.prefs.curvature_rubber_band,
             placeholder_text: self.prefs.placeholder_text,
-            smart_guide_color: rgb(&self.prefs.smart_guide_color, vectorcraft_tools::guides::MAGENTA),
+            smart_guide_color: rgb(&self.prefs.smart_guide_color, logocraft_tools::guides::MAGENTA),
             alignment_guides: self.prefs.alignment_guides,
             anchor_path_labels: self.prefs.anchor_path_labels,
             measurement_labels: self.prefs.measurement_labels,
@@ -216,7 +216,7 @@ impl Session {
             spacing_guides: self.prefs.spacing_guides,
             snapping_tolerance: self.prefs.snapping_tolerance,
             construction_angles: if self.prefs.construction_guides {
-                vectorcraft_tools::guides::construction_angles(&self.prefs.construction_angles)
+                logocraft_tools::guides::construction_angles(&self.prefs.construction_angles)
             } else {
                 &[]
             },
@@ -272,7 +272,7 @@ impl Session {
                 let boards = self.active().map_or(0, |d| d.doc.artboards.len());
                 let active = (self.tool.id() == "artboard").then(|| self.tool.options()["active"].as_u64()).flatten();
                 let artboard = active.and_then(|i| usize::try_from(i).ok()).filter(|i| *i < boards);
-                self.with_tool_cx(view, |_, cx| Some(vectorcraft_tools::rulerguide::NewGuide::new(cx, vertical, artboard)))
+                self.with_tool_cx(view, |_, cx| Some(logocraft_tools::rulerguide::NewGuide::new(cx, vertical, artboard)))
             }
         };
         let Some(mut g) = g else { return Ok(()) };
@@ -412,7 +412,7 @@ impl Session {
     pub fn set_tool_option_cmd(&mut self, p: &Value) -> std::result::Result<Value, String> {
         let tool = p.get("tool").and_then(Value::as_str);
         if let Some(t) = tool
-            && vectorcraft_tools::tool_info(t).is_none()
+            && logocraft_tools::tool_info(t).is_none()
         {
             return Err(format!("unknown tool `{t}`"));
         }
@@ -423,7 +423,7 @@ impl Session {
         Ok(self.set_tool_options(tool, &values))
     }
 
-    /// Let the active tool finish work a command from outside it ended ([`vectorcraft_tools::Tool::after_command`]):
+    /// Let the active tool finish work a command from outside it ended ([`logocraft_tools::Tool::after_command`]):
     /// the Type tool stops editing text that is no longer selected. Only while it edits text.
     pub(crate) fn after_command(&mut self) {
         if self.in_tool_actions || !self.tool.wants_text() {

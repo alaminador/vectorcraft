@@ -2,14 +2,14 @@
 
 > **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-12 · **Change:** minor (G2: Film Grain added; Photoshop effects 29/57; 28 filters remain) · **Target:** Adobe Illustrator 2026 (30.x)
 
-Every entry of Illustrator's Effect menu, by its public feature name, against VectorCraft's effects catalogue
+Every entry of Illustrator's Effect menu, by its public feature name, against LogoCraft's effects catalogue
 (`effect_catalog()` in `crates/effects/src/lib.rs`) and the Effect menu built from it
 (`crates/ui-egui/src/menus.rs`). Counts are **measured** from the catalogue; "depth" notes are estimated.
 Part of [target-app-parity.md](target-app-parity.md); open work is in [gaps.md](gaps.md).
 
 ## Summary
 
-| Group | Illustrator | VectorCraft | % | Remaining (h) |
+| Group | Illustrator | LogoCraft | % | Remaining (h) |
 |---|---:|---:|---:|---:|
 | Illustrator effects (vector and stylize) | 50 | 44 | 88% | 6–10 |
 | Photoshop effects (raster, Effect Gallery) | 57 | 29 | 51% | 23–39 |
@@ -50,7 +50,7 @@ its resolution, PDF export warns once per object with the requested and the lowe
 | Video | De-Interlace, NTSC Colors | 2/2 | — |
 | Effect Gallery | the combined browser and stack dialog | 0/1 | all |
 
-The pixel-filter pipeline (`vectorcraft_effects::pixel`) is in place: each new filter is one function, a
+The pixel-filter pipeline (`logocraft_effects::pixel`) is in place: each new filter is one function, a
 catalogue row, a menu entry and translations. Measured throughput: 0.7–1.2 agent hours per filter
 (see [calibration](target-app-parity.md#calibration)), so the 28 missing filters are ~19–34 h and the Effect
 Gallery dialog another 4–6 h. These parallelize well across agents.
@@ -67,7 +67,7 @@ quieter highlight grain. Grain strength stays even across shadows and midtones a
 mid-grey to a quarter-strength floor at full Intensity before highlight headroom; cream retains
 soft grain, black takes light speckles and white stays clean. The tonal curve and endpoint behaviour
 are interpretations, not verified proprietary behaviour. Saturated colour channels may clip. The parameter
-ranges and defaults are chosen for VectorCraft, not asserted as measured proprietary defaults.
+ranges and defaults are chosen for LogoCraft, not asserted as measured proprietary defaults.
 Near white, highlight headroom can limit grain equally at every Intensity; highlight lift still
 depends on Intensity when Highlight Area is nonzero.
 The two rotated, variance-normalised noise layers can leave a faint diagonal weave at high

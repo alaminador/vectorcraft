@@ -32,29 +32,29 @@ pub mod transform;
 pub mod transparency;
 
 use egui::{Rect, Sense, Ui, vec2};
+use logocraft_color::{BlendMode, Color, Paint};
+use logocraft_doc::{LiveCorners, Node, StrokeLayer};
+use logocraft_engine::inspect::StrokeMixed;
+use logocraft_geom::shapes::CornerKind;
 use serde_json::{Value, json};
-use vectorcraft_color::{BlendMode, Color, Paint};
-use vectorcraft_doc::{LiveCorners, Node, StrokeLayer};
-use vectorcraft_engine::inspect::StrokeMixed;
-use vectorcraft_geom::shapes::CornerKind;
 
 use crate::theme::Tokens;
 use crate::widgets::{Live, dim_label};
-use crate::{VectorcraftApp, icons};
+use crate::{LogocraftApp, icons};
 
 /// The first selected node (cloned), if any.
-pub fn first_selected(app: &VectorcraftApp) -> Option<Node> {
+pub fn first_selected(app: &LogocraftApp) -> Option<Node> {
     first_node(app).cloned()
 }
 
 /// The radius the Live Corners of path `n` show in the panels: that of the corners the panels set
 /// (the Direct-Selected ones, else every corner), blank when they differ.
-pub(crate) fn corner_radius(app: &VectorcraftApp, n: &Node) -> Option<f64> {
+pub(crate) fn corner_radius(app: &LogocraftApp, n: &Node) -> Option<f64> {
     corner_style(app, n).0
 }
 
 /// The radius and kind of the corners [`corner_radius`] reads, each None when they differ.
-pub(crate) fn corner_style(app: &VectorcraftApp, n: &Node) -> (Option<f64>, Option<CornerKind>) {
+pub(crate) fn corner_style(app: &LogocraftApp, n: &Node) -> (Option<f64>, Option<CornerKind>) {
     let partial = app.session.active().and_then(|d| d.selection.partial(n.id));
     LiveCorners::of(n).map_or((None, None), |c| c.style(&c.picked(partial)))
 }
@@ -70,7 +70,7 @@ pub(crate) fn field_width(ui: &Ui) -> f32 {
 
 /// The Corner Radius field of a live rectangle's properties: [`corner_radius`], which a new value
 /// sets on those corners.
-pub(crate) fn corner_radius_row(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, id: &str) {
+pub(crate) fn corner_radius_row(app: &mut LogocraftApp, ui: &mut Ui, n: &Node, id: &str) {
     let fw = field_width(ui);
     ui.horizontal(|ui| {
         dim_label(ui, tl!("Corner Radius:"));
@@ -79,18 +79,18 @@ pub(crate) fn corner_radius_row(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node,
 }
 
 /// [`corner_radius_row`]'s field, `width` wide.
-pub(crate) fn corner_radius_field(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, id: impl std::hash::Hash + std::fmt::Debug, width: f32) {
+pub(crate) fn corner_radius_field(app: &mut LogocraftApp, ui: &mut Ui, n: &Node, id: impl std::hash::Hash + std::fmt::Debug, width: f32) {
     if let Some(r) = crate::widgets::num_field(ui, id, corner_radius(app, n), app.session.general_unit(), width) {
         app.run("object.setLiveShape", json!({"radius": r})).ok();
     }
 }
 
 /// Number of selected objects.
-pub(crate) fn selection_len(app: &VectorcraftApp) -> usize {
+pub(crate) fn selection_len(app: &LogocraftApp) -> usize {
     app.session.active().map(|d| d.selection.len()).unwrap_or(0)
 }
 
-pub fn show_icon_panel(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) {
+pub fn show_icon_panel(app: &mut LogocraftApp, ui: &mut Ui, id: &str) {
     match id {
         "swatches" => swatches::show(app, ui),
         "color" => color::show(app, ui),
@@ -125,7 +125,7 @@ pub fn show_icon_panel(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) {
 
 /// Items of a panel's (≡) menu. Unimplemented Illustrator items are listed disabled. False for a
 /// panel without items of its own.
-pub fn panel_menu_items(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) -> bool {
+pub fn panel_menu_items(app: &mut LogocraftApp, ui: &mut Ui, id: &str) -> bool {
     match id {
         "swatches" => swatches::menu(app, ui),
         "color" => color::menu(app, ui),
@@ -159,7 +159,7 @@ pub fn panel_menu_items(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) -> bool
 }
 
 /// The ≡ panel-menu button drawn into `rect` (the right end of a panel's title/tab strip).
-pub fn panel_menu(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, rect: Rect) {
+pub fn panel_menu(app: &mut LogocraftApp, ui: &mut Ui, id: &str, rect: Rect) {
     let t = Tokens::get(ui.ctx());
     let resp = ui.interact(rect, ui.id().with(("panel-menu", id)), Sense::click());
     icons::paint(ui, "menu", rect.shrink(1.0), if resp.hovered() { t.text_strong } else { t.text_dim });
@@ -189,12 +189,12 @@ pub fn panel_menu(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, rect: Rect) {
 // ---------- shared helpers ----------
 
 /// The paint command of the active proxy (Fill or Stroke), or of the inactive one.
-pub(crate) fn proxy_cmd(app: &VectorcraftApp, inactive: bool) -> &'static str {
+pub(crate) fn proxy_cmd(app: &LogocraftApp, inactive: bool) -> &'static str {
     if app.session.fill_active != inactive { "paint.setFill" } else { "paint.setStroke" }
 }
 
 /// The first selected node, borrowed (for per-frame reads that need no copy of it).
-fn first_node(app: &VectorcraftApp) -> Option<&Node> {
+fn first_node(app: &LogocraftApp) -> Option<&Node> {
     let st = app.session.active()?;
     st.selection.objects.first().and_then(|id| st.doc.node(*id))
 }
@@ -206,22 +206,22 @@ pub(crate) fn alt_held(ui: &Ui) -> bool {
 
 /// Apply a clicked colour, swatch or None (`params`: `{color}`, `{swatch}` or `{none}`) to the
 /// active proxy, or with Alt held to the inactive one, which stays behind.
-pub(crate) fn apply_click(app: &mut VectorcraftApp, ui: &Ui, mut params: Value) {
+pub(crate) fn apply_click(app: &mut LogocraftApp, ui: &Ui, mut params: Value) {
     let alt = alt_held(ui);
     params["focus"] = json!(!alt);
     app.run(proxy_cmd(app, alt), params).ok();
 }
 
-/// Fill and stroke as the proxies show them ([`vectorcraft_engine::Session::proxy_paints`]: the
+/// Fill and stroke as the proxies show them ([`logocraft_engine::Session::proxy_paints`]: the
 /// Appearance panel's active item for the proxy of its kind, else the first selected object's, a
 /// group's first painted object's, else the defaults for new art).
-pub(crate) fn current_paints(app: &VectorcraftApp) -> (Paint, Paint) {
+pub(crate) fn current_paints(app: &LogocraftApp) -> (Paint, Paint) {
     app.session.proxy_paints()
 }
 
 /// Whether the selected objects' fills and strokes differ (the proxies show "?"), cached per
 /// document revision and Appearance panel item.
-pub(crate) fn mixed_paints(app: &VectorcraftApp, ctx: &egui::Context) -> (bool, bool) {
+pub(crate) fn mixed_paints(app: &LogocraftApp, ctx: &egui::Context) -> (bool, bool) {
     let Some(st) = app.session.active() else { return (false, false) };
     let key = (st.uid, st.revision, app.session.appearance_item());
     match pstate::<Option<((u64, u64, Option<usize>), (bool, bool))>>(ctx, "proxy-mixed") {
@@ -235,8 +235,8 @@ pub(crate) fn mixed_paints(app: &VectorcraftApp, ctx: &egui::Context) -> (bool, 
 }
 
 /// The stroke the Stroke panel, Control bar and Properties show: while the Type tool edits text,
-/// the selected characters' stroke, else [`vectorcraft_engine::Session::shown_stroke`].
-pub(crate) fn current_stroke(app: &VectorcraftApp) -> Option<StrokeLayer> {
+/// the selected characters' stroke, else [`logocraft_engine::Session::shown_stroke`].
+pub(crate) fn current_stroke(app: &LogocraftApp) -> Option<StrokeLayer> {
     if character::text_editing(app).is_some() {
         return character::text_style(app).map(|(c, _)| c.stroke_layer());
     }
@@ -244,9 +244,9 @@ pub(crate) fn current_stroke(app: &VectorcraftApp) -> Option<StrokeLayer> {
 }
 
 /// Which Stroke panel values the selection doesn't share and whether Align Stroke applies
-/// ([`vectorcraft_engine::DocState::stroke_mixed`]), cached per document revision. While the Type
+/// ([`logocraft_engine::DocState::stroke_mixed`]), cached per document revision. While the Type
 /// tool edits text, the selected characters' stroke shows as it is.
-pub(crate) fn stroke_mixed(app: &VectorcraftApp, ctx: &egui::Context) -> StrokeMixed {
+pub(crate) fn stroke_mixed(app: &LogocraftApp, ctx: &egui::Context) -> StrokeMixed {
     let Some(st) = app.session.active().filter(|_| character::text_editing(app).is_none()) else { return StrokeMixed::default() };
     let key = (st.uid, st.revision);
     match pstate::<Option<((u64, u64), StrokeMixed)>>(ctx, "stroke-mixed") {
@@ -261,7 +261,7 @@ pub(crate) fn stroke_mixed(app: &VectorcraftApp, ctx: &egui::Context) -> StrokeM
 
 /// Opacity and blend mode as the Transparency panel and Control bar show them: the Appearance
 /// panel's active item's, else the first selected object's.
-pub(crate) fn current_transparency(app: &VectorcraftApp) -> Option<(f32, BlendMode)> {
+pub(crate) fn current_transparency(app: &LogocraftApp) -> Option<(f32, BlendMode)> {
     let n = first_node(app)?;
     Some(match app.session.appearance_item().and_then(|i| n.appearance.items.get(i)) {
         Some(it) => (it.opacity(), it.blend()),
@@ -270,19 +270,19 @@ pub(crate) fn current_transparency(app: &VectorcraftApp) -> Option<(f32, BlendMo
 }
 
 /// Is the active proxy "?" (the selected objects' paints differ)?
-pub(crate) fn active_mixed(app: &VectorcraftApp, ctx: &egui::Context) -> bool {
+pub(crate) fn active_mixed(app: &LogocraftApp, ctx: &egui::Context) -> bool {
     let (f, s) = mixed_paints(app, ctx);
     if app.session.fill_active { f } else { s }
 }
 
 /// The paint behind the active proxy.
-pub(crate) fn active_paint(app: &VectorcraftApp) -> Paint {
+pub(crate) fn active_paint(app: &LogocraftApp) -> Paint {
     let (f, s) = current_paints(app);
     if app.session.fill_active { f } else { s }
 }
 
 /// Draw the Fill/Stroke proxy and handle its clicks through commands.
-pub(crate) fn proxy(app: &mut VectorcraftApp, ui: &mut Ui, size: f32) {
+pub(crate) fn proxy(app: &mut LogocraftApp, ui: &mut Ui, size: f32) {
     let (f, s) = current_paints(app);
     let mixed = mixed_paints(app, ui.ctx());
     let c = crate::widgets::fill_stroke_proxy(ui, &f, &s, mixed, app.session.fill_active, size);
@@ -304,7 +304,7 @@ pub(crate) fn proxy(app: &mut VectorcraftApp, ui: &mut Ui, size: f32) {
 /// `chevron` after it): the proxy's paint, "?" when the selected objects' paints differ. A click
 /// brings that proxy forward and opens a popover with the Swatches panel; Shift-click (or the
 /// popover's toggle) shows the Color panel's mixer instead.
-pub(crate) fn paint_chip(app: &mut VectorcraftApp, ui: &mut Ui, stroke: bool, size: f32, chevron: bool) {
+pub(crate) fn paint_chip(app: &mut LogocraftApp, ui: &mut Ui, stroke: bool, size: f32, chevron: bool) {
     let (fill, stroke_paint) = current_paints(app);
     let mixed = mixed_paints(app, ui.ctx());
     let (paint, mixed) = if stroke { (stroke_paint, mixed.1) } else { (fill, mixed.0) };
@@ -331,7 +331,7 @@ const POPOVER_WIDTH: f32 = 248.0;
 const MIXER: &str = "paint-popover-mixer";
 
 /// The body of a Fill/Stroke chip popover: a Swatches / Color mixer toggle above that panel's body.
-fn paint_popover(app: &mut VectorcraftApp, ui: &mut Ui) {
+fn paint_popover(app: &mut LogocraftApp, ui: &mut Ui) {
     ui.set_width(POPOVER_WIDTH);
     let mixer: bool = pstate(ui.ctx(), MIXER);
     ui.horizontal(|ui| {
@@ -351,7 +351,7 @@ fn paint_popover(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// Run `cmd` live: while dragging, preview on top of an interaction snapshot; on release, commit
 /// it as one undo step. Falls back to a plain run when no document is open.
-pub(crate) fn live_run(app: &mut VectorcraftApp, label: &str, cmd: &str, params: Value, phase: Live) {
+pub(crate) fn live_run(app: &mut LogocraftApp, label: &str, cmd: &str, params: Value, phase: Live) {
     match phase {
         Live::Idle => {}
         Live::Dragging | Live::Released => {
@@ -385,7 +385,7 @@ pub(crate) fn label_or_name(s: &str, built_in: bool) -> &str {
 
 /// "Recent Colors" header + a row of chips (the Session's recent colours, which every paint
 /// command feeds); returns the one clicked, for the caller to apply.
-pub(crate) fn recent_colors_row(app: &VectorcraftApp, ui: &mut Ui) -> Option<Color> {
+pub(crate) fn recent_colors_row(app: &LogocraftApp, ui: &mut Ui) -> Option<Color> {
     let t = Tokens::get(ui.ctx());
     crate::widgets::subheader(ui, tl!("Recent Colors"));
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 22.0), Sense::hover());
@@ -406,7 +406,7 @@ pub(crate) fn recent_colors_row(app: &VectorcraftApp, ui: &mut Ui) -> Option<Col
 }
 
 /// A colour as command JSON, keeping its model.
-pub(crate) use vectorcraft_tools::params::color_json;
+pub(crate) use logocraft_tools::params::color_json;
 
 /// Paint as command params (`{color}`, `{swatch, tint?}`, `{none}`, `{gradient}` (lossless) or
 /// `{pattern}`).
@@ -416,7 +416,7 @@ pub(crate) fn paint_params(p: &Paint) -> Value {
         Paint::Solid { swatch: Some(n), tint, .. } if *tint < 1.0 => json!({"swatch": n, "tint": tint * 100.0}),
         Paint::Solid { swatch: Some(n), .. } => json!({"swatch": n}),
         Paint::Solid { color, .. } => json!({"color": color_json(color)}),
-        Paint::Gradient(g) => json!({"gradient": vectorcraft_tools::params::gradient_params(g)}),
+        Paint::Gradient(g) => json!({"gradient": logocraft_tools::params::gradient_params(g)}),
         Paint::Pattern { pattern, .. } => json!({"pattern": pattern}),
     }
 }
@@ -449,11 +449,11 @@ mod tests {
         assert_eq!(paint_params(&Paint::None), json!({"none": true}));
         let p = paint_params(&Paint::solid(Color::cmyk(0.1, 0.2, 0.3, 0.4)));
         assert!((p["color"]["k"].as_f64().unwrap() - 0.4).abs() < 1e-6);
-        let g = Paint::Gradient(Box::new(vectorcraft_color::GradientPaint::new(Default::default())));
+        let g = Paint::Gradient(Box::new(logocraft_color::GradientPaint::new(Default::default())));
         let p = paint_params(&g);
         assert_eq!(p["gradient"]["kind"], "linear");
         assert_eq!(p["gradient"]["stops"].as_array().unwrap().len(), 2);
-        assert_eq!(paint_params(&vectorcraft_doc::pattern::pattern_paint("Dots")), json!({"pattern": "Dots"}));
+        assert_eq!(paint_params(&logocraft_doc::pattern::pattern_paint("Dots")), json!({"pattern": "Dots"}));
         assert_eq!(p["gradient"]["stops"][0]["midpoint"], json!(0.5));
         let tint = Paint::Solid { color: Color::gray(0.5), swatch: Some("Ink".into()), tint: 0.5 };
         assert_eq!(paint_params(&tint), json!({"swatch": "Ink", "tint": 50.0}), "a tint keeps its percentage");

@@ -1,9 +1,9 @@
 //! Layer Options on screen: Preview off draws a layer in outline, Dim Images fades its images;
 //! exports (which leave templates out) draw both as they are.
 
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, ImageBlob, ImageObject, Node, NodeId, NodeKind};
-use vectorcraft_geom::shapes;
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, ImageBlob, ImageObject, Node, NodeId, NodeKind};
+use logocraft_geom::shapes;
 
 use super::*;
 

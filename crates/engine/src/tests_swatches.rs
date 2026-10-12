@@ -2,8 +2,8 @@
 //! Info), naming and kinds, Swatch Options edits reaching linked art, deleting, new swatches in
 //! groups and colour groups made from artwork.
 
+use logocraft_color::{Color, Paint};
 use serde_json::{Value, json};
-use vectorcraft_color::{Color, Paint};
 
 use super::*;
 
@@ -21,7 +21,7 @@ fn rect(s: &mut Session) -> NodeId {
     NodeId(run(s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10}))["id"].as_u64().unwrap())
 }
 
-fn doc(s: &Session) -> &vectorcraft_doc::Document {
+fn doc(s: &Session) -> &logocraft_doc::Document {
     &s.doc().unwrap().doc
 }
 
@@ -122,7 +122,7 @@ fn editing_a_global_swatch_recolours_linked_art_in_one_step() {
     assert_eq!(fill_of(&s, a), linked("#ff0000", "Brand"));
     assert_eq!(fill_of(&s, b), Paint::solid(Color::from_hex("#2a6fb0").unwrap()), "unlinked art keeps its colour");
     let text_fill = |s: &Session| match &doc(s).node(t).unwrap().kind {
-        vectorcraft_doc::NodeKind::Text(tx) => tx.runs[0].style.fill.clone(),
+        logocraft_doc::NodeKind::Text(tx) => tx.runs[0].style.fill.clone(),
         _ => panic!("type"),
     };
     assert_eq!(text_fill(&s), linked("#ff0000", "Brand"), "text runs follow the swatch");

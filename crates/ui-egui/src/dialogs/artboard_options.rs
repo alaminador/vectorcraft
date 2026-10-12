@@ -4,7 +4,7 @@
 use serde_json::{Value, json};
 
 use super::{DialogSpec, run_and_close};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::state::Dialog;
 
 pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("Artboard Options").into(), confirm, ..DialogSpec::FORM };
@@ -14,7 +14,7 @@ pub const KIND: &str = "artboardOptions";
 
 /// Open Artboard Options for the active artboard: the Artboard tool's while it is in use, else the
 /// window's.
-pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp) -> Result<Value, String> {
     let index = if app.session.tool_id() == "artboard" {
         app.session.tool_options()["active"].as_u64().and_then(|i| usize::try_from(i).ok()).unwrap_or(0)
     } else {
@@ -28,7 +28,7 @@ pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     Ok(json!({ "dialog": KIND }))
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     let mut p = Value::Object(d.fields.clone());
     for k in ["x", "y", "width", "height"] {
         if d.fields.contains_key(k) {

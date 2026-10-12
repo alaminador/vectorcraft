@@ -3,9 +3,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+use logocraft_doc::{Document, Node, NodeId, NodeKind, Unit};
+use logocraft_geom::{Affine, Point, Vec2};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeId, NodeKind, Unit};
-use vectorcraft_geom::{Affine, Point, Vec2};
 
 use super::clipboard::SwatchChoices;
 use super::*;
@@ -160,7 +160,7 @@ fn doc_node(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let doc = &s.doc()?.doc;
     let n = doc.node(id).ok_or(EngineError::NoNode(id))?;
-    opts.compound_member = doc.parent_of(id).and_then(|p| doc.node(p)).is_some_and(|p| matches!(p.kind, vectorcraft_doc::NodeKind::Compound { .. }));
+    opts.compound_member = doc.parent_of(id).and_then(|p| doc.node(p)).is_some_and(|p| matches!(p.kind, logocraft_doc::NodeKind::Compound { .. }));
     if summary { Ok(inspect::node_summary_opts(n, opts)) } else { Ok(serde_json::to_value(n).unwrap_or(Value::Null)) }
 }
 
@@ -295,7 +295,7 @@ fn redo(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 /// `selection` for an undo (redo) step, sharing that of `like`, the step beside it, when the same.
-fn shared_selection(selection: vectorcraft_doc::Selection, like: Option<&crate::HistoryEntry>) -> Arc<vectorcraft_doc::Selection> {
+fn shared_selection(selection: logocraft_doc::Selection, like: Option<&crate::HistoryEntry>) -> Arc<logocraft_doc::Selection> {
     match like {
         Some(l) if *l.selection == selection => l.selection.clone(),
         _ => Arc::new(selection),
@@ -320,7 +320,7 @@ pub(crate) fn roots_of(doc: &Document, ids: Vec<NodeId>) -> Vec<NodeId> {
             let path = paths.get(&id);
             let parent = path.and_then(|p| p.split_last()).map(|(_, up)| up).filter(|up| !up.is_empty());
             match parent.and_then(|up| doc.node_at(up).map(|n| (up, n))) {
-                Some((up, n)) if matches!(n.kind, vectorcraft_doc::NodeKind::Compound { .. }) => (n.id, Some(up.to_vec())),
+                Some((up, n)) if matches!(n.kind, logocraft_doc::NodeKind::Compound { .. }) => (n.id, Some(up.to_vec())),
                 _ => (id, path.cloned()),
             }
         })
@@ -560,7 +560,7 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Duplicate `roots` directly above each original, transform the copies, select them.
-pub(crate) fn duplicate_in(d: &mut Document, sel: &mut vectorcraft_doc::Selection, roots: &[NodeId], xf: Affine) -> Result<Vec<NodeId>> {
+pub(crate) fn duplicate_in(d: &mut Document, sel: &mut logocraft_doc::Selection, roots: &[NodeId], xf: Affine) -> Result<Vec<NodeId>> {
     let mut out = vec![];
     for id in roots {
         let Some((par, idx, _)) = d.position(*id) else { continue };

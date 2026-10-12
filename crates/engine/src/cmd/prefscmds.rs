@@ -8,7 +8,7 @@ use serde_json::{Map, Value, json};
 use super::*;
 use crate::Prefs;
 use crate::units::Measure;
-use vectorcraft_doc::{GridPrefs, Unit};
+use logocraft_doc::{GridPrefs, Unit};
 
 /// What kind of value a preference holds.
 #[derive(Clone, Copy, Debug)]
@@ -511,19 +511,19 @@ impl Session {
         self.prefs = p;
         if fonts_folder_changed {
             let folder = self.prefs.fonts_folder.trim();
-            vectorcraft_text::set_user_font_dirs(if folder.is_empty() { vec![] } else { vec![folder.into()] });
+            logocraft_text::set_user_font_dirs(if folder.is_empty() { vec![] } else { vec![folder.into()] });
             // Once the fonts were scanned, scan again now: the folder's fonts appear (or go) in the
             // font menus, and type in them lays out again. The first scan reads it anyway.
-            if vectorcraft_text::FontDb::global().installed_fonts_changed() {
+            if logocraft_text::FontDb::global().installed_fonts_changed() {
                 // Its result only counts the faces cataloged.
                 let _ = super::fonts::rescan(self, &serde_json::Value::Null);
             }
         }
         if hyphen_exceptions_changed {
             // Preferences › Hyphenation › Exceptions (#394): the layout reads the process-wide list.
-            vectorcraft_text::set_hyphenation_exceptions(&self.prefs.hyphenation_exceptions);
+            logocraft_text::set_hyphenation_exceptions(&self.prefs.hyphenation_exceptions);
         }
-        vectorcraft_render::set_default_threads(u16::try_from(self.prefs.render_threads).ok());
+        logocraft_render::set_default_threads(u16::try_from(self.prefs.render_threads).ok());
         for st in &mut self.docs {
             if history_changed {
                 st.history.limit = self.prefs.history_states as usize;

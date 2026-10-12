@@ -1,9 +1,9 @@
 //! Placed documents on screen: drawn from bitmaps made in the background (a placeholder until
 //! then), the same as drawn exactly; exports draw them exactly at once.
 
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, ImageBlob, LinkInfo, Node, NodeId, NodeKind, PlacedDocument};
-use vectorcraft_geom::shapes;
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, ImageBlob, LinkInfo, Node, NodeId, NodeKind, PlacedDocument};
+use logocraft_geom::shapes;
 
 use super::*;
 
@@ -24,11 +24,11 @@ fn blue_page(p: &PlacedDocument, bytes: &[u8]) -> Option<(Document, Node, Rect)>
 
 /// A 100×100 document showing one placed file (`bytes` under `key`) in the box (10, 10)–(90, 50).
 fn doc_with(key: &str, bytes: &[u8]) -> Document {
-    vectorcraft_doc::placed_document::set_loader(blue_page);
+    logocraft_doc::placed_document::set_loader(blue_page);
     let mut d = Document::new(100.0, 100.0);
     d.images.insert(key.into(), ImageBlob::new("application/json", bytes.to_vec()));
     let p = PlacedDocument {
-        link: LinkInfo::new("/art/card.vectorcraft"),
+        link: LinkInfo::new("/art/card.logocraft"),
         key: key.into(),
         bounding: false,
         width: 40.0,

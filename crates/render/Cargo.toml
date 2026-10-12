@@ -1,20 +1,20 @@
 [package]
-name = "vectorcraft-render"
+name = "logocraft-render"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "VectorCraft renderer: document to pixels (vello_cpu backend)"
+description = "LogoCraft renderer: document to pixels (vello_cpu backend)"
 
 [lints]
 workspace = true
 
 [dependencies]
-vectorcraft-geom = { workspace = true }
-vectorcraft-color = { workspace = true }
-vectorcraft-doc = { workspace = true }
-vectorcraft-text = { workspace = true }
-vectorcraft-effects = { workspace = true }
-vectorcraft-brush = { workspace = true }
+logocraft-geom = { workspace = true }
+logocraft-color = { workspace = true }
+logocraft-doc = { workspace = true }
+logocraft-text = { workspace = true }
+logocraft-effects = { workspace = true }
+logocraft-brush = { workspace = true }
 vello_cpu = { workspace = true }
 # Filter types (Gaussian blur, drop shadow) are not re-exported by vello_cpu 0.2.
 vello_common = { version = "0.2", default-features = false }
@@ -30,7 +30,7 @@ log = { workspace = true }
 vello_cpu = { workspace = true, features = ["multithreading"] }
 
 [dev-dependencies]
-vectorcraft-testkit = { workspace = true }
+logocraft-testkit = { workspace = true }
 # Decoders the export tests read their files back with.
 image = { workspace = true }
 proptest = { workspace = true }

@@ -3,9 +3,9 @@
 
 use std::collections::BTreeSet;
 
+use logocraft_doc::{AnchorRef, NodeId, NodeKind};
+use logocraft_geom::Point;
 use serde_json::{Value, json};
-use vectorcraft_doc::{AnchorRef, NodeId, NodeKind};
-use vectorcraft_geom::Point;
 
 use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey};
 
@@ -117,7 +117,7 @@ impl Tool for LassoTool {
 mod tests {
     use super::*;
     use crate::testutil::*;
-    use vectorcraft_doc::Selection;
+    use logocraft_doc::Selection;
 
     #[test]
     fn lasso_selects_anchors_inside() {

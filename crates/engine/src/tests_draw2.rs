@@ -1,9 +1,9 @@
 //! Drawing / path-editing tools driven through the session (tools → actions → `path.*` commands).
 
+use logocraft_doc::{NodeId, NodeKind};
+use logocraft_geom::{FillRule, PathData, Point};
+use logocraft_tools::{Mods, PointerEvent, PointerKind, ToolKey};
 use serde_json::json;
-use vectorcraft_doc::{NodeId, NodeKind};
-use vectorcraft_geom::{FillRule, PathData, Point};
-use vectorcraft_tools::{Mods, PointerEvent, PointerKind, ToolKey};
 
 use super::*;
 use crate::tooling::{UiRequest, ViewInfo};
@@ -82,7 +82,7 @@ fn near(a: Point, b: Point) -> bool {
 }
 
 fn area(pd: &PathData) -> f64 {
-    vectorcraft_pathops::area(pd, FillRule::NonZero)
+    logocraft_pathops::area(pd, FillRule::NonZero)
 }
 
 #[test]
@@ -143,7 +143,7 @@ fn curvature_clicks_build_smooth_path() {
     assert_eq!(ps.len(), 1);
     let sp = &ps[0].1.subpaths[0];
     assert_eq!(sp.anchors.len(), 3);
-    assert_eq!(sp.anchors[1].kind, vectorcraft_geom::AnchorKind::Smooth);
+    assert_eq!(sp.anchors[1].kind, logocraft_geom::AnchorKind::Smooth);
     // Alt-click the middle point → corner.
     s.pointer(&PointerEvent::new(PointerKind::Down, 200.0, 200.0).with_mods(Mods { alt: true, ..Default::default() }), v).unwrap();
     s.pointer(&PointerEvent::new(PointerKind::Up, 200.0, 200.0), v).unwrap();
@@ -272,7 +272,7 @@ fn anchor_point_tool_converts() {
     let id = rect(&mut s, 100.0, 100.0, 100.0, 100.0);
     drag(&mut s, "anchorPoint", &[(100.0, 100.0), (130.0, 80.0)], Mods::default());
     let a = path(&s, id).subpaths[0].anchors[0];
-    assert_eq!(a.kind, vectorcraft_geom::AnchorKind::Smooth);
+    assert_eq!(a.kind, logocraft_geom::AnchorKind::Smooth);
     assert_eq!(a.h_out, Point::new(130.0, 80.0));
     assert_eq!(a.h_in, Point::new(70.0, 120.0));
     // Click the smooth anchor → corner again.
@@ -561,7 +561,7 @@ fn convert_anchors_turns_the_selected_anchors_corner_or_smooth() {
     s.execute("path.convertAnchors", &json!({"to": "smooth"})).unwrap();
     let a = path(&s, id).subpaths[0].anchors.clone();
     assert_eq!(undo_steps(&s), undo + 1);
-    assert_eq!(a[1].kind, vectorcraft_geom::AnchorKind::Smooth);
+    assert_eq!(a[1].kind, logocraft_geom::AnchorKind::Smooth);
     let r = 100.0 * 2f64.sqrt() / 3.0;
     assert!(near(a[1].h_in, Point::new(200.0 - r, 100.0)) && near(a[1].h_out, Point::new(200.0 + r, 100.0)), "{:?}", a[1]);
     assert!(!a[0].has_out() && !a[2].has_in(), "the neighbours keep theirs");
@@ -787,7 +787,7 @@ fn pen_with_alt_moves_one_handle_and_converts_anchors() {
 }
 
 /// The anchor's handles point opposite ways.
-fn smooth(a: vectorcraft_geom::Anchor) -> bool {
+fn smooth(a: logocraft_geom::Anchor) -> bool {
     let (i, o) = (a.h_in - a.p, a.h_out - a.p);
     (i.x * o.y - i.y * o.x).abs() < 1e-6 && i.x * o.x + i.y * o.y < 0.0
 }
@@ -804,8 +804,8 @@ fn pen_with_cmd_borrows_direct_selection_and_goes_on_drawing() {
     gesture(&mut s, &[(100.0, 300.0)], none);
     gesture(&mut s, &[(200.0, 300.0), (250.0, 300.0)], none);
     let id = s.doc().unwrap().selection.objects[0];
-    assert_eq!(s.cursor(Point::new(250.0, 300.0), none, v), vectorcraft_tools::Cursor::Pen);
-    assert_eq!(s.cursor(Point::new(250.0, 300.0), cmd, v), vectorcraft_tools::Cursor::ArrowHollow, "Direct Selection's");
+    assert_eq!(s.cursor(Point::new(250.0, 300.0), none, v), logocraft_tools::Cursor::Pen);
+    assert_eq!(s.cursor(Point::new(250.0, 300.0), cmd, v), logocraft_tools::Cursor::ArrowHollow, "Direct Selection's");
     // The new anchor's outgoing handle: it moves, its incoming one turning with it.
     s.pointer(&PointerEvent::new(PointerKind::Down, 250.0, 300.0).with_mods(cmd), v).unwrap();
     assert_eq!(s.tool_id(), "directSelection");
@@ -918,7 +918,7 @@ fn pen_with_alt_converts_the_anchors_of_the_path_being_drawn() {
 /// finishes it.
 #[test]
 fn the_pen_continues_any_open_path_and_joins_another() {
-    use vectorcraft_tools::Cursor;
+    use logocraft_tools::Cursor;
     let (v, none) = (view(), Mods::default());
     let mut s = session();
     let a = line(&mut s, 100.0, 100.0, 200.0, 100.0);

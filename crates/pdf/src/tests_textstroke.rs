@@ -1,9 +1,9 @@
 //! Strokes on type keep every stroke option in PDF: the characters' cap, join, miter limit and
 //! dash array, and the alignment of the object's own strokes.
 
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{AppearanceItem, CharStyle, Dash, Document, LineCap, LineJoin, Node, NodeKind, StrokeAlign, StrokeLayer, TextObject};
-use vectorcraft_geom::Point;
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{AppearanceItem, CharStyle, Dash, Document, LineCap, LineJoin, Node, NodeKind, StrokeAlign, StrokeLayer, TextObject};
+use logocraft_geom::Point;
 
 use crate::*;
 

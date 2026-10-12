@@ -28,12 +28,12 @@ use std::ops::{Range, RangeInclusive};
 use std::rc::Rc;
 use std::str::FromStr;
 
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{CharStyle, Dash, Justify, LineCap, LineJoin, ParaDirection, ParaStyle, StrokeLayer, TextKind, TextObject, TextRun};
+use logocraft_geom::kurbo::ParamCurveArclen;
+use logocraft_geom::{Affine, BezPath, PathData, Point, Rect};
+use logocraft_text::{FontDb, TextLayout};
 use usvg::roxmltree;
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{CharStyle, Dash, Justify, LineCap, LineJoin, ParaDirection, ParaStyle, StrokeLayer, TextKind, TextObject, TextRun};
-use vectorcraft_geom::kurbo::ParamCurveArclen;
-use vectorcraft_geom::{Affine, BezPath, PathData, Point, Rect};
-use vectorcraft_text::{FontDb, TextLayout};
 
 use super::css::{Styles, XNode};
 use super::{DEFAULT_FONT_SIZE, PT_PER_IN, href, vector_effect};
@@ -167,7 +167,7 @@ impl TextSlots {
 
 /// Replace every `<text>` usvg would draw by a placeholder group (see the module docs).
 pub(super) fn prepare<'s>(svg: &'s str, xml: &roxmltree::Document, dpi: f64, warnings: &mut Vec<String>) -> (Cow<'s, str>, TextSlots) {
-    let mut prefix = String::from("vectorcraft-text-");
+    let mut prefix = String::from("logocraft-text-");
     while xml.descendants().any(|n| n.attribute("id").is_some_and(|id| id.starts_with(&prefix))) {
         prefix.insert(0, '_');
     }
@@ -642,7 +642,7 @@ impl Ctx {
         // strong character: pinned (on every paragraph) when that would read as right to left.
         if self.css.prop(t, "direction").is_some_and(|d| d.trim() == "rtl") {
             obj.edit_paras(None, |pa| pa.direction = Some(ParaDirection::RightToLeft));
-        } else if obj.plain_text().split('\n').any(|p| vectorcraft_text::paragraph_is_rtl(p, None)) {
+        } else if obj.plain_text().split('\n').any(|p| logocraft_text::paragraph_is_rtl(p, None)) {
             obj.edit_paras(None, |pa| pa.direction = Some(ParaDirection::LeftToRight));
         }
         // The placeholder covers the text (laid out when a paint server needs its bounding box).
@@ -861,7 +861,7 @@ fn point_text(cells: &[Cell]) -> TextObject {
 }
 
 fn measure(t: &TextObject) -> TextLayout {
-    vectorcraft_text::layout(FontDb::global(), t)
+    logocraft_text::layout(FontDb::global(), t)
 }
 
 /// Total advance of a laid-out single line.

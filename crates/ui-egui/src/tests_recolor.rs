@@ -1,15 +1,15 @@
 //! Recolor Artwork (M3.78) and Edit or Apply Color Group (M3.79), drawn headlessly.
 
 use egui::{Event, Modifiers, PointerButton, Pos2, Rect, vec2};
+use logocraft_color::Color;
+use logocraft_color::recolor::ColorKey;
+use logocraft_engine::Session;
 use serde_json::{Value, json};
-use vectorcraft_color::Color;
-use vectorcraft_color::recolor::ColorKey;
-use vectorcraft_engine::Session;
 
-use crate::{VectorcraftApp, dialogs, panels};
+use crate::{LogocraftApp, dialogs, panels};
 
-fn app() -> VectorcraftApp {
-    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+fn app() -> LogocraftApp {
+    let mut app = LogocraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width": 400, "height": 200})).unwrap();
     app
 }
@@ -20,14 +20,14 @@ fn context() -> egui::Context {
     ctx
 }
 
-fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<Event>, time: f64, draw: fn(&mut VectorcraftApp, &mut egui::Ui)) {
+fn frame(app: &mut LogocraftApp, ctx: &egui::Context, events: Vec<Event>, time: f64, draw: fn(&mut LogocraftApp, &mut egui::Ui)) {
     let screen_rect = Some(Rect::from_min_size(Pos2::ZERO, vec2(900.0, 800.0)));
     let input = egui::RawInput { events, time: Some(time), screen_rect, ..Default::default() };
     let mut out = ctx.run_ui(input, |ui| draw(app, ui));
     out.textures_delta.clear();
 }
 
-fn dialog_frame(app: &mut VectorcraftApp, ctx: &egui::Context) {
+fn dialog_frame(app: &mut LogocraftApp, ctx: &egui::Context) {
     let time = ctx.input(|i| i.time) + 1.0;
     frame(app, ctx, vec![], time, |app, ui| dialogs::show(app, ui.ctx()));
 }
@@ -38,7 +38,7 @@ fn press(at: Pos2, clicks: usize) -> Vec<Event> {
 }
 
 /// Rectangles filled with `colors`, all selected.
-fn art(app: &mut VectorcraftApp, colors: &[&str]) {
+fn art(app: &mut LogocraftApp, colors: &[&str]) {
     for (i, c) in colors.iter().enumerate() {
         let id = app.run("shape.rectangle", json!({"x": 10 + 30 * i, "y": 10, "width": 20, "height": 20})).unwrap()["id"].clone();
         app.run("paint.setFill", json!({"ids": [id], "color": c})).unwrap();
@@ -47,21 +47,21 @@ fn art(app: &mut VectorcraftApp, colors: &[&str]) {
     app.run("select.all", json!({})).unwrap();
 }
 
-fn colors(app: &mut VectorcraftApp) -> usize {
+fn colors(app: &mut LogocraftApp) -> usize {
     app.session.execute("recolor.colors", &json!({})).unwrap()["colors"].as_array().unwrap().len()
 }
 
-fn group_keys(app: &VectorcraftApp, name: &str) -> Vec<Value> {
+fn group_keys(app: &LogocraftApp, name: &str) -> Vec<Value> {
     let d = &app.session.doc().unwrap().doc;
     let g = d.swatch_groups.iter().find(|g| g.name == name).unwrap();
     g.swatches.iter().filter_map(|w| w.paint.color()).map(|c| json!(ColorKey::of(&c).to_string())).collect()
 }
 
-fn field(app: &VectorcraftApp, k: &str) -> Value {
+fn field(app: &LogocraftApp, k: &str) -> Value {
     app.ui.dialog.as_ref().and_then(|d| d.fields.get(k).cloned()).unwrap_or(Value::Null)
 }
 
-fn set(app: &mut VectorcraftApp, k: &str, v: Value) {
+fn set(app: &mut LogocraftApp, k: &str, v: Value) {
     app.ui.dialog.as_mut().unwrap().fields.insert(k.into(), v);
 }
 
@@ -112,7 +112,7 @@ fn presets_open_colour_jobs_and_libraries_and_both_tabs_draw() {
     app.run("ui.recolorDialog", presets[3].1.clone()).unwrap();
     assert_eq!(field(&app, "limitTo"), "web-safe-216", "Color Library starts on the first library");
     dialog_frame(&mut app, &ctx);
-    let web = |k: &Value| vectorcraft_engine::cmd::color_value(k).unwrap().to_rgb().iter().all(|v| ((v * 5.0).round() - v * 5.0).abs() < 1e-3);
+    let web = |k: &Value| logocraft_engine::cmd::color_value(k).unwrap().to_rgb().iter().all(|v| ((v * 5.0).round() - v * 5.0).abs() < 1e-3);
     assert!(field(&app, "rows").as_array().unwrap().iter().all(|r| web(&r["to"])));
     dialogs::cancel(&mut app);
     // The Color Guide's colours become the new colours.
@@ -127,7 +127,7 @@ fn presets_open_colour_jobs_and_libraries_and_both_tabs_draw() {
 fn double_clicking_a_colour_group_opens_it_and_ok_rewrites_it() {
     let mut app = app();
     let ctx = context();
-    let show: fn(&mut VectorcraftApp, &mut egui::Ui) = panels::swatches::show;
+    let show: fn(&mut LogocraftApp, &mut egui::Ui) = panels::swatches::show;
     frame(&mut app, &ctx, vec![], 0.0, show);
     let folder = ctx.read_response(egui::Id::new(("swatch-tile", "Brights"))).expect("the Brights folder").rect.center();
     frame(&mut app, &ctx, press(folder, 2), 1.0, show);
@@ -155,7 +155,7 @@ fn the_options_button_edits_a_selected_group_and_applies_it_to_the_art() {
     let mut app = app();
     let ctx = context();
     art(&mut app, &["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"]);
-    let show: fn(&mut VectorcraftApp, &mut egui::Ui) = panels::swatches::show;
+    let show: fn(&mut LogocraftApp, &mut egui::Ui) = panels::swatches::show;
     frame(&mut app, &ctx, vec![], 0.0, show);
     let folder = ctx.read_response(egui::Id::new(("swatch-tile", "Brights"))).unwrap().rect.center();
     frame(&mut app, &ctx, press(folder, 1), 1.0, show);

@@ -1,7 +1,7 @@
 //! The batched lookups ([`Document::index_paths`], `node_at`, `node_mut_at`, `ancestry_at`) agree
 //! with the one-id ones on nested trees with missing and duplicated ids.
 use super::*;
-use vectorcraft_geom::shapes;
+use logocraft_geom::shapes;
 
 /// Layers with paths and groups nested `depth` deep; every 7th id is reused (a damaged file), so
 /// first-in-tree-order matters.

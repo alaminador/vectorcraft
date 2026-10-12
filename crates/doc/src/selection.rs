@@ -126,7 +126,7 @@ impl Selection {
         self.anchors.get(&id)
     }
     /// Which direction handles belong to selected segments; both for an anchor selection.
-    pub fn handle_sides(&self, id: NodeId, si: usize, ai: usize, sp: &vectorcraft_geom::SubPath) -> (bool, bool) {
+    pub fn handle_sides(&self, id: NodeId, si: usize, ai: usize, sp: &logocraft_geom::SubPath) -> (bool, bool) {
         let Some(segments) = self.segments.get(&id) else { return (true, true) };
         let previous = ai.checked_sub(1).or_else(|| sp.closed.then_some(sp.segment_count()).and_then(|n| n.checked_sub(1)));
         (previous.is_some_and(|i| segments.contains(&(si, i))), segments.contains(&(si, ai)))

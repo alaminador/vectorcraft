@@ -1,13 +1,13 @@
-//! The native `.vectorcraft` format.
+//! The native `.logocraft` format.
 //!
-//! A `.vectorcraft` file is UTF-8 JSON, gzip-compressed when saved with Use Compression (told apart
+//! A `.logocraft` file is UTF-8 JSON, gzip-compressed when saved with Use Compression (told apart
 //! by its magic bytes on open, whatever the version):
 //! ```json
-//! { "format": "vectorcraft", "version": 3, "generator": "VectorCraft 0.1.0",
+//! { "format": "logocraft", "version": 3, "generator": "LogoCraft 0.1.0",
 //!   "preview": { "mime": "image/png", "data": "<base64>" },
 //!   "profiles": { "<profile name>": { "mime": "application/vnd.iccprofile", "data": "<base64>" } },
 //!   "pdf": { "mime": "application/pdf", "data": "<base64>" },
-//!   "document": { …vectorcraft_doc::Document… },
+//!   "document": { …logocraft_doc::Document… },
 //!   "images": { "<key>": { "mime": "image/png", "data": "<base64>" } } }
 //! ```
 //! It is lossless for everything in the document model; foreign data lives in `document.unknown`
@@ -41,8 +41,8 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, HashSet};
 use std::io::{Read as _, Write};
 
+use logocraft_doc::{Document, ImageBlob};
 use serde::{Deserialize, Serialize};
-use vectorcraft_doc::{Document, ImageBlob};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use atomic::{write_atomic, write_atomic_with, write_new_with};
@@ -60,25 +60,29 @@ pub const MIN_VERSION: u32 = 1;
 pub const COMPRESSED_SINCE: u32 = 3;
 /// Most pixels on the longer side of an embedded preview.
 pub const PREVIEW_MAX: u32 = 256;
-pub const EXTENSION: &str = "vectorcraft";
+pub const EXTENSION: &str = "logocraft";
 /// Extension and format name from before the project was renamed (DrawCraft): still opened.
 pub const LEGACY_EXTENSION: &str = "drawcraft";
+/// Extension and format name of VectorCraft, which LogoCraft is based on: still opened.
+pub const VECTORCRAFT_EXTENSION: &str = "vectorcraft";
+/// Every former extension and format name, opened like today's.
+pub const FORMER_EXTENSIONS: &[&str] = &[VECTORCRAFT_EXTENSION, LEGACY_EXTENSION];
 /// Most bytes the JSON of a compressed file may unpack to (a guard against decompression bombs,
 /// as are [`MAX_BLOB`] and [`MAX_BLOBS`]). A compressed save refuses a document past any of them,
-/// so every file VectorCraft writes reads back.
+/// so every file LogoCraft writes reads back.
 pub const MAX_JSON: u64 = 1 << 30;
 /// Most bytes one entry of the data after the JSON (an image, a placed document, the PDF, a
 /// profile) may have in a compressed file.
 pub const MAX_BLOB: u64 = 1 << 30;
 /// Most bytes the entries after the JSON may have together in a compressed file.
 pub const MAX_BLOBS: u64 = 4 << 30;
-/// Most bytes a compressed file whose JSON isn't followed by the marker where VectorCraft puts it
+/// Most bytes a compressed file whose JSON isn't followed by the marker where LogoCraft puts it
 /// (hand-made or damaged files) may unpack to: it is unpacked whole.
 const MAX_UNPACKED: u64 = 512 << 20;
 
 /// Is `ext` (without the dot, any case) a native document extension?
 pub fn is_native_ext(ext: &str) -> bool {
-    ext.eq_ignore_ascii_case(EXTENSION) || ext.eq_ignore_ascii_case(LEGACY_EXTENSION)
+    ext.eq_ignore_ascii_case(EXTENSION) || FORMER_EXTENSIONS.iter().any(|e| ext.eq_ignore_ascii_case(e))
 }
 
 /// Does the file name or path end in a native document extension?
@@ -88,17 +92,17 @@ pub fn is_native_name(name: &str) -> bool {
 
 #[derive(Debug, thiserror::Error)]
 pub enum FormatError {
-    #[error("not a VectorCraft file: {0}")]
-    NotVectorcraft(String),
-    #[error("file version {0} is newer than this VectorCraft supports ({VERSION})")]
+    #[error("not a LogoCraft file: {0}")]
+    NotLogocraft(String),
+    #[error("file version {0} is newer than this LogoCraft supports ({VERSION})")]
     TooNew(u32),
     #[error("invalid image data for `{0}`")]
     BadImage(String),
-    #[error("can't save version {0}: VectorCraft writes versions {MIN_VERSION} to {VERSION}")]
+    #[error("can't save version {0}: LogoCraft writes versions {MIN_VERSION} to {VERSION}")]
     BadVersion(u32),
     #[error("version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files")]
     CompressedTooOld(u32),
-    #[error("the compressed file unpacks to more than VectorCraft reads ({} MB of document, {} MB per image)", MAX_JSON >> 20, MAX_BLOB >> 20)]
+    #[error("the compressed file unpacks to more than LogoCraft reads ({} MB of document, {} MB per image)", MAX_JSON >> 20, MAX_BLOB >> 20)]
     TooBig,
     #[error("the document is too large to save compressed ({0}): save it with Use Compression off")]
     TooBigToCompress(String),
@@ -160,7 +164,7 @@ fn is_packed(mime: &str) -> bool {
 
 /// The MIME type of a preview's bytes (JPEG or PNG).
 fn preview_mime(bytes: &[u8]) -> &'static str {
-    if bytes.starts_with(&[0xff, 0xd8]) { "image/jpeg" } else { vectorcraft_doc::links::PROXY_MIME }
+    if bytes.starts_with(&[0xff, 0xd8]) { "image/jpeg" } else { logocraft_doc::links::PROXY_MIME }
 }
 
 /// The JSON of a file and the data after it (v4), split at [`BLOB_MAGIC`] after the first JSON
@@ -325,7 +329,7 @@ pub fn save_to(doc: &Document, o: &SaveOptions, w: impl Write) -> Result<(), For
     // Older apps only know the name from before the rename.
     env.field(&mut out, "format", &if o.version < 3 { LEGACY_EXTENSION } else { EXTENSION })?;
     env.field(&mut out, "version", &o.version)?;
-    env.field(&mut out, "generator", &format!("VectorCraft {}", env!("CARGO_PKG_VERSION")))?;
+    env.field(&mut out, "generator", &format!("LogoCraft {}", env!("CARGO_PKG_VERSION")))?;
     if let Some(png) = &o.preview {
         env.field(&mut out, "preview", &blob("image/png", png))?;
     }
@@ -468,7 +472,7 @@ pub struct NativeFile {
 pub struct FileInfo {
     /// The file's format version (see [`VERSION`]).
     pub version: u32,
-    /// Written under the project's former name (`"format": "drawcraft"`).
+    /// Written under a former name (`"format": "vectorcraft"` or `"drawcraft"`).
     pub legacy: bool,
 }
 
@@ -487,9 +491,9 @@ pub fn load_info(bytes: &[u8]) -> Result<(Document, FileInfo), FormatError> {
 /// [`load`], with everything else the file carries.
 pub fn load_file(bytes: &[u8]) -> Result<NativeFile, FormatError> {
     let file = unpack::Unpacked::new(bytes)?;
-    let f: File = serde_json::from_slice(file.json()).map_err(|e| FormatError::NotVectorcraft(e.to_string()))?;
-    if f.format != EXTENSION && f.format != LEGACY_EXTENSION {
-        return Err(FormatError::NotVectorcraft(format!("format is `{}`", f.format)));
+    let f: File = serde_json::from_slice(file.json()).map_err(|e| FormatError::NotLogocraft(e.to_string()))?;
+    if f.format != EXTENSION && !FORMER_EXTENSIONS.contains(&f.format.as_str()) {
+        return Err(FormatError::NotLogocraft(format!("format is `{}`", f.format)));
     }
     if f.version > VERSION {
         return Err(FormatError::TooNew(f.version));
@@ -522,7 +526,7 @@ pub fn load_file(bytes: &[u8]) -> Result<NativeFile, FormatError> {
     doc.tidy_saved_selections();
     doc.tidy_graph_designs();
     let profiles = f.profiles.into_iter().filter_map(|(name, icc)| Some((name, bytes_of(&icc)?))).collect();
-    Ok(NativeFile { doc, info: FileInfo { version: f.version, legacy: f.format == LEGACY_EXTENSION }, profiles })
+    Ok(NativeFile { doc, info: FileInfo { version: f.version, legacy: f.format != EXTENSION }, profiles })
 }
 
 /// The members of a native file besides its document (which is skipped, not decoded).
@@ -555,7 +559,7 @@ pub fn pdf_content(bytes: &[u8]) -> Option<Vec<u8>> {
     head_member(bytes, |h| h.pdf)
 }
 
-/// Does this look like a `.vectorcraft` file (compressed or not)?
+/// Does this look like a `.logocraft` file (compressed or not)?
 pub fn sniff(bytes: &[u8]) -> bool {
     const HEAD: usize = 256;
     let head: Cow<'_, [u8]> = if is_compressed(bytes) {
@@ -568,7 +572,7 @@ pub fn sniff(bytes: &[u8]) -> bool {
     };
     // The cut may split a character.
     let s = String::from_utf8_lossy(&head);
-    s.trim_start().starts_with('{') && (s.contains("\"vectorcraft\"") || s.contains("\"drawcraft\""))
+    s.trim_start().starts_with('{') && (s.contains("\"logocraft\"") || s.contains("\"vectorcraft\"") || s.contains("\"drawcraft\""))
 }
 
 const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -621,12 +625,26 @@ mod tests {
     #[test]
     fn files_from_before_the_rename_still_open() {
         let d = Document::new(100.0, 50.0);
-        let legacy = String::from_utf8(save(&d, false)).unwrap().replacen("\"format\":\"vectorcraft\"", "\"format\":\"drawcraft\"", 1);
+        let legacy = String::from_utf8(save(&d, false)).unwrap().replacen("\"format\":\"logocraft\"", "\"format\":\"drawcraft\"", 1);
         assert!(legacy.contains("\"drawcraft\""));
         assert!(sniff(legacy.as_bytes()));
         assert_eq!(load(legacy.as_bytes()).unwrap().artboards[0].rect, d.artboards[0].rect);
-        assert!(is_native_name("old/Poster.DrawCraft") && is_native_name("new.vectorcraft") && !is_native_name("x.svg"));
+        assert!(is_native_name("old/Poster.DrawCraft") && is_native_name("new.logocraft") && !is_native_name("x.svg"));
         assert!(load(br#"{"format":"other","version":1,"document":{}}"#).is_err());
+    }
+
+    /// LogoCraft is based on VectorCraft: its `.vectorcraft` files open, are told apart as old,
+    /// and save again as `.logocraft`.
+    #[test]
+    fn vectorcraft_files_open() {
+        let d = Document::new(120.0, 60.0);
+        let old = String::from_utf8(save(&d, false)).unwrap().replacen("\"format\":\"logocraft\"", "\"format\":\"vectorcraft\"", 1);
+        assert!(old.contains("\"vectorcraft\"") && sniff(old.as_bytes()));
+        let (doc, info) = load_info(old.as_bytes()).unwrap();
+        assert_eq!(doc.artboards[0].rect, d.artboards[0].rect);
+        assert!(info.legacy && info.is_old(), "saving rewrites it under the new name");
+        assert!(is_native_name("Logo.vectorcraft") && is_native_name("LOGO.VECTORCRAFT") && is_native_ext("vectorcraft"));
+        assert!(String::from_utf8(save(&doc, false)).unwrap().contains("\"format\":\"logocraft\""));
     }
 
     #[test]
@@ -636,14 +654,14 @@ mod tests {
         assert_eq!(load_info(&current).unwrap().1, FileInfo { version: VERSION, legacy: false });
         assert!(!load_info(&current).unwrap().1.is_old());
         let text = String::from_utf8(current).unwrap();
-        let legacy = text.replacen("\"format\":\"vectorcraft\"", "\"format\":\"drawcraft\"", 1);
+        let legacy = text.replacen("\"format\":\"logocraft\"", "\"format\":\"drawcraft\"", 1);
         assert!(load_info(legacy.as_bytes()).unwrap().1.is_old());
         let v1 = text.replacen(&format!("\"version\":{VERSION}"), "\"version\":1", 1);
         assert_eq!(load_info(v1.as_bytes()).unwrap().1, FileInfo { version: 1, legacy: false });
         assert!(load_info(v1.as_bytes()).unwrap().1.is_old());
     }
-    use vectorcraft_doc::{Appearance, ImageObject, Node, NodeKind};
-    use vectorcraft_geom::{Affine, Rect, shapes};
+    use logocraft_doc::{Appearance, ImageObject, Node, NodeKind};
+    use logocraft_geom::{Affine, Rect, shapes};
 
     #[test]
     fn roundtrip() {

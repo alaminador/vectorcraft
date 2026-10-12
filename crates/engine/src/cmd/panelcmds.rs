@@ -1,9 +1,9 @@
 //! Commands the panels need beyond the core set: artboard reorder, duplicate, copy and cut, and the advanced
 //! Character/Paragraph attributes.
 
+use logocraft_doc::{Composer, NodeKind, Scaling};
+use logocraft_geom::{Rect, Vec2};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Composer, NodeKind, Scaling};
-use vectorcraft_geom::{Rect, Vec2};
 
 use super::*;
 use crate::{Clipboard, EngineError};
@@ -80,7 +80,7 @@ fn board_and_art(s: &Session, p: &Value) -> (usize, bool) {
 /// ones only with prefs moveLockedWithArtboard), in paint order.
 /// The artboards `cmd` acts on: `indices` (several), else `index` (one), each an artboard of `d`,
 /// in order and once each.
-pub(crate) fn artboard_indices(d: &vectorcraft_doc::Document, p: &Value, cmd: &str) -> Result<Vec<usize>> {
+pub(crate) fn artboard_indices(d: &logocraft_doc::Document, p: &Value, cmd: &str) -> Result<Vec<usize>> {
     let listed = match (p.get("indices"), p.get("index")) {
         (Some(v), _) => point_indices(v),
         (None, Some(i)) => point_indices(&json!([i])),
@@ -100,7 +100,7 @@ pub(crate) fn artboard_art(s: &Session, i: usize, art: bool) -> Result<Vec<NodeI
 }
 
 /// How far a copy of `rect` moves to sit right of the last artboard (Duplicate Artboards, Paste).
-pub(crate) fn beside_artboards(d: &vectorcraft_doc::Document, rect: Rect) -> Vec2 {
+pub(crate) fn beside_artboards(d: &logocraft_doc::Document, rect: Rect) -> Vec2 {
     let right = d.artboards.iter().map(|a| a.rect.x1).fold(f64::MIN, f64::max);
     Vec2::new(right + 20.0 - rect.x0, 0.0)
 }
@@ -154,7 +154,7 @@ pub(crate) fn artboard_copy(s: &mut Session, p: &Value, cut: bool) -> Result<Val
 /// Add a copy of artboard `i` moved by `dv`, with copies of its guides and of its `art` (each just
 /// above its original) moved along → (the copy's index, the art's copies). When `sc.patterns`, the
 /// pattern tiles of the art's copies move with them. Duplicate Artboards and Alt-drag.
-pub(crate) fn copy_artboard(d: &mut vectorcraft_doc::Document, i: usize, dv: Vec2, art: &[NodeId], sc: Scaling) -> Result<(usize, Vec<NodeId>)> {
+pub(crate) fn copy_artboard(d: &mut logocraft_doc::Document, i: usize, dv: Vec2, art: &[NodeId], sc: Scaling) -> Result<(usize, Vec<NodeId>)> {
     let src = d.artboards.get(i).cloned().ok_or_else(|| EngineError::Other("no such artboard".into()))?;
     let index = push_artboard_copy(d, &src, src.rect + dv);
     // Its guides come along.
@@ -173,7 +173,7 @@ pub(crate) fn copy_artboard(d: &mut vectorcraft_doc::Document, i: usize, dv: Vec
 
 /// Add a copy of artboard `src` at `rect`, with an id of its own and its name, or `<name> copy`
 /// (`<name> copy 2`…) when that is taken → its index.
-pub(crate) fn push_artboard_copy(d: &mut vectorcraft_doc::Document, src: &vectorcraft_doc::Artboard, rect: Rect) -> usize {
+pub(crate) fn push_artboard_copy(d: &mut logocraft_doc::Document, src: &logocraft_doc::Artboard, rect: Rect) -> usize {
     let mut a = src.clone();
     a.id = d.artboards.iter().map(|a| a.id).max().unwrap_or(0).saturating_add(1);
     let taken = |name: &str| d.artboards.iter().any(|a| a.name == name);
@@ -195,8 +195,8 @@ const MAX_PARA: f64 = 1296.0;
 /// `justification: {wordSpacing?: [min, desired, max] %, letterSpacing?: [min, desired, max] %,
 /// glyphScaling?: [min, desired, max] %, autoLeading?: %, singleWord?: "fullJustify"|"alignLeft"|
 /// "alignCenter"|"alignRight"}` merged into `base` (Paragraph panel menu › Justification…).
-pub(crate) fn justification_param(v: &Value, base: vectorcraft_doc::Justification, cmd: &str) -> Result<vectorcraft_doc::Justification> {
-    use vectorcraft_doc::SingleWord;
+pub(crate) fn justification_param(v: &Value, base: logocraft_doc::Justification, cmd: &str) -> Result<logocraft_doc::Justification> {
+    use logocraft_doc::SingleWord;
     let o = v.as_object().ok_or_else(|| bad(cmd, "justification must be an object"))?;
     let mut j = base;
     let triple = |k: &str, (lo, hi): (f64, f64), cur: [f64; 3]| -> Result<[f64; 3]> {
@@ -236,7 +236,7 @@ pub(crate) fn justification_param(v: &Value, base: vectorcraft_doc::Justificatio
 
 /// `hyphenation: {wordsLongerThan?: 1–25, afterFirst?: 1–15, beforeLast?: 1–15, limit?: 0–25,
 /// zone?: pt, capitalized?: bool}` merged into `base` (Paragraph panel menu › Hyphenation…).
-pub(crate) fn hyphenation_param(v: &Value, base: vectorcraft_doc::Hyphenation, cmd: &str) -> Result<vectorcraft_doc::Hyphenation> {
+pub(crate) fn hyphenation_param(v: &Value, base: logocraft_doc::Hyphenation, cmd: &str) -> Result<logocraft_doc::Hyphenation> {
     let o = v.as_object().ok_or_else(|| bad(cmd, "hyphenation must be an object"))?;
     let mut h = base;
     let count = |k: &str, (lo, hi): (u64, u64), cur: u32| -> Result<u32> {
@@ -310,17 +310,17 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
     let mojikumi = match p.get("mojikumi") {
         None => None,
         Some(v) => Some(match v.as_str() {
-            Some("none") => vectorcraft_doc::Mojikumi::None,
-            Some("lineEndHalf") => vectorcraft_doc::Mojikumi::LineEndHalf,
+            Some("none") => logocraft_doc::Mojikumi::None,
+            Some("lineEndHalf") => logocraft_doc::Mojikumi::LineEndHalf,
             _ => return Err(bad(C, "`mojikumi` must be \"none\" or \"lineEndHalf\"")),
         }),
     };
     let kinsoku = match p.get("kinsoku") {
         None => None,
         Some(v) => Some(match v.as_str() {
-            Some("none") => vectorcraft_doc::Kinsoku::None,
-            Some("hard") => vectorcraft_doc::Kinsoku::Hard,
-            Some("soft") => vectorcraft_doc::Kinsoku::Soft,
+            Some("none") => logocraft_doc::Kinsoku::None,
+            Some("hard") => logocraft_doc::Kinsoku::Hard,
+            Some("soft") => logocraft_doc::Kinsoku::Soft,
             _ => return Err(bad(C, "`kinsoku` must be \"none\", \"hard\" or \"soft\"")),
         }),
     };
@@ -328,25 +328,25 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
         None => None,
         Some(v) => Some(match v.as_str() {
             Some("auto") => None,
-            Some("leftToRight") => Some(vectorcraft_doc::ParaDirection::LeftToRight),
-            Some("rightToLeft") => Some(vectorcraft_doc::ParaDirection::RightToLeft),
+            Some("leftToRight") => Some(logocraft_doc::ParaDirection::LeftToRight),
+            Some("rightToLeft") => Some(logocraft_doc::ParaDirection::RightToLeft),
             _ => return Err(bad(C, "`direction` must be \"auto\", \"leftToRight\" or \"rightToLeft\"")),
         }),
     };
     let leading_model = match p.get("leadingModel") {
         None => None,
         Some(v) => Some(match v.as_str() {
-            Some("romanBaseline") => vectorcraft_doc::LeadingModel::RomanBaseline,
-            Some("emBoxTop") => vectorcraft_doc::LeadingModel::EmBoxTop,
+            Some("romanBaseline") => logocraft_doc::LeadingModel::RomanBaseline,
+            Some("emBoxTop") => logocraft_doc::LeadingModel::EmBoxTop,
             _ => return Err(bad(C, "`leadingModel` must be \"romanBaseline\" or \"emBoxTop\"")),
         }),
     };
     let burasagari = match p.get("burasagari") {
         None => None,
         Some(v) => Some(match v.as_str() {
-            Some("none") => vectorcraft_doc::Burasagari::None,
-            Some("standard") => vectorcraft_doc::Burasagari::Standard,
-            Some("forced") => vectorcraft_doc::Burasagari::Forced,
+            Some("none") => logocraft_doc::Burasagari::None,
+            Some("standard") => logocraft_doc::Burasagari::Standard,
+            Some("forced") => logocraft_doc::Burasagari::Forced,
             _ => return Err(bad(C, "`burasagari` must be \"none\", \"standard\" or \"forced\"")),
         }),
     };
@@ -354,14 +354,14 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
     let hyphenation = p.get("hyphenation").filter(|v| !v.is_null());
     // Check them before editing (they are merged into each paragraph's own values).
     if let Some(j) = justification {
-        justification_param(j, vectorcraft_doc::Justification::default(), C)?;
+        justification_param(j, logocraft_doc::Justification::default(), C)?;
     }
     if let Some(h) = hyphenation {
-        hyphenation_param(h, vectorcraft_doc::Hyphenation::default(), C)?;
+        hyphenation_param(h, logocraft_doc::Hyphenation::default(), C)?;
     }
     let range = super::typecmd::TextRange::parse(p, C)?;
     // The character attributes, given the baseline shift and horizontal scale in the type's own units.
-    let chars = |st: &mut vectorcraft_doc::CharStyle, baseline_shift: Option<f64>, h_scale: Option<f64>| {
+    let chars = |st: &mut logocraft_doc::CharStyle, baseline_shift: Option<f64>, h_scale: Option<f64>| {
         if let Some(k) = kerning {
             k.apply(st);
         }

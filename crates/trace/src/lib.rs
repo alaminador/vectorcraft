@@ -1,4 +1,4 @@
-//! VectorCraft Image Trace: raster → vector.
+//! LogoCraft Image Trace: raster → vector.
 //!
 //! A clean-room tracer built from the published ideas behind bitmap tracers (the potrace paper
 //! and classic colour quantisation), not from any existing implementation:
@@ -18,7 +18,7 @@
 //! 4. **Polygon**: each loop is reduced to a polygon whose vertices stay within a fidelity
 //!    dependent distance of the pixel boundary (Douglas–Peucker on the crack vertices, which
 //!    removes the staircase).
-//! 5. **Curves**: the polygon is fitted with cubic Béziers (`vectorcraft_pathops::simplify_with`,
+//! 5. **Curves**: the polygon is fitted with cubic Béziers (`logocraft_pathops::simplify_with`,
 //!    least squares with corner detection); optionally nearly-straight curves snap to lines.
 //!
 //! With **Create: Strokes**, the parts of a colour layer no wider than the stroke width are traced
@@ -38,8 +38,8 @@ mod quantize;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use logocraft_geom::PathData;
 use serde::{Deserialize, Serialize};
-use vectorcraft_geom::PathData;
 
 pub use contour::{Component, Loop, trace_mask};
 pub use mosaic::mosaic;

@@ -5,13 +5,13 @@
 //! Fields: `wordSpacing`, `letterSpacing`, `glyphScaling` (each `[min, desired, max]`, percent),
 //! `autoLeading` (percent), `singleWord` (`text.setFormat` names).
 
+use logocraft_doc::{Justification, SingleWord};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Justification, SingleWord};
 
 use super::DialogSpec;
 use super::swatch_options::label;
 use crate::state::Dialog;
-use crate::{VectorcraftApp, widgets};
+use crate::{LogocraftApp, widgets};
 
 /// The dialog kind of Justification.
 pub const KIND: &str = "justification";
@@ -39,7 +39,7 @@ pub fn fields(j: &Justification) -> Value {
 }
 
 /// Open Justification on the selected paragraphs (the first one's values).
-pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
+pub fn open(app: &mut LogocraftApp) -> Result<Value, String> {
     let (_, para) = crate::panels::character::text_style(app).ok_or("select some type first")?;
     app.ui.dialog = Some(Dialog::new(KIND, fields(&para.justification)));
     Ok(Value::Null)
@@ -51,7 +51,7 @@ fn triple(d: &Dialog, k: &str) -> [f64; 3] {
     [at(0), at(1), at(2)]
 }
 
-fn body(_app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn body(_app: &mut LogocraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let rows = [
         (tl!("Word Spacing:"), "wordSpacing", 0.0, 1000.0),
         (tl!("Letter Spacing:"), "letterSpacing", -100.0, 500.0),
@@ -114,7 +114,7 @@ pub fn params(d: &Dialog) -> Value {
     })
 }
 
-fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+fn confirm(app: &mut LogocraftApp, d: &Dialog) -> Result<Value, String> {
     crate::panels::paragraph::para_cmd(app, "text.setFormat", json!({"justification": params(d)}))?;
     app.ui.dialog = None;
     Ok(Value::Null)
@@ -123,10 +123,10 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_engine::Session;
+    use logocraft_engine::Session;
 
-    fn app() -> VectorcraftApp {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    fn app() -> LogocraftApp {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
         app.run("text.create", json!({"x": 10, "y": 10, "text": "one two", "area": {"width": 200, "height": 100}})).unwrap();
         app
@@ -163,7 +163,7 @@ mod tests {
         let mut app = app();
         for (open, labels) in [
             (
-                open as fn(&mut VectorcraftApp) -> Result<Value, String>,
+                open as fn(&mut LogocraftApp) -> Result<Value, String>,
                 &[
                     "Justification",
                     "Word Spacing:",

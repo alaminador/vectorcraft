@@ -1,7 +1,7 @@
 //! Distort & Transform effects.
 
+use logocraft_geom::{Affine, Anchor, ParamCurve, PathData, Point, Rect, SubPath, Vec2};
 use serde_json::Value;
-use vectorcraft_geom::{Affine, Anchor, ParamCurve, PathData, Point, Rect, SubPath, Vec2};
 
 use crate::util::*;
 
@@ -79,7 +79,7 @@ pub fn roughen(path: &PathData, b: Rect, p: &Value) -> PathData {
         let mut pts = vec![];
         for i in 0..sp.segment_count() {
             let c = sp.segment(i);
-            let len = vectorcraft_geom::kurbo::ParamCurveArclen::arclen(&c, 0.1);
+            let len = logocraft_geom::kurbo::ParamCurveArclen::arclen(&c, 0.1);
             let k = if spacing.is_finite() { ((len / spacing).ceil() as usize).clamp(1, 2000) } else { 1 };
             for j in 0..k {
                 pts.push(c.eval(j as f64 / k as f64));
@@ -120,7 +120,7 @@ pub fn transform(path: &PathData, b: Rect, p: &Value, seed: u64) -> PathData {
     let scale = |key: &str, k: u64| 1.0 + (num(p, key, 100.0).clamp(-MAX_SCALE, MAX_SCALE) / 100.0 - 1.0) * share(k);
     let moved = |key: &str, k: u64| num(p, key, 0.0).clamp(-MAX_MOVE, MAX_MOVE) * share(k);
     let reflect = |key: &str| if flag(p, key, false) { -1.0 } else { 1.0 };
-    let o = vectorcraft_geom::reference_point(b, num(p, "reference", 4.0).clamp(0.0, 8.0) as usize).to_vec2();
+    let o = logocraft_geom::reference_point(b, num(p, "reference", 4.0).clamp(0.0, 8.0) as usize).to_vec2();
     // Reflect X flips the x coordinates (left to right), Reflect Y the y coordinates.
     let m = Affine::translate(Vec2::new(moved("moveH", 2), moved("moveV", 3)) + o)
         * Affine::rotate(-(num(p, "rotate", 0.0) * share(4)).to_radians())

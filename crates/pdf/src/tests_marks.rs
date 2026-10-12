@@ -2,11 +2,11 @@
 
 use std::sync::Arc;
 
+use logocraft_color::{Color, Paint, Swatch};
+use logocraft_doc::marks::PrinterMarks;
+use logocraft_doc::{Appearance, Document, LayerColor, Node, NodeKind};
+use logocraft_geom::{Rect, shapes};
 use serde_json::json;
-use vectorcraft_color::{Color, Paint, Swatch};
-use vectorcraft_doc::marks::PrinterMarks;
-use vectorcraft_doc::{Appearance, Document, LayerColor, Node, NodeKind};
-use vectorcraft_geom::{Rect, shapes};
 
 use crate::*;
 

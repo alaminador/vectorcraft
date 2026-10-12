@@ -4,11 +4,11 @@
 // Integration tests: unwrapping and panicking on failure is fine here, unlike in shipped code (AGENTS.md › Robustness).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use vectorcraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, Paint};
-use vectorcraft_doc::{Appearance, CharStyle, Document, Effect, Justify, LiveShape, Node, NodeId, NodeKind, TextObject};
-use vectorcraft_geom::shapes::{self, CornerKind};
-use vectorcraft_geom::{Affine, Point, Rect};
-use vectorcraft_svg::{CssOptions, CssRule, CssUnits, ExportOptions, Styling, css_rules, export};
+use logocraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, Paint};
+use logocraft_doc::{Appearance, CharStyle, Document, Effect, Justify, LiveShape, Node, NodeId, NodeKind, TextObject};
+use logocraft_geom::shapes::{self, CornerKind};
+use logocraft_geom::{Affine, Point, Rect};
+use logocraft_svg::{CssOptions, CssRule, CssUnits, ExportOptions, Styling, css_rules, export};
 
 fn doc() -> Document {
     Document::new(400.0, 300.0)

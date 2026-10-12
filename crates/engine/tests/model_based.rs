@@ -3,11 +3,11 @@
 // Integration tests: unwrapping and panicking on failure is fine here, unlike in shipped code (AGENTS.md › Robustness).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use logocraft_testkit::fixtures::{self, exec};
+use logocraft_testkit::invariants::{self, check_all, check_session, doc_json, first_diff, redo_all, undo_all};
+use logocraft_testkit::strategies::{Op, arb_ops};
 use proptest::prelude::*;
 use serde_json::json;
-use vectorcraft_testkit::fixtures::{self, exec};
-use vectorcraft_testkit::invariants::{self, check_all, check_session, doc_json, first_diff, redo_all, undo_all};
-use vectorcraft_testkit::strategies::{Op, arb_ops};
 
 fn run_sequence(ops: &[Op], full_checks_every: usize) -> Result<(), TestCaseError> {
     let mut s = fixtures::session();
@@ -60,7 +60,7 @@ proptest! {
         }
         let want = doc_json(&s.doc().unwrap().doc);
         let journal = s.journal.clone();
-        let mut r = vectorcraft_engine::Session::new();
+        let mut r = logocraft_engine::Session::new();
         for (id, p) in &journal {
             let _ = r.execute(id, p);
         }
@@ -134,8 +134,8 @@ fn empty_batch_is_harmless() {
 #[test]
 fn save_open_via_commands_roundtrips() {
     let mut s = fixtures::rich_session();
-    let dir = vectorcraft_testkit::temp_dir("engine-save");
-    let path = dir.join("rich.vectorcraft");
+    let dir = logocraft_testkit::temp_dir("engine-save");
+    let path = dir.join("rich.logocraft");
     exec(&mut s, "document.save", json!({"path": path.to_str().unwrap()}));
     let want = doc_json(&s.doc().unwrap().doc);
     exec(&mut s, "document.open", json!({"path": path.to_str().unwrap()}));
@@ -149,7 +149,7 @@ fn save_open_via_commands_roundtrips() {
 #[test]
 fn serialize_all_formats_on_rich_doc() {
     let mut s = fixtures::rich_session();
-    for f in ["vectorcraft", "svg", "pdf", "png"] {
+    for f in ["logocraft", "svg", "pdf", "png"] {
         let v = exec(&mut s, "document.serialize", json!({"format": f}));
         assert!(v.get("dataBase64").or(v.get("text")).is_some(), "{f}: {v}");
     }
@@ -158,8 +158,8 @@ fn serialize_all_formats_on_rich_doc() {
     let text = svg["text"]
         .as_str()
         .map(str::to_string)
-        .unwrap_or_else(|| String::from_utf8(vectorcraft_format::base64_decode(svg["dataBase64"].as_str().unwrap()).unwrap()).unwrap());
-    let back = vectorcraft_svg::import(&text).unwrap();
+        .unwrap_or_else(|| String::from_utf8(logocraft_format::base64_decode(svg["dataBase64"].as_str().unwrap()).unwrap()).unwrap());
+    let back = logocraft_svg::import(&text).unwrap();
     invariants::check_document(&back).unwrap();
     assert!(back.node_count() >= 5);
 }

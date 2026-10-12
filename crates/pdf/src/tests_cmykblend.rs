@@ -2,9 +2,9 @@
 
 use std::sync::Arc;
 
-use vectorcraft_color::{BlendMode, Color, Paint};
-use vectorcraft_doc::{Appearance, ColorMode, Document, Node, NodeId, OpacityMask};
-use vectorcraft_geom::{Rect, shapes};
+use logocraft_color::{BlendMode, Color, Paint};
+use logocraft_doc::{Appearance, ColorMode, Document, Node, NodeId, OpacityMask};
+use logocraft_geom::{Rect, shapes};
 
 use crate::*;
 

@@ -13,9 +13,9 @@ use hayro_interpret::Function;
 use hayro_interpret::color::ColorSpace;
 use hayro_syntax::Pdf;
 use hayro_syntax::object::{Array, MaybeRef, Name, Object, Stream};
+use logocraft_color::swatch::REGISTRATION;
+use logocraft_color::{Color, Paint, Swatch};
 use smallvec::SmallVec;
-use vectorcraft_color::swatch::REGISTRATION;
-use vectorcraft_color::{Color, Paint, Swatch};
 
 /// The longest `Debug` text read: a colour whose space is longer (a big sampled tint transform)
 /// imports as RGB.
@@ -431,7 +431,7 @@ fn lab_profile(profile: &Stream<'_>) -> bool {
     head.get(16..20) == Some(b"Lab ")
 }
 
-/// An alternate-space colour (the tint transform's output) as a VectorCraft colour.
+/// An alternate-space colour (the tint transform's output) as a LogoCraft colour.
 fn alt_color(alt: Alt, v: &[f32]) -> Option<Color> {
     let c = |i: usize| v.get(i).copied().filter(|x| x.is_finite());
     let u = |i: usize| c(i).map(|x| round3(x.clamp(0.0, 1.0)));

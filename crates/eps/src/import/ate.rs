@@ -21,9 +21,9 @@
 use std::collections::BTreeMap;
 
 use kurbo::{BezPath, CubicBez, ParamCurve, ParamCurveArclen};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{CharStyle, Justify, Node, NodeId, NodeKind, ParaStyle, TextKind, TextObject, TextRun};
-use vectorcraft_geom::{Affine, PathData, Point, Rect};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{CharStyle, Justify, Node, NodeId, NodeKind, ParaStyle, TextKind, TextObject, TextRun};
+use logocraft_geom::{Affine, PathData, Point, Rect};
 
 /// Longest story read (bytes).
 const MAX_STORY: usize = 1 << 20;
@@ -672,14 +672,14 @@ impl Story {
     /// top, by what the first line needs. Whether it was.
     pub(super) fn fit_first_line(&self, t: &mut TextObject) -> bool {
         let TextKind::Area { frame } = &t.kind else { return false };
-        let db = vectorcraft_text::FontDb::global();
+        let db = logocraft_text::FontDb::global();
         let Some(b) = frame.bounds().filter(|b| b.height() > 1e-6 && !self.lines.is_empty()) else { return false };
-        if !vectorcraft_text::layout(db, t).lines.is_empty() {
+        if !logocraft_text::layout(db, t).lines.is_empty() {
             return false;
         }
         // The height of its first line: the line's as point type.
         let point = TextObject { kind: TextKind::Point, ..t.clone() };
-        let Some(need) = vectorcraft_text::layout(db, &point).lines.first().map(|l| l.ascent + l.descent) else { return false };
+        let Some(need) = logocraft_text::layout(db, &point).lines.first().map(|l| l.ascent + l.descent) else { return false };
         // (A little more than it, for the rounding of the layout.)
         let by = (need + 0.05) / b.height();
         if !(by.is_finite() && by > 1.0) {
@@ -688,7 +688,7 @@ impl Story {
         let taller = frame.transformed(Affine::translate((0.0, b.y0)) * Affine::scale_non_uniform(1.0, by) * Affine::translate((0.0, -b.y0)));
         let short = std::mem::replace(&mut t.kind, TextKind::Area { frame: taller });
         // Something else keeps the line out (a frame narrower than a letter): as the file has it.
-        if vectorcraft_text::layout(db, t).lines.is_empty() {
+        if logocraft_text::layout(db, t).lines.is_empty() {
             t.kind = short;
             return false;
         }
@@ -780,7 +780,7 @@ fn para_style(p: &Para, scale: f64) -> ParaStyle {
 
 fn char_style(s: &Style, scale: f64, leading: Option<f64>) -> CharStyle {
     let (family, style) = s.font.as_deref().map_or_else(|| (CharStyle::default().font_family, "Regular".to_string()), crate::family_style);
-    let family = vectorcraft_text::FontDb::global().find_family(&family).unwrap_or(family);
+    let family = logocraft_text::FontDb::global().find_family(&family).unwrap_or(family);
     CharStyle {
         font_family: family,
         font_style: style,
@@ -896,12 +896,12 @@ mod tests {
         let s = story("Heading\r", &[0.0], &Para::default());
         let area = |height: f64| {
             let mut t = TextObject::point(Point::ZERO, "Heading", CharStyle { size: 13.0, ..CharStyle::default() });
-            t.kind = TextKind::Area { frame: vectorcraft_geom::shapes::rectangle(Rect::new(10.0, 20.0, 210.0, 20.0 + height)) };
+            t.kind = TextKind::Area { frame: logocraft_geom::shapes::rectangle(Rect::new(10.0, 20.0, 210.0, 20.0 + height)) };
             t
         };
         let height =
             |t: &TextObject| if let TextKind::Area { frame } = &t.kind { frame.bounds().map(|b| (b.x0, b.y0, b.x1, b.height())) } else { None };
-        let lines = |t: &TextObject| vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t).lines.len();
+        let lines = |t: &TextObject| logocraft_text::layout(logocraft_text::FontDb::global(), t).lines.len();
         let mut t = area(13.0);
         assert_eq!(lines(&t), 0, "nothing of it shows");
         assert!(s.fit_first_line(&mut t));

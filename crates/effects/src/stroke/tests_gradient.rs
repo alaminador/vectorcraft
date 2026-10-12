@@ -1,7 +1,7 @@
 use kurbo::{BezPath, Point, Shape, Vec2};
-use vectorcraft_color::{Color, Gradient, GradientPaint, GradientStop, Paint};
-use vectorcraft_doc::{ArrowAlign, Arrowhead, Dash, LineCap, LineJoin, StrokeAlign, StrokeGradientMode, StrokeLayer, WidthProfile};
-use vectorcraft_geom::FillRule;
+use logocraft_color::{Color, Gradient, GradientPaint, GradientStop, Paint};
+use logocraft_doc::{ArrowAlign, Arrowhead, Dash, LineCap, LineJoin, StrokeAlign, StrokeGradientMode, StrokeLayer, WidthProfile};
+use logocraft_geom::FillRule;
 
 use super::*;
 

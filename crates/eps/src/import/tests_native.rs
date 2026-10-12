@@ -2,7 +2,7 @@
 //! carries (see `native`). The files here are small ones written by hand for the tests, with the
 //! operators seen in files their users own.
 
-use vectorcraft_doc::{Document, LayerColor, Node, NodeKind};
+use logocraft_doc::{Document, LayerColor, Node, NodeKind};
 
 use crate::import::import;
 
@@ -202,10 +202,10 @@ fn private(native: &str) -> Vec<u8> {
 fn pdf_part(x: f64, y: f64) -> Document {
     let mut d = Document::new(100.0, 100.0);
     let id = d.alloc_id();
-    let path = vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(x, y, x + 4.0, y + 4.0));
-    let paint = vectorcraft_color::Paint::solid(vectorcraft_color::Color::cmyk(0.0, 0.0, 1.0, 0.0));
-    let item = vectorcraft_doc::AppearanceItem::Fill(vectorcraft_doc::FillLayer::new(paint));
-    let n = Node::path(id, path, vectorcraft_doc::Appearance { items: vec![item], ..Default::default() });
+    let path = logocraft_geom::shapes::rectangle(logocraft_geom::Rect::new(x, y, x + 4.0, y + 4.0));
+    let paint = logocraft_color::Paint::solid(logocraft_color::Color::cmyk(0.0, 0.0, 1.0, 0.0));
+    let item = logocraft_doc::AppearanceItem::Fill(logocraft_doc::FillLayer::new(paint));
+    let n = Node::path(id, path, logocraft_doc::Appearance { items: vec![item], ..Default::default() });
     let layer = d.layers[0].id;
     d.insert(Some(layer), 0, n).unwrap();
     d
@@ -264,16 +264,16 @@ fn an_ai_file_read_as_its_pdf_part_keeps_its_artboard_layout() {
     let layer_id = pdf.layers[0].id;
     pdf.insert(Some(layer_id), 1, second).unwrap();
     let mut page = pdf.artboards[0].clone();
-    (page.id, page.rect) = (2, vectorcraft_geom::Rect::new(120.0, 0.0, 220.0, 100.0));
+    (page.id, page.rect) = (2, logocraft_geom::Rect::new(120.0, 0.0, 220.0, 100.0));
     pdf.artboards.push(page);
     let squares = |d: &Document| d.layers[0].children().unwrap().iter().map(|n| n.visual_bounds().unwrap().origin()).collect::<Vec<_>>();
     let (d, w, read) = crate::layered_ai(&private(&unread(&[(0, 0), (0, -150)])), pdf.clone(), vec![], false);
     assert!(!read && w.iter().any(|w| w.contains("layers weren't read")), "{w:?}");
     let rects: Vec<_> = d.artboards.iter().map(|a| a.rect).collect();
-    assert_eq!(rects, [vectorcraft_geom::Rect::new(0.0, 0.0, 100.0, 100.0), vectorcraft_geom::Rect::new(0.0, 150.0, 100.0, 250.0)]);
+    assert_eq!(rects, [logocraft_geom::Rect::new(0.0, 0.0, 100.0, 100.0), logocraft_geom::Rect::new(0.0, 150.0, 100.0, 250.0)]);
     let moved = squares(&d);
     assert!((moved[0] - squares(&pdf)[0]).hypot() < 1e-6, "the first page's art stays: {moved:?}");
-    assert!((moved[1] - vectorcraft_geom::Point::new(10.0, 160.0)).hypot() < 1e-6, "the second's goes with its page: {moved:?}");
+    assert!((moved[1] - logocraft_geom::Point::new(10.0, 160.0)).hypot() < 1e-6, "the second's goes with its page: {moved:?}");
     // Artboards that don't match the pages leave them in a row.
     for list in [&[(0, 0)][..], &[(0, 0), (0, -150), (200, 0)]] {
         let (d, _, _) = crate::layered_ai(&private(&unread(list)), pdf.clone(), vec![], false);
@@ -290,7 +290,7 @@ fn a_gray_is_a_grayscale_colour() {
     let r = import(&eps(page, &art)).unwrap();
     assert_eq!(names(&r.document), ["Art"], "{:?}", r.warnings);
     let fill = r.document.layers[0].children().unwrap()[0].appearance.fill().and_then(|f| f.paint.color());
-    assert_eq!(fill, Some(vectorcraft_color::Color::gray(0.75)));
+    assert_eq!(fill, Some(logocraft_color::Color::gray(0.75)));
     assert!(r.warnings.is_empty(), "{:?}", r.warnings);
 }
 
@@ -373,7 +373,7 @@ fn text_object(story: u32) -> String {
     format!("/AI11Text :\n0 /FreeUndo ,\n0 /FrameIndex ,\n{story} /StoryIndex ,\n2 /TextAntialiasing ,\n;\n")
 }
 
-fn text_of(l: &Node) -> Vec<&vectorcraft_doc::TextObject> {
+fn text_of(l: &Node) -> Vec<&logocraft_doc::TextObject> {
     l.children().into_iter().flatten().filter_map(|n| if let NodeKind::Text(t) = &n.kind { Some(&**t) } else { None }).collect()
 }
 
@@ -394,9 +394,9 @@ fn type_on_a_hidden_layer_comes_from_the_text_document() {
     let [.., e, f] = a.xf.as_coeffs();
     assert!((e - 58.5).abs() < 1e-6 && (f - 38.5).abs() < 1e-6, "{:?}", a.xf);
     assert_eq!(a.runs[0].style.size, 14.0);
-    assert_eq!(a.para.justify, vectorcraft_doc::Justify::Left);
+    assert_eq!(a.para.justify, logocraft_doc::Justify::Left);
     // Centred type is anchored at its middle.
-    assert_eq!(b.para.justify, vectorcraft_doc::Justify::Center);
+    assert_eq!(b.para.justify, logocraft_doc::Justify::Center);
     let [.., e, f] = b.xf.as_coeffs();
     assert!((e - 50.0).abs() < 1e-6 && (f - 50.0).abs() < 1e-6, "{:?}", b.xf);
     assert!(!r.warnings.iter().any(|w| w.contains("couldn't be read")), "{:?}", r.warnings);
@@ -616,15 +616,15 @@ fn type_on_a_later_artboard_of_an_ai_file_goes_to_its_text_object() {
     // The PDF part: the second page 20 points right of the first, the type 50 down it.
     let mut pdf = pdf_part(10.0, 86.0);
     let mut page = pdf.artboards[0].clone();
-    (page.id, page.rect) = (2, vectorcraft_geom::Rect::new(120.0, 0.0, 220.0, 100.0));
+    (page.id, page.rect) = (2, logocraft_geom::Rect::new(120.0, 0.0, 220.0, 100.0));
     pdf.artboards.push(page);
-    let style = vectorcraft_doc::CharStyle { size: 14.0, ..Default::default() };
-    let text = vectorcraft_doc::TextObject::point(vectorcraft_geom::Point::new(178.5, 50.0), "Hi there", style);
+    let style = logocraft_doc::CharStyle { size: 14.0, ..Default::default() };
+    let text = logocraft_doc::TextObject::point(logocraft_geom::Point::new(178.5, 50.0), "Hi there", style);
     let (id, layer_id) = (pdf.alloc_id(), pdf.layers[0].id);
     pdf.insert(Some(layer_id), 1, Node::new(id, NodeKind::Text(Box::new(text)))).unwrap();
     let (d, w, read) = crate::layered_ai(&private(&art), pdf, vec![], false);
     assert!(read, "{w:?}");
-    assert_eq!(d.artboards[1].rect, vectorcraft_geom::Rect::new(0.0, 150.0, 100.0, 250.0));
+    assert_eq!(d.artboards[1].rect, logocraft_geom::Rect::new(0.0, 150.0, 100.0, 250.0));
     let texts = text_of(&d.layers[0]);
     assert_eq!(texts.len(), 1, "{w:?}");
     let [.., e, f] = texts[0].xf.as_coeffs();
@@ -656,7 +656,7 @@ fn a_global_colour_or_a_pattern_fill_keeps_the_sublayers_of_an_ai_file() {
     let lawn = &d.layers[0].children().unwrap()[0];
     assert_eq!((lawn.name.as_deref(), kinds(lawn)), (Some("Lawn"), vec!["path"]), "{notes:?}");
     let fill = lawn.children().unwrap()[0].appearance.fill().map(|f| f.paint.clone());
-    assert!(matches!(&fill, Some(vectorcraft_color::Paint::Pattern { pattern, .. }) if pattern == "Dots"), "{fill:?}");
+    assert!(matches!(&fill, Some(logocraft_color::Paint::Pattern { pattern, .. }) if pattern == "Dots"), "{fill:?}");
 }
 
 #[test]
@@ -796,16 +796,16 @@ fn area_type_and_type_on_a_path_come_from_the_text_document() {
     assert_eq!(texts.len(), 2, "{:?}", r.warnings);
     let (area, path) = (texts[0], texts[1]);
     assert_eq!(area.plain_text(), "Area type\nSecond");
-    let vectorcraft_doc::TextKind::Area { frame } = &area.kind else { panic!("area type: {:?}", area.kind) };
+    let logocraft_doc::TextKind::Area { frame } = &area.kind else { panic!("area type: {:?}", area.kind) };
     // Art y 20..40 is 60..80 down the 100 pt page.
     let b = frame.bounds().unwrap();
     assert!((b.x0 - 10.0).abs() < 1e-6 && (b.y0 - 60.0).abs() < 1e-6 && (b.x1 - 60.0).abs() < 1e-6 && (b.y1 - 80.0).abs() < 1e-6, "{b:?}");
-    assert_eq!(area.para.justify, vectorcraft_doc::Justify::Center);
+    assert_eq!(area.para.justify, logocraft_doc::Justify::Center);
     assert_eq!((area.para.first_line_indent, area.para.left_indent, area.para.space_before), (4.0, 6.0, 3.0));
     let style = &area.runs[0].style;
     assert_eq!((style.size, style.tracking, style.h_scale), (9.0, 50.0, 150.0));
-    assert_eq!(style.fill.color(), Some(vectorcraft_color::Color::rgb(1.0, 0.0, 0.0)));
-    let vectorcraft_doc::TextKind::OnPath { path: p, start, end } = &path.kind else { panic!("type on a path: {:?}", path.kind) };
+    assert_eq!(style.fill.color(), Some(logocraft_color::Color::rgb(1.0, 0.0, 0.0)));
+    let logocraft_doc::TextKind::OnPath { path: p, start, end } = &path.kind else { panic!("type on a path: {:?}", path.kind) };
     assert!((start - 0.25).abs() < 1e-3 && end.is_none(), "{start} {end:?}");
     assert_eq!(p.bounds().unwrap().width(), 40.0);
     assert_eq!(path.runs[0].style.size, 8.0);
@@ -864,7 +864,7 @@ fn a_copied_area_type_object_is_framed_where_its_own_art_path_is() {
     let r = import(&eps(&page_square(10, 10), &art)).unwrap();
     let texts = text_of(&r.document.layers[1]);
     assert_eq!(texts.len(), 1, "{:?}", r.warnings);
-    let vectorcraft_doc::TextKind::Area { frame } = &texts[0].kind else { panic!("area type: {:?}", texts[0].kind) };
+    let logocraft_doc::TextKind::Area { frame } = &texts[0].kind else { panic!("area type: {:?}", texts[0].kind) };
     // Art y 50..70 is 30..50 down the 100 pt page.
     let b = frame.bounds().unwrap();
     assert!((b.x0 - 30.0).abs() < 1e-6 && (b.y0 - 30.0).abs() < 1e-6 && (b.x1 - 80.0).abs() < 1e-6 && (b.y1 - 50.0).abs() < 1e-6, "{b:?}");

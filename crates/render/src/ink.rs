@@ -4,7 +4,7 @@
 //! over magenta prints both inks (blue, C100 M100 through the CMYK profile), where screen RGB would
 //! give the product of the two display colours. The renderer composites additive values, so a CMYK
 //! document that shows transparency is drawn twice, once per ink plane
-//! ([`vectorcraft_color::blend::cmyk_planes`]): every colour painted as its complemented C, M and
+//! ([`logocraft_color::blend::cmyk_planes`]): every colour painted as its complemented C, M and
 //! Y ([`Ink::Cmy`]), then as its complemented K, a grey ([`Ink::K`]). Blend modes, opacity,
 //! groups, knockouts and effects composite the planes exactly as they composite RGB, which is CMYK
 //! blending. [`compose`] reads each pixel's inks back and shows them through the working CMYK
@@ -18,11 +18,11 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use vectorcraft_color::Color;
-use vectorcraft_color::blend::{cmyk_planes, planes_cmyk};
-use vectorcraft_color::cms::{self, Cms, CmykLut, ProofLut, lab};
-use vectorcraft_doc::cmyk::Inks;
-use vectorcraft_doc::{ColorMode, Document, ImageBlob};
+use logocraft_color::Color;
+use logocraft_color::blend::{cmyk_planes, planes_cmyk};
+use logocraft_color::cms::{self, Cms, CmykLut, ProofLut, lab};
+use logocraft_doc::cmyk::Inks;
+use logocraft_doc::{ColorMode, Document, ImageBlob};
 use vello_cpu::Pixmap;
 use vello_cpu::color::PremulRgba8;
 use vello_cpu::peniko;
@@ -326,9 +326,9 @@ mod tests {
 
     #[test]
     fn cmyk_images_show_through_the_profile_and_paint_their_own_inks() {
-        use vectorcraft_color::Paint;
-        use vectorcraft_doc::{Appearance, ImageObject, Node, NodeKind};
-        use vectorcraft_geom::{Affine, Rect, shapes};
+        use logocraft_color::Paint;
+        use logocraft_doc::{Appearance, ImageObject, Node, NodeKind};
+        use logocraft_geom::{Affine, Rect, shapes};
 
         use crate::Renderer;
 

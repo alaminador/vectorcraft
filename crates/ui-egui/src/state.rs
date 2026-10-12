@@ -1,8 +1,8 @@
 //! Serializable UI state (read and driven by the control channel).
 
+use logocraft_geom::Point;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use vectorcraft_geom::Point;
 
 use crate::theme::Brightness;
 
@@ -31,7 +31,7 @@ impl Default for View {
 
 impl View {
     /// The view a document opens at: the one it was saved with, else fitted on first display.
-    pub fn of(st: &vectorcraft_engine::DocState) -> Self {
+    pub fn of(st: &logocraft_engine::DocState) -> Self {
         match &st.view {
             Some(v) if v.zoom.is_finite() && v.zoom > 0.0 && v.center.x.is_finite() && v.center.y.is_finite() => Self {
                 zoom: v.zoom.clamp(0.0313, 640.0),
@@ -210,7 +210,7 @@ impl Dialog {
     pub fn f64(&self, k: &str, d: f64) -> f64 {
         match self.fields.get(k) {
             Some(Value::Number(n)) => n.as_f64().unwrap_or(d),
-            Some(Value::String(s)) => vectorcraft_doc::Unit::Points.parse(s).unwrap_or(d),
+            Some(Value::String(s)) => logocraft_doc::Unit::Points.parse(s).unwrap_or(d),
             _ => d,
         }
     }
@@ -545,13 +545,13 @@ impl UiState {
         self.status.clear();
         self.about = false;
         self.open_panel = None;
-        if self.group_tool.len() != vectorcraft_tools::TOOL_GROUPS.len() {
+        if self.group_tool.len() != logocraft_tools::TOOL_GROUPS.len() {
             self.group_tool = UiState::default().group_tool;
         }
         // One strip per group, of known tools (a hand-edited preferences file).
         let mut seen = std::collections::BTreeSet::new();
         self.floating_flyouts.retain_mut(|f| {
-            f.tools.retain(|id| vectorcraft_tools::tool_info(id).is_some());
+            f.tools.retain(|id| logocraft_tools::tool_info(id).is_some());
             f.tools.first().is_some_and(|k| seen.insert(k.clone()))
         });
         FloatingPanels::sanitize(&mut self.floating_panels, &mut self.toolbar_pos);
@@ -594,7 +594,7 @@ impl Default for UiState {
             view: ViewFlags::default(),
             dialog: None,
             flyout: None,
-            group_tool: vectorcraft_tools::TOOL_GROUPS.iter().map(|g| g[0].id.to_string()).collect(),
+            group_tool: logocraft_tools::TOOL_GROUPS.iter().map(|g| g[0].id.to_string()).collect(),
             status: String::new(),
             palette_open: false,
             palette_query: String::new(),

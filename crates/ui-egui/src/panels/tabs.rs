@@ -2,11 +2,11 @@
 //! adds a stop, dragging moves one and dragging it off the ruler deletes it.
 
 use egui::{Sense, Stroke, Ui, vec2};
+use logocraft_doc::{Node, NodeKind, TabAlign, TabStop, TextKind};
 use serde_json::{Value, json};
-use vectorcraft_doc::{Node, NodeKind, TabAlign, TabStop, TextKind};
 
 use super::{first_selected, pstate, set_pstate};
-use crate::VectorcraftApp;
+use crate::LogocraftApp;
 use crate::theme::Tokens;
 use crate::widgets::{self, menu_item};
 
@@ -32,7 +32,7 @@ const RULER_LEFT: f32 = 10.0 + 4.0;
 /// The text object, the stops of the caret's paragraph while the Type tool edits text (else the
 /// first selected text object's first paragraph) and the ruler span in points (the frame width for
 /// area type).
-fn current(app: &VectorcraftApp) -> Option<(Node, Vec<TabStop>, f64)> {
+fn current(app: &LogocraftApp) -> Option<(Node, Vec<TabStop>, f64)> {
     let editing = super::character::text_editing(app);
     let n = match editing {
         Some((id, _, _)) => app.session.active()?.doc.node(id)?.clone(),
@@ -51,7 +51,7 @@ fn current(app: &VectorcraftApp) -> Option<(Node, Vec<TabStop>, f64)> {
 /// Position Panel Above Text: float the panel just above text `n`, as wide as its ruler needs to
 /// put 0 on the text's left edge and its marks at the canvas zoom, so each stop sits over the
 /// column it sets (#729). `span`: the ruler's length in the text's points.
-fn above_text(app: &mut VectorcraftApp, ctx: &egui::Context, n: &Node, span: f64) -> Option<()> {
+fn above_text(app: &mut LogocraftApp, ctx: &egui::Context, n: &Node, span: f64) -> Option<()> {
     let xf = crate::canvas::Xf::new(app.canvas_rect?, app.view()?);
     let on_screen = xf.rect_to_screen(n.geometric_bounds()?);
     // Screen points per point of the text: across the frame for area type (so a scaled frame
@@ -85,7 +85,7 @@ fn stops_json(stops: &[TabStop]) -> Value {
     )
 }
 
-fn apply(app: &mut VectorcraftApp, stops: &[TabStop]) {
+fn apply(app: &mut LogocraftApp, stops: &[TabStop]) {
     if let Some((id, a, b)) = super::character::text_editing(app) {
         super::character::end_typing(app);
         app.run("text.tabs.set", json!({"stops": stops_json(stops), "ids": [id.0], "start": a, "end": b})).ok();
@@ -94,7 +94,7 @@ fn apply(app: &mut VectorcraftApp, stops: &[TabStop]) {
     }
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some((node, mut stops, span)) = current(app) else {
         super::empty_state(ui, "pilcrow", tl!("No text selected"), tl!("Select a text object to set its tab stops."));
@@ -244,7 +244,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     resp.on_hover_text(tl!("Click to add a tab stop, drag to move it, drag it off the ruler to delete it"));
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let Some((_, mut stops, _)) = current(app) else {
         ui.add_enabled(false, egui::Button::new(tl!("Select text")).frame(false));
         return;
@@ -275,9 +275,9 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vectorcraft_engine::Session;
+    use logocraft_engine::Session;
 
-    fn frame(app: &mut VectorcraftApp) {
+    fn frame(app: &mut LogocraftApp) {
         let ctx = egui::Context::default();
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
             show(app, ui);
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn panel_draws_empty_with_text_and_with_stops() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({})).unwrap();
         frame(&mut app);
         app.session.execute("text.create", &json!({"x": 10, "y": 20, "text": "a\tb", "area": {"width": 300, "height": 100}})).unwrap();
@@ -307,14 +307,14 @@ mod tests {
     /// (spaces kept, eight characters at most).
     #[test]
     fn leader_and_align_on_keep_what_is_typed_until_enter() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({})).unwrap();
         app.session.execute("text.create", &json!({"x": 10, "y": 20, "text": "a	b", "area": {"width": 300, "height": 100}})).unwrap();
         app.session.execute("text.tabs.set", &json!({"stops": [{"position": 50, "align": "decimal"}]})).unwrap();
         let ctx = egui::Context::default();
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(320.0, 400.0));
         // One frame with `events` → the texts painted and where.
-        let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+        let frame = |app: &mut LogocraftApp, events: Vec<egui::Event>| {
             let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| show(app, ui));
             out.textures_delta.clear();
             out.shapes
@@ -334,7 +334,7 @@ mod tests {
                 modifiers: Default::default(),
             })
         };
-        let stop = |app: &VectorcraftApp| current(app).unwrap().1[0].clone();
+        let stop = |app: &LogocraftApp| current(app).unwrap().1[0].clone();
         for (label, typed, want) in [("Leader:", [". ", "_", "123456789"], ". _12345"), ("Align On:", [",", "", ""], ",")] {
             let texts = frame(&mut app, vec![]);
             let r = texts.iter().find(|(t, _)| t == label).unwrap_or_else(|| panic!("{label} in {texts:?}")).1;
@@ -363,7 +363,7 @@ mod tests {
     /// edge and a stop's mark over the column it sets, at any zoom (#729).
     #[test]
     fn above_text_puts_the_ruler_over_the_text_at_the_zoom() {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 600, "height": 400})).unwrap();
         app.session.execute("text.create", &json!({"x": 40, "y": 200, "text": "a	b", "area": {"width": 300, "height": 100}})).unwrap();
         app.canvas_rect = Some(egui::Rect::from_min_size(egui::pos2(50.0, 40.0), vec2(1000.0, 700.0)));

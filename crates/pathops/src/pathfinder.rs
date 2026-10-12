@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use kurbo::{BezPath, ParamCurve, ParamCurveNearest, Point, Shape as _};
 use linesweeper::topology::ContourIdx;
-use vectorcraft_geom::{FillRule, PathData};
+use logocraft_geom::{FillRule, PathData};
 
 use crate::boolean::{Arrangement, Multi, Seg, all_contours_to_path, contours_to_path, fill_bezpath, normalize_bez, segs_to_subpath, unite_all};
 
@@ -502,8 +502,8 @@ fn mid_point(c: &[Seg]) -> Point {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use logocraft_geom::{Rect, SubPath, shapes};
     use proptest::prelude::*;
-    use vectorcraft_geom::{Rect, SubPath, shapes};
 
     /// The faces one contour pass per mask finds: what [`regions_of`] must match exactly.
     fn regions_one_mask_at_a_time(arr: &Arrangement) -> Vec<Region> {

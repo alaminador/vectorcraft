@@ -3,12 +3,12 @@
 
 use std::sync::Arc;
 
-use vectorcraft_color::Color;
-use vectorcraft_color::cms::{self, Cms, Model, ProfileKind};
-use vectorcraft_color::swatch::REGISTRATION;
-use vectorcraft_doc::inks::{Link, inks, plates, visit_node_colors};
-use vectorcraft_doc::overprint::multiply_overprints;
-use vectorcraft_doc::{ColorMode, Document, Node};
+use logocraft_color::Color;
+use logocraft_color::cms::{self, Cms, Model, ProfileKind};
+use logocraft_color::swatch::REGISTRATION;
+use logocraft_doc::inks::{Link, inks, plates, visit_node_colors};
+use logocraft_doc::overprint::multiply_overprints;
+use logocraft_doc::{ColorMode, Document, Node};
 
 use super::{DEFAULT_FREQUENCY, PrintInk, PrintSettings};
 

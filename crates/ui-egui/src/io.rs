@@ -1,24 +1,24 @@
 //! File I/O through the injected services (pick, read, write, download, reveal); the engine's
 //! `fileio` decodes, encodes and saves every format.
 
+use logocraft_doc::SavedView;
+use logocraft_engine::EngineError;
+use logocraft_engine::cmd::fileio::{self, Format, SAVE_FORMATS, SaveMode, SavePlan};
 use serde_json::{Value, json};
-use vectorcraft_doc::SavedView;
-use vectorcraft_engine::EngineError;
-use vectorcraft_engine::cmd::fileio::{self, Format, SAVE_FORMATS, SaveMode, SavePlan};
 
 use crate::background::{self, Writer};
 use crate::dialogs::svg_options;
 use crate::state::Dialog;
-use crate::{FilePick, Services, VectorcraftApp, dialogs};
+use crate::{FilePick, LogocraftApp, Services, dialogs};
 
 /// Template extensions New from Template's open dialog lists first.
-const TEMPLATE_EXTS: &[&str] = &["vctemplate", "ait", "vectorcraft", "drawcraft"];
+const TEMPLATE_EXTS: &[&str] = &["vctemplate", "ait", "logocraft", "vectorcraft", "drawcraft"];
 
 /// Open bytes of any readable format as a new document (templates open untitled); swatch and
 /// graphic style library files open in the library panel, Libraries panel files are added to it,
 /// and flattener, PDF, print and perspective grid presets files are imported. → `document.open`'s result for a document opened now (its
 /// `warnings` say what didn't come in as it was), else null.
-pub fn open_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Option<String>) -> Result<Value, String> {
+pub fn open_bytes(app: &mut LogocraftApp, name: &str, bytes: &[u8], path: Option<String>) -> Result<Value, String> {
     let opens = opens_as(name);
     if let Some(OpensAs::Presets { import, what }) = opens {
         let r = app.run(import, serde_json::json!({"data": String::from_utf8_lossy(bytes)}))?;
@@ -30,7 +30,7 @@ pub fn open_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Opti
         let p = match path {
             Some(path) => serde_json::json!({ "path": path }),
             // `.ase` swatch libraries are binary.
-            None => serde_json::json!({"name": name, "dataBase64": vectorcraft_format::base64_encode(bytes)}),
+            None => serde_json::json!({"name": name, "dataBase64": logocraft_format::base64_encode(bytes)}),
         };
         return crate::panels::swatches::load_library(app, p).map(|_| Value::Null);
     }
@@ -54,16 +54,16 @@ pub enum OpensAs {
 
 /// The kind of file named `name` (by its extension) that File → Open installs, imports or shows in
 /// the library panel or the Libraries panel ([`open_bytes`]), else `None`. A drop opens these files
-/// the same way, wherever they are dropped ([`VectorcraftApp::drop_target`]).
+/// the same way, wherever they are dropped ([`LogocraftApp::drop_target`]).
 pub fn opens_as(name: &str) -> Option<OpensAs> {
     let ext = fileio::extension(name);
     let presets = [
-        (vectorcraft_engine::cmd::flatten::PRESET_EXTS, "flattener.presets.import", "flattener presets"),
-        (vectorcraft_engine::cmd::pdfcmds::PRESET_EXTS, "pdf.preset.import", "PDF presets"),
+        (logocraft_engine::cmd::flatten::PRESET_EXTS, "flattener.presets.import", "flattener presets"),
+        (logocraft_engine::cmd::pdfcmds::PRESET_EXTS, "pdf.preset.import", "PDF presets"),
     ];
     if let Some(&(_, import, what)) = presets.iter().find(|(exts, ..)| exts.contains(&ext.as_str())) {
         Some(OpensAs::Presets { import, what })
-    } else if vectorcraft_engine::cmd::swatchlib::LIBRARY_EXTS.contains(&ext.as_str()) {
+    } else if logocraft_engine::cmd::swatchlib::LIBRARY_EXTS.contains(&ext.as_str()) {
         Some(OpensAs::SwatchLibrary)
     } else {
         None
@@ -72,7 +72,7 @@ pub fn opens_as(name: &str) -> Option<OpensAs> {
 
 /// Open a document through the engine loader with the `document.open` options in `p` →
 /// `document.open`'s result.
-pub fn open_document(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Option<String>, p: &Value) -> Result<Value, String> {
+pub fn open_document(app: &mut LogocraftApp, name: &str, bytes: &[u8], path: Option<String>, p: &Value) -> Result<Value, String> {
     let r = fileio::open_bytes_with(&mut app.session, name, bytes, path, p).map_err(|e| e.to_string())?;
     opened(app, &r);
     Ok(r)
@@ -80,7 +80,7 @@ pub fn open_document(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: O
 
 /// A document just opened (`r`: `document.open`'s result): the views follow, the status bar says
 /// what didn't come in as it was, and missing links are asked about.
-pub(crate) fn opened(app: &mut VectorcraftApp, r: &Value) {
+pub(crate) fn opened(app: &mut LogocraftApp, r: &Value) {
     app.sync_views();
     if let Some(w) = r["warnings"].as_array().filter(|w| !w.is_empty()) {
         app.status(format!("Opened with {} note(s): {}", w.len(), w[0].as_str().unwrap_or_default()));
@@ -89,12 +89,12 @@ pub(crate) fn opened(app: &mut VectorcraftApp, r: &Value) {
 }
 
 /// A path from the open dialog, or "cancelled".
-fn pick_open(app: &mut VectorcraftApp, pick: &FilePick) -> Result<String, String> {
+fn pick_open(app: &mut LogocraftApp, pick: &FilePick) -> Result<String, String> {
     crate::picks::open(app, pick).ok_or_else(|| "cancelled".into())
 }
 
 /// File → Open…
-pub fn open_dialog(app: &mut VectorcraftApp) -> Result<(), String> {
+pub fn open_dialog(app: &mut LogocraftApp) -> Result<(), String> {
     if let Some(f) = app.services.open_async.as_mut() {
         f();
         return Ok(());
@@ -105,7 +105,7 @@ pub fn open_dialog(app: &mut VectorcraftApp) -> Result<(), String> {
 
 /// A file the user asked to open (File › Open, Open Recent, the Home screen, a drop, the Finder)
 /// couldn't be: say so in a dialog as well as the status bar, which is easily missed (#861).
-pub fn report_open_error(app: &mut VectorcraftApp, name: &str, e: &str) {
+pub fn report_open_error(app: &mut LogocraftApp, name: &str, e: &str) {
     app.status(format!("Couldn't open {name}: {e}"));
     let message = crate::i18n::fmt(tl!("Can't open “{name}”."), &[("name", name)]);
     dialogs::confirm::tell(app, &message, &crate::i18n::message(crate::i18n::current(), e));
@@ -115,7 +115,7 @@ pub fn report_open_error(app: &mut VectorcraftApp, name: &str, e: &str) {
 /// the desktop a document is decoded off the UI thread ([`crate::opening`]): the result is then
 /// `{background: true, status}`, and the document opens in its tab (or the failure is reported)
 /// once it is ready.
-pub fn open_reporting(app: &mut VectorcraftApp, path: &str) -> Result<Value, String> {
+pub fn open_reporting(app: &mut LogocraftApp, path: &str) -> Result<Value, String> {
     let r = open_file(app, path, crate::opening::available());
     if let Err(e) = &r {
         report_open_error(app, &fileio::file_name(path), e);
@@ -123,18 +123,18 @@ pub fn open_reporting(app: &mut VectorcraftApp, path: &str) -> Result<Value, Str
     r
 }
 
-fn read(app: &VectorcraftApp, path: &str) -> Result<Vec<u8>, String> {
+fn read(app: &LogocraftApp, path: &str) -> Result<Vec<u8>, String> {
     app.services.read.as_ref().ok_or("no file reader")?(path)
 }
 
 /// Open the file at `path` (see [`open_bytes`]) → `document.open`'s result, or null.
-pub fn open_path(app: &mut VectorcraftApp, path: &str) -> Result<Value, String> {
+pub fn open_path(app: &mut LogocraftApp, path: &str) -> Result<Value, String> {
     open_file(app, path, false)
 }
 
 /// [`open_path`]; with `background`, a document (not a file that installs, imports or asks
 /// first) is decoded off the UI thread ([`crate::opening::start`]).
-fn open_file(app: &mut VectorcraftApp, path: &str, background: bool) -> Result<Value, String> {
+fn open_file(app: &mut LogocraftApp, path: &str, background: bool) -> Result<Value, String> {
     let mut bytes = read(app, path)?;
     if background && opens_as(path).is_none() {
         // A PDF with several pages or a password asks first, as at once.
@@ -156,7 +156,7 @@ fn open_file(app: &mut VectorcraftApp, path: &str, background: bool) -> Result<V
 /// File → New from Template…: a template (or any readable file) as a new untitled document. Without
 /// a path the open dialog starts in the Templates folder. On the web the browser's file picker
 /// opens it (`.vctemplate`, `.ait` and template files open untitled there too).
-pub fn new_from_template(app: &mut VectorcraftApp, path: Option<String>) -> Result<Value, String> {
+pub fn new_from_template(app: &mut LogocraftApp, path: Option<String>) -> Result<Value, String> {
     let path = match path {
         Some(p) => p,
         None if app.services.open_async.is_some() => return open_dialog(app).map(|_| Value::Null),
@@ -182,13 +182,13 @@ pub(crate) fn write_to(services: &mut Services, path: &str, bytes: &[u8]) -> Res
 }
 
 /// The web saves by downloading: no save panel, no folders.
-pub(crate) fn is_web(app: &VectorcraftApp) -> bool {
+pub(crate) fn is_web(app: &LogocraftApp) -> bool {
     app.services.download.is_some()
 }
 
 /// Write `bytes` to `path`, else to a file picked with `name` suggested next to the document (the
 /// web downloads them as `name`) → where they went.
-pub(crate) fn write_named(app: &mut VectorcraftApp, path: Option<String>, name: &str, bytes: &[u8]) -> Result<String, String> {
+pub(crate) fn write_named(app: &mut LogocraftApp, path: Option<String>, name: &str, bytes: &[u8]) -> Result<String, String> {
     let path = match path {
         Some(p) => p,
         None => {
@@ -203,7 +203,7 @@ pub(crate) fn write_named(app: &mut VectorcraftApp, path: Option<String>, name: 
 /// Where a file goes when no path was given: the suggested name on the web (a download), else the
 /// save panel's choice, given the suggested name's extension when it names no file type (a name
 /// typed without one).
-fn pick_path(app: &mut VectorcraftApp, pick: &FilePick) -> Result<String, String> {
+fn pick_path(app: &mut LogocraftApp, pick: &FilePick) -> Result<String, String> {
     if is_web(app) {
         return Ok(pick.name.clone());
     }
@@ -223,7 +223,7 @@ fn with_extension(path: &str, ext: &str, keeps: impl Fn(&Format) -> bool) -> Str
 }
 
 /// The active document's file name with extension `ext`, and its folder.
-fn suggested(app: &VectorcraftApp, ext: &str) -> (String, Option<String>) {
+fn suggested(app: &LogocraftApp, ext: &str) -> (String, Option<String>) {
     let st = app.session.active();
     let t = st.map(|d| d.path.clone().unwrap_or_else(|| d.doc.title.clone())).unwrap_or_else(|| "Untitled".into());
     let folder = st.and_then(|d| d.path.as_deref()).and_then(|p| std::path::Path::new(p).parent()).map(|p| p.to_string_lossy().to_string());
@@ -232,7 +232,7 @@ fn suggested(app: &VectorcraftApp, ext: &str) -> (String, Option<String>) {
 
 /// `path`, else one picked in a save panel (the web: the suggested name) for the active document
 /// with extension `ext`, filtered to that format when it is one.
-pub(crate) fn target_path(app: &mut VectorcraftApp, path: Option<String>, ext: &str) -> Result<String, String> {
+pub(crate) fn target_path(app: &mut LogocraftApp, path: Option<String>, ext: &str) -> Result<String, String> {
     if let Some(p) = path {
         return Ok(p);
     }
@@ -242,7 +242,7 @@ pub(crate) fn target_path(app: &mut VectorcraftApp, path: Option<String>, ext: &
 }
 
 /// Keep the active document's saved view current before a save (native files reopen at it).
-pub fn remember_view(app: &mut VectorcraftApp) {
+pub fn remember_view(app: &mut LogocraftApp) {
     let Some(v) = app.view().copied().filter(|v| v.fitted) else { return };
     if let Some(st) = app.session.active_mut() {
         st.view = Some(SavedView { name: String::new(), center: v.center, zoom: v.zoom, rotation: v.rotation });
@@ -257,7 +257,7 @@ fn with_save_extension(path: &str, f: &Format) -> String {
 
 /// Write every file of an export (one per artboard, linked images) for the destination `path`.
 /// → the export's own files (without the linked images).
-fn write_encoded(write: Writer, doc: &vectorcraft_doc::Document, path: &str, enc: &fileio::Encoded) -> Result<Vec<String>, String> {
+fn write_encoded(write: Writer, doc: &logocraft_doc::Document, path: &str, enc: &fileio::Encoded) -> Result<Vec<String>, String> {
     let named = enc.named(doc, path);
     for (p, bytes) in &named {
         write(p, bytes)?;
@@ -265,7 +265,7 @@ fn write_encoded(write: Writer, doc: &vectorcraft_doc::Document, path: &str, enc
     Ok(named.into_iter().take(enc.files.len()).map(|(p, _)| p).collect())
 }
 
-fn plan(app: &VectorcraftApp, mode: SaveMode, p: &Value) -> Result<SavePlan, String> {
+fn plan(app: &LogocraftApp, mode: SaveMode, p: &Value) -> Result<SavePlan, String> {
     fileio::save_plan(&app.session, mode, p).map_err(|e| e.to_string())
 }
 
@@ -278,7 +278,7 @@ fn plan(app: &VectorcraftApp, mode: SaveMode, p: &Value) -> Result<SavePlan, Str
 /// Options, the Save PDF dialog, or the save options dialog: native and `.ai` files on Save As
 /// only), and so does Save As or Save a Copy to a given SVG path. → `{path, format, warnings…}` once written, or `{pending: <dialog kind>,
 /// path?}` while a dialog is open.
-pub fn save(app: &mut VectorcraftApp, mode: SaveMode, p: &Value, ask_options: bool) -> Result<Value, String> {
+pub fn save(app: &mut LogocraftApp, mode: SaveMode, p: &Value, ask_options: bool) -> Result<Value, String> {
     remember_view(app);
     // Writing over the file the document was read from is asked about here, not refused.
     let first = plan(app, mode, &acknowledged(p))?;
@@ -335,14 +335,14 @@ fn acknowledged(p: &Value) -> Value {
 }
 
 /// Writing `path` over the file the active document was read from, when reading it left things
-/// out (hidden text, art or layers VectorCraft can't read yet): asks first, and OK runs `command`
+/// out (hidden text, art or layers LogoCraft can't read yet): asks first, and OK runs `command`
 /// with `params` and `acknowledgeLoss` → `{pending}` while it asks, `None` when nothing is lost.
-fn ask_before_losing(app: &mut VectorcraftApp, path: &str, command: &str, params: &Value) -> Option<Value> {
+fn ask_before_losing(app: &mut LogocraftApp, path: &str, command: &str, params: &Value) -> Option<Value> {
     let what = fileio::losses_summary(fileio::overwrite_losses(app.session.active()?, path, params)?);
     let name = fileio::file_name(path);
     let message = crate::i18n::fmt(tl!("Replace “{name}”, the file this document was opened from?"), &[("name", &name)]);
     let detail = crate::i18n::fmt(
-        tl!("Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it."),
+        tl!("Opening it left out what LogoCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it."),
         &[("what", &what)],
     );
     let mut params = acknowledged(params);
@@ -359,7 +359,7 @@ fn ask_before_losing(app: &mut VectorcraftApp, path: &str, command: &str, params
 fn asks_options(mode: SaveMode, f: &Format) -> bool {
     !f.options.is_empty()
         && match f.id {
-            "vectorcraft" | "ai" => mode == SaveMode::SaveAs,
+            "logocraft" | "ai" => mode == SaveMode::SaveAs,
             "template" => false,
             _ => true,
         }
@@ -372,7 +372,7 @@ fn has_options(p: &Value) -> bool {
 
 /// Ask for format `f`'s options before a save (`mode`) to `path`: SVG Options for SVG, the Save
 /// PDF dialog for PDF, else the save options dialog. OK finishes the save.
-pub fn ask_format_options(app: &mut VectorcraftApp, mode: SaveMode, f: &Format, path: &str) -> Result<Value, String> {
+pub fn ask_format_options(app: &mut LogocraftApp, mode: SaveMode, f: &Format, path: &str) -> Result<Value, String> {
     match f.id {
         "pdf" => ask_pdf_options(app, mode, path),
         "svg" | "svgz" => {
@@ -386,7 +386,7 @@ pub fn ask_format_options(app: &mut VectorcraftApp, mode: SaveMode, f: &Format, 
 
 /// A save as PDF asks with the Save PDF dialog, filled with the PDF options the document was last
 /// saved with; its OK finishes the save ([`save_pdf`]).
-pub fn ask_pdf_options(app: &mut VectorcraftApp, mode: SaveMode, path: &str) -> Result<Value, String> {
+pub fn ask_pdf_options(app: &mut LogocraftApp, mode: SaveMode, path: &str) -> Result<Value, String> {
     let mut p = Value::Object(plan(app, mode, &json!({ "path": path, "format": "pdf" }))?.options);
     p["path"] = json!(path);
     dialogs::open_save_pdf(app, &p)?;
@@ -397,7 +397,7 @@ pub fn ask_pdf_options(app: &mut VectorcraftApp, mode: SaveMode, path: &str) -> 
 
 /// The Save PDF dialog's OK during a save (`mode`): `params` are its `document.exportPdf` options
 /// and `path`.
-pub fn save_pdf(app: &mut VectorcraftApp, mode: SaveMode, mut params: Value) -> Result<Value, String> {
+pub fn save_pdf(app: &mut LogocraftApp, mode: SaveMode, mut params: Value) -> Result<Value, String> {
     let path = params.as_object_mut().and_then(|o| o.remove("path"));
     let view = params.get("viewAfterSaving").and_then(Value::as_bool).unwrap_or(false);
     let r = save(app, mode, &json!({ "path": path, "format": "pdf", "options": params }), false)?;
@@ -408,14 +408,14 @@ pub fn save_pdf(app: &mut VectorcraftApp, mode: SaveMode, mut params: Value) -> 
 }
 
 /// Open a written file in the system viewer (not on the web, which downloads it).
-fn view_file(app: &mut VectorcraftApp, path: &str) {
+fn view_file(app: &mut LogocraftApp, path: &str) {
     if !is_web(app) {
         app.open_url(&file_url(path));
     }
 }
 
 /// "Saved <path>", with the first of the result's warnings.
-pub(crate) fn report_saved(app: &mut VectorcraftApp, path: &str, r: &Value) {
+pub(crate) fn report_saved(app: &mut LogocraftApp, path: &str, r: &Value) {
     let warnings: Vec<&str> = r["warnings"].as_array().map(|w| w.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
     app.status(match warnings.first() {
         Some(first) => format!("Saved {path} with {} note(s): {first}", warnings.len()),
@@ -427,7 +427,7 @@ pub(crate) fn report_saved(app: &mut VectorcraftApp, path: &str, r: &Value) {
 /// With Background Save on, the file is encoded and written from a snapshot off the UI thread
 /// ([`background`]): this returns `{path, background: true, status}` at once, and the document
 /// takes the file (and counts as saved, as of the snapshot) once it is written.
-fn write_plan(app: &mut VectorcraftApp, plan: SavePlan) -> Result<Value, String> {
+fn write_plan(app: &mut LogocraftApp, plan: SavePlan) -> Result<Value, String> {
     let uid = app.session.active().ok_or("no document")?.uid;
     // Saves of one document finish in order.
     if app.background.busy_with(uid) {
@@ -452,7 +452,7 @@ fn write_plan(app: &mut VectorcraftApp, plan: SavePlan) -> Result<Value, String>
         }
         .map_err(|e| e.to_string())
     };
-    let then = move |app: &mut VectorcraftApp, r: Result<Value, String>| {
+    let then = move |app: &mut LogocraftApp, r: Result<Value, String>| {
         let r = r?;
         // The document may have closed meanwhile: the file is written all the same.
         done.complete(&mut app.session, uid);
@@ -472,7 +472,7 @@ fn write_plan(app: &mut VectorcraftApp, plan: SavePlan) -> Result<Value, String>
 
 /// Open the save options dialog of format `f` before writing `path`: `action` is the save command
 /// it finishes, and `pick` (the web's Save As) also names the file and chooses the format.
-fn open_options(app: &mut VectorcraftApp, action: &str, f: &Format, path: &str, pick: bool) -> Value {
+fn open_options(app: &mut LogocraftApp, action: &str, f: &Format, path: &str, pick: bool) -> Value {
     let mut fields = dialogs::save_options::option_values(app, f);
     fields.insert("__action".into(), json!(action));
     fields.insert("__pick".into(), json!(pick));
@@ -487,7 +487,7 @@ fn open_options(app: &mut VectorcraftApp, action: &str, f: &Format, path: &str, 
 pub const MAX_RECENT_FILES: usize = 30;
 
 /// Put `path` at the top of File → Open Recent Files.
-pub fn note_recent(app: &mut VectorcraftApp, path: &str) {
+pub fn note_recent(app: &mut LogocraftApp, path: &str) {
     let r = &mut app.ui.recent_files;
     r.retain(|p| p != path);
     r.insert(0, path.to_string());
@@ -495,7 +495,7 @@ pub fn note_recent(app: &mut VectorcraftApp, path: &str) {
 }
 
 /// The recent files File → Open Recent Files lists.
-pub fn recent_files(app: &VectorcraftApp) -> &[String] {
+pub fn recent_files(app: &LogocraftApp) -> &[String] {
     let r = &app.ui.recent_files;
     &r[..r.len().min(app.session.prefs.recent_files_count as usize)]
 }
@@ -505,7 +505,7 @@ pub fn recent_files(app: &VectorcraftApp) -> &[String] {
 /// options…): every file it writes (one per artboard, linked images) goes next to `path`. The
 /// document keeps its path. → `{path, warnings, files?}` (`files`: every file when there are
 /// several).
-pub fn export(app: &mut VectorcraftApp, format: Option<&str>, path: Option<String>, params: &Value) -> Result<Value, String> {
+pub fn export(app: &mut LogocraftApp, format: Option<&str>, path: Option<String>, params: &Value) -> Result<Value, String> {
     let f = fileio::writable_format(format, path.as_deref())?;
     let st = app.session.active().ok_or("no document")?;
     let doc = match fileio::export_source(st, params).map_err(|e| e.to_string())? {
@@ -559,7 +559,7 @@ pub fn export(app: &mut VectorcraftApp, format: Option<&str>, path: Option<Strin
 
 /// Run an engine command that returns `{dataBase64}` and write the bytes to a picked path
 /// (Export Selection, Save as Template).
-pub fn save_command_output(app: &mut VectorcraftApp, id: &str, ext: &str, params: Value) -> Result<String, String> {
+pub fn save_command_output(app: &mut LogocraftApp, id: &str, ext: &str, params: Value) -> Result<String, String> {
     let (path, _) = run_to_file(app, id, ext, params)?;
     app.status(format!("Saved {path}"));
     Ok(path)
@@ -568,7 +568,7 @@ pub fn save_command_output(app: &mut VectorcraftApp, id: &str, ext: &str, params
 /// Run an engine command that returns `{data}` or `{dataBase64}` and write the bytes to a file
 /// picked with file name `name` suggested next to the document (the web downloads them as `name`)
 /// → where they went.
-pub(crate) fn save_command_output_named(app: &mut VectorcraftApp, id: &str, name: &str, params: Value) -> Result<String, String> {
+pub(crate) fn save_command_output_named(app: &mut LogocraftApp, id: &str, name: &str, params: Value) -> Result<String, String> {
     let mut v = app.session.execute(id, &params).map_err(|e| e.to_string())?;
     let bytes = take_output(&mut v)?;
     let path = write_named(app, None, name, &bytes)?;
@@ -581,7 +581,7 @@ pub(crate) fn save_command_output_named(app: &mut VectorcraftApp, id: &str, name
 fn take_output(v: &mut Value) -> Result<Vec<u8>, String> {
     let o = v.as_object_mut().ok_or("no data")?;
     let bytes = match (o.remove("dataBase64"), o.remove("data")) {
-        (Some(Value::String(b64)), _) => vectorcraft_format::base64_decode(&b64),
+        (Some(Value::String(b64)), _) => logocraft_format::base64_decode(&b64),
         (_, Some(Value::String(text))) => Some(text.into_bytes()),
         _ => None,
     };
@@ -592,7 +592,7 @@ fn take_output(v: &mut Value) -> Result<Vec<u8>, String> {
 /// that path (else a picked or suggested name) → (path, the command's result without the data).
 /// The command runs before a path is asked for, so bad params never open a save dialog, except
 /// for Export Selection without a `format`, which takes it from the picked path.
-pub(crate) fn run_to_file(app: &mut VectorcraftApp, id: &str, ext: &str, mut params: Value) -> Result<(String, Value), String> {
+pub(crate) fn run_to_file(app: &mut LogocraftApp, id: &str, ext: &str, mut params: Value) -> Result<(String, Value), String> {
     let mut path = params.as_object_mut().and_then(|o| o.remove("path")).and_then(|p| p.as_str().map(str::to_string));
     if let Some(o) = params.as_object_mut()
         && o.get("format").is_none()
@@ -617,7 +617,7 @@ pub(crate) fn run_to_file(app: &mut VectorcraftApp, id: &str, ext: &str, mut par
 /// to `path` (else a picked or suggested name) → `{path, bytes, warnings}`. With
 /// `viewAfterSaving`, the written file opens in the system viewer (not on the web, which
 /// downloads it).
-pub fn export_pdf(app: &mut VectorcraftApp, params: Value) -> Result<Value, String> {
+pub fn export_pdf(app: &mut LogocraftApp, params: Value) -> Result<Value, String> {
     let view = params.get("viewAfterSaving").and_then(Value::as_bool).unwrap_or(false);
     let (path, mut v) = run_to_file(app, "document.exportPdf", "pdf", params)?;
     if view {
@@ -645,8 +645,8 @@ pub(crate) fn file_url(path: &str) -> String {
 }
 
 /// File → Revert: ask first; OK runs `file.revert` with `confirmed`, which goes to the engine.
-pub fn ask_revert(app: &mut VectorcraftApp) -> Result<Value, String> {
-    let c = vectorcraft_engine::find_command("file.revert").ok_or("no revert command")?;
+pub fn ask_revert(app: &mut LogocraftApp) -> Result<Value, String> {
+    let c = logocraft_engine::find_command("file.revert").ok_or("no revert command")?;
     (c.enabled)(&app.session)?;
     let name = app.session.active().map(|d| d.title()).unwrap_or_default();
     let message = crate::i18n::fmt(tl!("Revert to the saved version of “{name}”?"), &[("name", &name)]);
@@ -655,31 +655,31 @@ pub fn ask_revert(app: &mut VectorcraftApp) -> Result<Value, String> {
 }
 
 /// File → Show in Folder: the document's file in the system file manager.
-pub fn reveal(app: &mut VectorcraftApp) -> Result<Value, String> {
+pub fn reveal(app: &mut LogocraftApp) -> Result<Value, String> {
     let path = app.session.active().and_then(|d| d.path.clone()).ok_or("the document has never been saved")?;
     reveal_path(app, &path)?;
     Ok(json!({ "path": path }))
 }
 
 /// Show the file at `path` in the system file manager (desktop).
-pub(crate) fn reveal_path(app: &mut VectorcraftApp, path: &str) -> Result<(), String> {
+pub(crate) fn reveal_path(app: &mut LogocraftApp, path: &str) -> Result<(), String> {
     app.services.reveal.as_mut().ok_or("no file manager here")?(path)
 }
 
 /// Open `path` (a file or a folder) in the system's default app for it (desktop).
-pub(crate) fn open_in_app(app: &mut VectorcraftApp, path: &str) -> Result<(), String> {
+pub(crate) fn open_in_app(app: &mut LogocraftApp, path: &str) -> Result<(), String> {
     app.services.open_file.as_mut().ok_or("no app to open files here")?(path)
 }
 
 /// File → Export for Screens with `document.exportForScreens` params: the files go into `folder`;
 /// without one the web downloads them (the ZIP, or each file) and the other frontends get them
 /// back as base64. With `openLocation`, the file manager shows the first file written.
-pub fn export_for_screens(app: &mut VectorcraftApp, params: Value) -> Result<Value, String> {
+pub fn export_for_screens(app: &mut LogocraftApp, params: Value) -> Result<Value, String> {
     export_files(app, "document.exportForScreens", params)
 }
 
 /// [`export_for_screens`] through command `id` (`document.exportForScreens` or `assets.export`).
-pub(crate) fn export_files(app: &mut VectorcraftApp, id: &str, params: Value) -> Result<Value, String> {
+pub(crate) fn export_files(app: &mut LogocraftApp, id: &str, params: Value) -> Result<Value, String> {
     let open_location = params.get("openLocation").and_then(Value::as_bool).unwrap_or(false);
     let folder = params.get("folder").and_then(Value::as_str).unwrap_or_default().to_string();
     let r = app.run(id, params)?;
@@ -703,7 +703,7 @@ pub(crate) fn export_files(app: &mut VectorcraftApp, id: &str, params: Value) ->
         app.status(status);
     } else if let Some(download) = app.services.download.as_mut() {
         for (name, data) in &returned {
-            let bytes = vectorcraft_format::base64_decode(data).ok_or("the export returned unreadable data")?;
+            let bytes = logocraft_format::base64_decode(data).ok_or("the export returned unreadable data")?;
             download(name, &bytes);
         }
         let what = match returned.as_slice() {
@@ -716,8 +716,8 @@ pub(crate) fn export_files(app: &mut VectorcraftApp, id: &str, params: Value) ->
 }
 
 /// Place a file's bytes (no path, so embedded) centred in the view: `file.place`.
-pub fn place_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8]) -> Result<(), String> {
-    crate::place::run(app, &serde_json::json!({ "name": name, "dataBase64": vectorcraft_format::base64_encode(bytes) })).map(|_| ())
+pub fn place_bytes(app: &mut LogocraftApp, name: &str, bytes: &[u8]) -> Result<(), String> {
+    crate::place::run(app, &serde_json::json!({ "name": name, "dataBase64": logocraft_format::base64_encode(bytes) })).map(|_| ())
 }
 
 #[cfg(test)]
@@ -725,17 +725,17 @@ mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
+    use logocraft_engine::Session;
     use serde_json::json;
-    use vectorcraft_engine::Session;
 
     use super::*;
     use crate::Services;
-    use vectorcraft_doc::NodeKind;
+    use logocraft_doc::NodeKind;
 
     type Written = Rc<RefCell<Vec<(String, Vec<u8>)>>>;
 
     /// An app whose writer records what it is given.
-    fn app() -> (VectorcraftApp, Written) {
+    fn app() -> (LogocraftApp, Written) {
         let written = Written::default();
         let w = written.clone();
         let services = Services {
@@ -745,7 +745,7 @@ mod tests {
             })),
             ..Default::default()
         };
-        (VectorcraftApp::new(Session::new(), services), written)
+        (LogocraftApp::new(Session::new(), services), written)
     }
 
     /// #861: a file the user opens that can't be opened is reported in a dialog they close, not
@@ -766,12 +766,12 @@ mod tests {
         assert!(app.ui.dialog.is_none());
     }
 
-    fn bytes_of(app: &mut VectorcraftApp, cmd: &str, p: Value) -> Vec<u8> {
+    fn bytes_of(app: &mut LogocraftApp, cmd: &str, p: Value) -> Vec<u8> {
         let v = app.session.execute(cmd, &p).unwrap();
-        vectorcraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap()
+        logocraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap()
     }
 
-    fn image_size(app: &VectorcraftApp, id: vectorcraft_doc::NodeId) -> (u32, u32) {
+    fn image_size(app: &LogocraftApp, id: logocraft_doc::NodeId) -> (u32, u32) {
         match &app.session.doc().unwrap().doc.node(id).unwrap().kind {
             NodeKind::Image(im) => (im.width, im.height),
             other => panic!("{other:?}"),
@@ -811,13 +811,13 @@ mod tests {
         let (mut app, written) = app();
         app.session.execute("file.new", &json!({"width": 100, "height": 50, "artboards": 2})).unwrap();
         app.session.execute("artboard.setProps", &json!({"index": 1, "width": 40})).unwrap();
-        app.session.doc_mut().unwrap().path = Some("/tmp/doc.vectorcraft".into());
+        app.session.doc_mut().unwrap().path = Some("/tmp/doc.logocraft".into());
         export(&mut app, None, Some("/tmp/b.png".into()), &json!({"artboard": 1, "scale": 2})).unwrap();
-        export(&mut app, None, Some("/tmp/copy.vectorcraft".into()), &Value::Null).unwrap();
+        export(&mut app, None, Some("/tmp/copy.logocraft".into()), &Value::Null).unwrap();
         let w = written.borrow();
         assert_eq!(&w[0].1[16..20], 80u32.to_be_bytes(), "artboard 1 (40 pt) at scale 2");
-        assert!(vectorcraft_format::sniff(&w[1].1));
-        assert_eq!(app.session.active().unwrap().path.as_deref(), Some("/tmp/doc.vectorcraft"));
+        assert!(logocraft_format::sniff(&w[1].1));
+        assert_eq!(app.session.active().unwrap().path.as_deref(), Some("/tmp/doc.logocraft"));
         drop(w);
         assert!(export(&mut app, None, Some("/tmp/x.dwg".into()), &Value::Null).is_err(), "DWG can't be written");
     }
@@ -862,7 +862,7 @@ mod tests {
         let (req, _) = crate::control::ControlRequest::new("app.export", json!({"format": "png", "scale": 2}));
         let crate::control::Outcome::Done(r) = crate::control::handle(&mut app, &egui::Context::default(), &req) else { panic!("not done") };
         assert_eq!(r["ok"], true, "{r}");
-        let png = vectorcraft_format::base64_decode(r["result"]["dataBase64"].as_str().unwrap()).unwrap();
+        let png = logocraft_format::base64_decode(r["result"]["dataBase64"].as_str().unwrap()).unwrap();
         assert_eq!(&png[16..20], 60u32.to_be_bytes(), "30 pt at scale 2");
         assert!(written.borrow().is_empty(), "no file and no save dialog");
     }

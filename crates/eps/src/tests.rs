@@ -3,9 +3,9 @@
 
 use std::sync::Arc;
 
-use vectorcraft_color::{Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint, Swatch};
-use vectorcraft_doc::{Appearance, AppearanceItem, Dash, Document, ImageBlob, ImageObject, LineCap, LineJoin, Node, NodeKind};
-use vectorcraft_geom::{Affine, PathData, Point, Rect, shapes};
+use logocraft_color::{Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint, Swatch};
+use logocraft_doc::{Appearance, AppearanceItem, Dash, Document, ImageBlob, ImageObject, LineCap, LineJoin, Node, NodeKind};
+use logocraft_geom::{Affine, PathData, Point, Rect, shapes};
 
 use crate::*;
 
@@ -107,7 +107,7 @@ fn the_header_follows_dsc_and_the_file_ends_with_eof() {
     let out = export(&d, &EpsOptions { title: "Poster (draft)".into(), created: Some(0), ..opts(&d) }, None, None).unwrap();
     let ps = text(&out);
     assert!(ps.starts_with("%!PS-Adobe-3.0 EPSF-3.0\n"), "{ps}");
-    assert!(dsc(&ps, "Creator").unwrap().starts_with("VectorCraft"));
+    assert!(dsc(&ps, "Creator").unwrap().starts_with("LogoCraft"));
     assert_eq!(dsc(&ps, "Title").as_deref(), Some("(Poster \\(draft\\))"));
     assert_eq!(dsc(&ps, "CreationDate").as_deref(), Some("(1970-01-01 00:00:00 UTC)"));
     assert_eq!(dsc(&ps, "LanguageLevel").as_deref(), Some("3"));
@@ -247,7 +247,7 @@ fn rgb_is_written_as_cmyk_when_asked_and_in_cmyk_documents() {
     let cmyk = page_of(&d, &EpsOptions { cmyk: true, ..opts(&d) });
     assert!(!cmyk.contains(" rg\n") && cmyk.lines().any(|l| l.ends_with(" k") && l.split(' ').count() == 5), "{cmyk}");
     let mut c = d.clone();
-    c.color_mode = vectorcraft_doc::ColorMode::Cmyk;
+    c.color_mode = logocraft_doc::ColorMode::Cmyk;
     assert!(!page_of(&c, &opts(&c)).contains(" rg\n"));
 }
 
@@ -404,14 +404,14 @@ fn the_native_document_and_thumbnail_come_back() {
         assert_eq!(image::load_from_memory(&png).unwrap().to_rgba8().dimensions(), (3, 2));
         let ps = text(&out);
         checked_page(&ps);
-        assert!(ps.find("%VectorCraft_BeginData: thumbnail").unwrap() < ps.find("%%BeginProlog").unwrap());
-        assert!(ps.find("%VectorCraft_BeginData: native").unwrap() > ps.find("%%Trailer").unwrap());
+        assert!(ps.find("%LogoCraft_BeginData: thumbnail").unwrap() < ps.find("%%BeginProlog").unwrap());
+        assert!(ps.find("%LogoCraft_BeginData: native").unwrap() > ps.find("%%Trailer").unwrap());
         assert!(ps.lines().all(|l| l.len() <= 255));
     }
     let plain = export(&d, &opts(&d), None, None).unwrap();
     assert_eq!((super::native(&plain.bytes), super::thumbnail(&plain.bytes)), (None, None));
     // Damaged files give nothing back.
-    assert_eq!(super::native(b"%VectorCraft_BeginData: native\n% 9jqo^\n%VectorCraft_EndData\n"), None);
+    assert_eq!(super::native(b"%LogoCraft_BeginData: native\n% 9jqo^\n%LogoCraft_EndData\n"), None);
     let mut bad = vec![0xC5, 0xD0, 0xD3, 0xC6];
     bad.extend([0xFF; 26]);
     assert_eq!(sections(&bad), None);
@@ -427,7 +427,7 @@ fn clipping_groups_clip_and_hidden_or_template_art_is_left_out() {
         let id = d.alloc_id();
         vec![Node::new(id, NodeKind::Group { children: vec![Arc::new(clip), Arc::new(inside)], clip: true }), hidden]
     });
-    let mut t = Node::layer(d.alloc_id(), "Template", vectorcraft_doc::LayerColor::Preset(0));
+    let mut t = Node::layer(d.alloc_id(), "Template", logocraft_doc::LayerColor::Preset(0));
     if let NodeKind::Layer { template, .. } = &mut t.kind {
         *template = true;
     }
@@ -455,7 +455,7 @@ fn level_preview_and_overprint_ids_read_back() {
 
 #[test]
 fn a_rich_document_is_well_formed_at_both_levels() {
-    let d = (*vectorcraft_testkit::fixtures::rich_session().doc().unwrap().doc).clone();
+    let d = (*logocraft_testkit::fixtures::rich_session().doc().unwrap().doc).clone();
     for level in Level::ALL {
         for cmyk in [false, true] {
             let out = export(&d, &EpsOptions { level, cmyk, ..opts(&d) }, None, None).unwrap();
@@ -463,4 +463,16 @@ fn a_rich_document_is_well_formed_at_both_levels() {
             assert!(page.lines().count() > 50, "{page}");
         }
     }
+}
+
+/// LogoCraft is based on VectorCraft: the document a VectorCraft EPS carries comes back.
+#[test]
+fn a_vectorcraft_eps_brings_its_document_back() {
+    let d = doc_with(|d| vec![red_rect(d)]);
+    let native: Vec<u8> = (0..5_000u32).flat_map(|i| (i % 7).to_le_bytes()).collect();
+    let out = export(&d, &EpsOptions { native: Some(native.clone()), ..opts(&d) }, None, None).unwrap();
+    let old = text(&out).replace("%LogoCraft_BeginData: ", "%VectorCraft_BeginData: ").replace("%LogoCraft_EndData", "%VectorCraft_EndData");
+    assert!(!old.contains("LogoCraft_"));
+    assert!(super::has_native(old.as_bytes()));
+    assert_eq!(super::native(old.as_bytes()).as_deref(), Some(&native[..]));
 }

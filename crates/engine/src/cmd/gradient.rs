@@ -1,11 +1,11 @@
 //! The Gradient panel and the Gradient tool: in-place gradient edits and the gradient vector.
 
+use logocraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
+use logocraft_doc::appearance::stroke_paint_bounds;
+use logocraft_doc::{Document, Node, NodeKind, StrokeGradientMode};
+use logocraft_geom::{Affine, Point, Rect};
+use logocraft_tools::params::color_json;
 use serde_json::{Value, json};
-use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
-use vectorcraft_doc::appearance::stroke_paint_bounds;
-use vectorcraft_doc::{Document, Node, NodeKind, StrokeGradientMode};
-use vectorcraft_geom::{Affine, Point, Rect};
-use vectorcraft_tools::params::color_json;
 
 use super::appearance::{ItemTarget, edit_items, edits_stroke, item_target};
 use super::edit::selected_roots;
@@ -171,7 +171,7 @@ pub(crate) fn parse_stops(v: &Value) -> Parsed<Vec<GradientStop>> {
 }
 
 /// Parse a gradient paint object (the `gradient` param of `paint.setFill`). Lossless for everything
-/// `vectorcraft_tools::params::gradient_params` writes.
+/// `logocraft_tools::params::gradient_params` writes.
 pub(crate) fn parse_gradient(g: &Value) -> Parsed<GradientPaint> {
     if !g.is_object() {
         return Err("`gradient` must be an object".into());
@@ -280,7 +280,7 @@ pub(crate) fn apply_gradient_edit_in(
         gp.angle = a;
         if let Some(g) = &mut gp.geom {
             let r = a.to_radians();
-            let dir = vectorcraft_geom::Vec2::new(r.cos(), -r.sin());
+            let dir = logocraft_geom::Vec2::new(r.cos(), -r.sin());
             if gp.gradient.kind == GradientKind::Radial {
                 g.end = g.start + dir * g.length();
             } else {
@@ -397,7 +397,7 @@ fn edit_gradient(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// A painted stroke on a type run without a weight gets 1 pt.
-pub(crate) fn run_stroke_weight(style: &mut vectorcraft_doc::CharStyle) {
+pub(crate) fn run_stroke_weight(style: &mut logocraft_doc::CharStyle) {
     if style.stroke_width == 0.0 {
         style.stroke_width = 1.0;
     }
@@ -405,7 +405,7 @@ pub(crate) fn run_stroke_weight(style: &mut vectorcraft_doc::CharStyle) {
 
 /// A type run's fill or stroke paint and the box (text space) an unplaced gradient on it fits:
 /// the layout bounds `lb`, grown by half the run's stroke weight for strokes.
-pub(crate) fn run_paint_mut(r: &mut vectorcraft_doc::TextRun, stroke: bool, lb: Rect) -> (&mut Paint, Rect) {
+pub(crate) fn run_paint_mut(r: &mut logocraft_doc::TextRun, stroke: bool, lb: Rect) -> (&mut Paint, Rect) {
     if stroke {
         let b = stroke_paint_bounds(lb, r.style.stroke_width);
         (&mut r.style.stroke, b)

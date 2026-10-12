@@ -4,11 +4,11 @@
 use std::sync::Arc;
 
 use hayro_syntax::Pdf;
+use logocraft_color::cms::{self, Cms, ColorSettings, DEVICE_CMYK, GENERIC_CMYK, Intent};
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{Appearance, Document, Node};
+use logocraft_geom::{Rect, shapes};
 use serde_json::{Value, json};
-use vectorcraft_color::cms::{self, Cms, ColorSettings, DEVICE_CMYK, GENERIC_CMYK, Intent};
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, Document, Node};
-use vectorcraft_geom::{Rect, shapes};
 
 use crate::*;
 

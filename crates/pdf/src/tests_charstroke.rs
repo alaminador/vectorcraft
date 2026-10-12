@@ -1,8 +1,8 @@
 //! Strokes on type in PDF: the characters' and the object's strokes keep their join and dashes.
 
-use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{AppearanceItem, CharStyle, Dash, Document, LineJoin, Node, NodeKind, StrokeLayer, TextObject};
-use vectorcraft_geom::Point;
+use logocraft_color::{Color, Paint};
+use logocraft_doc::{AppearanceItem, CharStyle, Dash, Document, LineJoin, Node, NodeKind, StrokeLayer, TextObject};
+use logocraft_geom::Point;
 
 use crate::*;
 

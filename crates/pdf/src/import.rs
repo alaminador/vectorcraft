@@ -1,4 +1,4 @@
-//! PDF → Document (hayro-interpret device that builds a VectorCraft node tree).
+//! PDF → Document (hayro-interpret device that builds a LogoCraft node tree).
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -12,12 +12,12 @@ use hayro_interpret::{
 };
 use hayro_syntax::object::Name;
 use kurbo::{Affine, BezPath, PathEl, Rect, Shape};
-use vectorcraft_color::{BlendMode, Color, Paint, Swatch};
-use vectorcraft_doc::{
+use logocraft_color::{BlendMode, Color, Paint, Swatch};
+use logocraft_doc::{
     Appearance, AppearanceItem, Artboard, ColorMode, Dash, Document, FillLayer, ImageBlob, ImageObject, Knockout, LayerColor, LineCap, LineJoin,
     Node, NodeId, NodeKind, OpacityMask, PatternDef, StrokeLayer,
 };
-use vectorcraft_geom::{FillRule, PathData};
+use logocraft_geom::{FillRule, PathData};
 
 use crate::import_color::{Colors, Native};
 use crate::import_mask::{MaskSpec, contains, is_rectangle, luminance, mask_spec, white_cover};
@@ -271,7 +271,7 @@ pub fn import_with_report(bytes: &[u8], opts: &ImportOptions) -> Result<ImportRe
         art_boxes |= crate::pages::states_art(page);
         let mut right = ab.x1;
         if opts.crop == CropTo::Bounding
-            && let Some(art) = vectorcraft_doc::live::nodes_bounds(&children)
+            && let Some(art) = logocraft_doc::live::nodes_bounds(&children)
         {
             right = right.max(art.x1);
             ab = art;
@@ -350,7 +350,7 @@ pub fn import_with_report(bytes: &[u8], opts: &ImportOptions) -> Result<ImportRe
     // A file painted mostly in CMYK opens as a CMYK document (with CMYK default swatches).
     if b.colors.cmyk_document() {
         doc.color_mode = ColorMode::Cmyk;
-        let (swatches, groups) = vectorcraft_color::default_swatches(ColorMode::Cmyk.model());
+        let (swatches, groups) = logocraft_color::default_swatches(ColorMode::Cmyk.model());
         (doc.swatches, doc.swatch_groups) = (swatches.into(), groups.into());
     }
     doc.swatches.extend(b.colors.swatches());
@@ -463,14 +463,14 @@ const KANGXI: &str = "一丨丶丿乙亅二亠人儿入八冂冖冫几凵刀力�
 /// largest difference between their boxes, in thousandths of an em. `None` when they are clearly
 /// different glyphs (or the face lacks the character); `Some(0)` when there is nothing to compare
 /// (several characters, a vertical form, no ink in either).
-fn glyph_deviation(face: &vectorcraft_text::FontFace, text: &str, o: &hayro_interpret::font::OutlineGlyph, vertical: bool) -> Option<f64> {
+fn glyph_deviation(face: &logocraft_text::FontFace, text: &str, o: &hayro_interpret::font::OutlineGlyph, vertical: bool) -> Option<f64> {
     let Some(c) = comparable(text, vertical) else { return Some(0.0) };
     let gid = face.glyph_for(c);
     if gid == 0 {
         return None;
     }
     let embedded = o.outline();
-    let installed = vectorcraft_text::FontDb::global().outline(face, gid);
+    let installed = logocraft_text::FontDb::global().outline(face, gid);
     match (embedded.elements().is_empty(), installed.elements().is_empty()) {
         (true, true) => Some(0.0),
         (false, false) => {
@@ -491,16 +491,16 @@ fn glyph_deviation(face: &vectorcraft_text::FontFace, text: &str, o: &hayro_inte
 /// tell its styles apart, draw a character differently in each style). `None`: no style of the
 /// family has that glyph, so the font isn't the installed one.
 fn matching_face(
-    face: &Arc<vectorcraft_text::FontFace>,
+    face: &Arc<logocraft_text::FontFace>,
     text: &str,
     o: &hayro_interpret::font::OutlineGlyph,
     vertical: bool,
-) -> Option<Arc<vectorcraft_text::FontFace>> {
+) -> Option<Arc<logocraft_text::FontFace>> {
     let own = glyph_deviation(face, text, o, vertical);
     if own == Some(0.0) {
         return Some(face.clone());
     }
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     // Other installed versions of its family and style (a font library keeps old ones), then the
     // family's other styles.
     let versions = db.versions(face).into_iter().skip(1).take(16);
@@ -529,14 +529,14 @@ const IDENTIFIABLE: [std::ops::RangeInclusive<u32>; 6] =
 /// font embedded without a character map still carries the font's own outlines, so a glyph whose
 /// subset code names nothing is found this way. `None` when no glyph matches (another version of
 /// the font, or a glyph that is no character), and for empty glyphs, which every space draws.
-pub(crate) fn identify_glyph(face: &vectorcraft_text::FontFace, embedded: &BezPath) -> Option<char> {
+pub(crate) fn identify_glyph(face: &logocraft_text::FontFace, embedded: &BezPath) -> Option<char> {
     if embedded.elements().is_empty() {
         return None;
     }
     let k = 1000.0 / face.units_per_em();
     // Installed outlines are y-down in font units.
     let to_pdf = Affine::new([k, 0.0, 0.0, -k, 0.0, 0.0]);
-    let db = vectorcraft_text::FontDb::global();
+    let db = logocraft_text::FontDb::global();
     IDENTIFIABLE.iter().cloned().flatten().filter_map(char::from_u32).find(|c| {
         let gid = face.glyph_for(*c);
         gid != 0 && same_shape(embedded, &(to_pdf * db.outline(face, gid).as_ref().clone()))
@@ -580,7 +580,7 @@ struct FontInfo {
     family: String,
     style: String,
     /// The installed face of its PostScript name.
-    face: Option<Arc<vectorcraft_text::FontFace>>,
+    face: Option<Arc<logocraft_text::FontFace>>,
 }
 
 /// The page a PDF-compatible `.ai` paints under its layers is the editor's page, not art: an opaque
@@ -722,7 +722,7 @@ struct Builder<'p> {
     font_chars: HashMap<u128, Option<Arc<HashMap<u32, char>>>>,
     /// Font (cache key) → the installed face that draws its glyphs, decided from its first glyph
     /// that can be compared ([`matching_face`]); `None`: its glyphs differ, so it stays outlines.
-    matched: HashMap<u128, Option<Arc<vectorcraft_text::FontFace>>>,
+    matched: HashMap<u128, Option<Arc<logocraft_text::FontFace>>>,
     /// (Font, glyph) → the character its outline matches in the installed face, for glyphs no
     /// mapping names ([`Builder::identified_char`]).
     identified: HashMap<(u128, u32), Option<char>>,
@@ -981,7 +981,7 @@ impl<'p> Builder<'p> {
         // The interpreter drew another number of paths than the file was read to paint: which
         // of them overprint can't be trusted.
         if self.scan.overprints && self.paint_at != self.scan.paints.len() {
-            children.iter_mut().for_each(vectorcraft_doc::overprint::clear_overprints);
+            children.iter_mut().for_each(logocraft_doc::overprint::clear_overprints);
             self.warn(OVERPRINT_UNREAD);
         }
         let groups = std::mem::take(&mut self.root_groups);
@@ -1208,7 +1208,7 @@ impl<'p> Builder<'p> {
         self.push_node(n);
     }
 
-    /// Convert a hayro paint to a VectorCraft paint and opacity (`stroke`: for a stroke).
+    /// Convert a hayro paint to a LogoCraft paint and opacity (`stroke`: for a stroke).
     fn paint(&mut self, p: &hayro_interpret::Paint<'_>, stroke: bool) -> (Paint, f32) {
         match p {
             hayro_interpret::Paint::Color(c) => {
@@ -1381,7 +1381,7 @@ impl<'p> Builder<'p> {
 
     /// Mesh shadings filling `region` (document space): gradient meshes, clipped to the region
     /// when they reach past it.
-    fn draw_meshes(&mut self, meshes: Vec<vectorcraft_doc::live::GradientMesh>, region: &BezPath, opacity: f32) {
+    fn draw_meshes(&mut self, meshes: Vec<logocraft_doc::live::GradientMesh>, region: &BezPath, opacity: f32) {
         let nodes: Vec<Arc<Node>> = meshes.into_iter().map(|m| Arc::new(Node::new(self.id(), NodeKind::Mesh(m)))).collect();
         let Some(art) = bounds(&nodes) else { return };
         let mut content = match <[Arc<Node>; 1]>::try_from(nodes) {
@@ -1421,7 +1421,7 @@ impl<'p> Builder<'p> {
             Some((tag, rest)) if tag.len() == 6 && tag.chars().all(|c| c.is_ascii_uppercase()) => rest.to_string(),
             _ => n.to_string(),
         });
-        let installed = ps.as_deref().and_then(|ps| vectorcraft_text::FontDb::global().find_postscript(ps));
+        let installed = ps.as_deref().and_then(|ps| logocraft_text::FontDb::global().find_postscript(ps));
         let n = match (installed, name) {
             (Some(face), _) => FontInfo { family: face.family.clone(), style: face.style.clone(), face: Some(face) },
             (None, Some(name)) => {
@@ -1433,7 +1433,7 @@ impl<'p> Builder<'p> {
                 FontInfo { family, style, face: None }
             }
             (None, None) => {
-                let d = vectorcraft_doc::CharStyle::default();
+                let d = logocraft_doc::CharStyle::default();
                 FontInfo { family: d.font_family, style: d.font_style, face: None }
             }
         };
@@ -1523,9 +1523,9 @@ impl<'p> Builder<'p> {
         }
         // A version of the family and style that the two alone don't resolve to: the type names it.
         // Kept per font once its face is decided (until then each glyph asks).
-        let named = |f: &Option<Arc<vectorcraft_text::FontFace>>| {
+        let named = |f: &Option<Arc<logocraft_text::FontFace>>| {
             let f = f.as_ref()?;
-            let default = vectorcraft_text::FontDb::global().face(&f.family, &f.style)?;
+            let default = logocraft_text::FontDb::global().face(&f.family, &f.style)?;
             (default.version != f.version).then(|| f.version.clone())
         };
         let version = match self.versions.get(&key) {

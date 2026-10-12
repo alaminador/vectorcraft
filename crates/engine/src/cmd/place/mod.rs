@@ -13,7 +13,7 @@
 //!   (`crop: "bounding"`).
 //! - A text file becomes area type, decoded and cleaned up with the Text Import Options (`text`,
 //!   [`text`]).
-//! - A VectorCraft document placed from a file with Link (the default) becomes a placed document:
+//! - A LogoCraft document placed from a file with Link (the default) becomes a placed document:
 //!   one locked object showing the artboard `page`, linked to the file and read again when it
 //!   changes ([`document`]); without Link, an editable copy of its art.
 //!
@@ -27,11 +27,11 @@ pub(crate) mod document;
 
 use std::sync::Arc;
 
+use logocraft_color::Paint;
+use logocraft_doc::{Appearance, Document, ImageObject, LinkInfo, Node, NodeId, NodeKind, Scaling};
+use logocraft_geom::{Affine, Point, Rect, shapes};
+use logocraft_pdf::CropTo;
 use serde_json::{Value, json};
-use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, Document, ImageObject, LinkInfo, Node, NodeId, NodeKind, Scaling};
-use vectorcraft_geom::{Affine, Point, Rect, shapes};
-use vectorcraft_pdf::CropTo;
 
 use super::fileio::{self, Format, RasterImage};
 use super::*;
@@ -51,7 +51,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Place…",
             ["File"],
             Some("Cmd+Shift+P"),
-            "{path | name+dataBase64, link?: true (a raster image keeps its file's path; a VectorCraft document at path becomes one locked placed document showing artboard `page`, linked to the file and read again when it changes (links.update; saving it in this app updates it at once), drawn as vectors in every output; false: an editable copy of its art, as from dataBase64; other files are embedded), text?: {characterSet?: \"unicode\" (UTF-8, or UTF-16 with a byte-order mark; other bytes as the platform's 8-bit set) | \"ansi\" (the platform's 8-bit set), platform?: \"windows\" (Windows-1252) | \"mac\" (Mac Roman), removeLineReturns?: false (each block of lines becomes one paragraph; blank lines end paragraphs), removeParagraphReturns?: false (drop blank lines), replaceSpaces?: n (runs of n ≥ 2 spaces become a tab)} (a .txt file, placed as area type filling rect, the replaced object's bounds, or else the artboard less a 36 pt margin), template?: false (onto a new locked template layer below the current layer), replace?: false (swap the one selected object, keeping its stacking place and transform; no at/rect), at?: [x, y] centre (default: the first artboard's centre), rect?: [x, y, width, height] fit inside, aspect kept (wins over at), page?: 1 (PDF/.ai page, or a native document's artboard), crop?: \"crop\" (clipped to that page or artboard, default; an SVG, only when given: framed and clipped by its viewBox, else by its art's bounds) | \"bounding\" (the art's bounds) | \"art\" | \"trim\" | \"bleed\" | \"media\" (a PDF page's boxes), password? (an encrypted PDF)} → {ids, name, format, linked, width, height, warnings}. Raster images come in at 100% of their physical size (the file's ppi, else 72); SVG, PDF/.ai, EPS (clipped to its bounding box; as document.open reads it) and native documents as one group, with the images, symbols, patterns and swatches they use. One undo step; selects what it placed (unless on a template layer); never touches the clipboard",
+            "{path | name+dataBase64, link?: true (a raster image keeps its file's path; a LogoCraft document at path becomes one locked placed document showing artboard `page`, linked to the file and read again when it changes (links.update; saving it in this app updates it at once), drawn as vectors in every output; false: an editable copy of its art, as from dataBase64; other files are embedded), text?: {characterSet?: \"unicode\" (UTF-8, or UTF-16 with a byte-order mark; other bytes as the platform's 8-bit set) | \"ansi\" (the platform's 8-bit set), platform?: \"windows\" (Windows-1252) | \"mac\" (Mac Roman), removeLineReturns?: false (each block of lines becomes one paragraph; blank lines end paragraphs), removeParagraphReturns?: false (drop blank lines), replaceSpaces?: n (runs of n ≥ 2 spaces become a tab)} (a .txt file, placed as area type filling rect, the replaced object's bounds, or else the artboard less a 36 pt margin), template?: false (onto a new locked template layer below the current layer), replace?: false (swap the one selected object, keeping its stacking place and transform; no at/rect), at?: [x, y] centre (default: the first artboard's centre), rect?: [x, y, width, height] fit inside, aspect kept (wins over at), page?: 1 (PDF/.ai page, or a native document's artboard), crop?: \"crop\" (clipped to that page or artboard, default; an SVG, only when given: framed and clipped by its viewBox, else by its art's bounds) | \"bounding\" (the art's bounds) | \"art\" | \"trim\" | \"bleed\" | \"media\" (a PDF page's boxes), password? (an encrypted PDF)} → {ids, name, format, linked, width, height, warnings}. Raster images come in at 100% of their physical size (the file's ppi, else 72); SVG, PDF/.ai, EPS (clipped to its bounding box; as document.open reads it) and native documents as one group, with the images, symbols, patterns and swatches they use. One undo step; selects what it placed (unless on a template layer); never touches the clipboard",
             has_doc,
             place
         ),
@@ -90,7 +90,7 @@ pub fn specs() -> Vec<CommandSpec> {
 /// A file's art at its natural size, before it joins a document.
 enum Art {
     Image(RasterImage),
-    /// A VectorCraft document placed linked: the file read, the link, and whether the art's
+    /// A LogoCraft document placed linked: the file read, the link, and whether the art's
     /// bounds (not the artboard) are shown.
     Document(document::Source, LinkInfo, bool),
     Vector {
@@ -125,14 +125,14 @@ fn load(p: &Value, cmd: &str) -> Result<Loaded> {
     let src = fileio::source(p, cmd)?;
     let name = fileio::file_name(src.name);
     let format = fileio::detect(src.name, &src.bytes)
-        .ok_or_else(|| bad(cmd, format!("can't place `{name}`: not a format VectorCraft reads (see document.formats)")))?;
+        .ok_or_else(|| bad(cmd, format!("can't place `{name}`: not a format LogoCraft reads (see document.formats)")))?;
     let page = match p.get("page") {
         None => 1,
         Some(v) => v.as_u64().filter(|n| (1..=100_000).contains(n)).ok_or_else(|| bad(cmd, "page must be a whole number from 1"))? as usize,
     };
     let opts = fileio::LoadOptions::from_params(cmd, p)?;
     // PostScript .ai files are read like EPS.
-    let pdf = matches!(format.id, "pdf" | "ai" | "ait") && !vectorcraft_pdf::is_postscript(&src.bytes);
+    let pdf = matches!(format.id, "pdf" | "ai" | "ait") && !logocraft_pdf::is_postscript(&src.bytes);
     if !pdf && !matches!(opts.crop, CropTo::Crop | CropTo::Bounding) {
         return Err(bad(
             cmd,
@@ -140,8 +140,8 @@ fn load(p: &Value, cmd: &str) -> Result<Loaded> {
         ));
     }
     let crop = opts.crop != CropTo::Bounding;
-    // A VectorCraft document: placed linked from its file, else as an editable copy.
-    if matches!(format.id, "vectorcraft" | "template") {
+    // A LogoCraft document: placed linked from its file, else as an editable copy.
+    if matches!(format.id, "logocraft" | "template") {
         let page = page as u32;
         if let Some(path) = src.path.filter(|_| bool_or(p, "link", true)) {
             let s = document::source(src.name, &src.bytes, Some(path), page, !crop, cmd)?;
@@ -203,7 +203,7 @@ fn load(p: &Value, cmd: &str) -> Result<Loaded> {
         let pages = if pdf { layers.get(index..=index).unwrap_or_default() } else { &layers[..] };
         (on_artboard(pages, board), crop.then_some(board))
     };
-    let natural = clip.or_else(|| nodes.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds())));
+    let natural = clip.or_else(|| nodes.iter().fold(None, |acc, n| logocraft_geom::union_opt(acc, n.visual_bounds())));
     let natural = natural.filter(|r| r.width() > 0.0 || r.height() > 0.0).ok_or_else(|| bad(cmd, format!("`{name}` has no art to place")))?;
     Ok(Loaded { name, format, art: Art::Vector { src: Box::new(doc), nodes, clip }, natural, warnings, link: None })
 }
@@ -275,8 +275,8 @@ fn build(d: &mut Document, l: Loaded, link: Option<LinkInfo>) -> Node {
 
 /// `node` moved and scaled by `m` as a whole: strokes, effects and pattern tiles go along.
 pub(crate) fn transformed(mut node: Node, m: Affine) -> Node {
-    node.transform(m, Scaling { strokes: true, effects: Some(vectorcraft_render::effects::scale_effect), ..Default::default() });
-    adopt::each_mut(&mut node, &mut |n| vectorcraft_doc::pattern::transform_pattern_paints(n, m));
+    node.transform(m, Scaling { strokes: true, effects: Some(logocraft_render::effects::scale_effect), ..Default::default() });
+    adopt::each_mut(&mut node, &mut |n| logocraft_doc::pattern::transform_pattern_paints(n, m));
     node
 }
 
@@ -484,8 +484,8 @@ fn thumbnail_png(l: Loaded, px: f64) -> Result<String> {
     let node = build(&mut d, l, None);
     d.insert(layer, 0, node)?;
     let k = px.clamp(1.0, MAX_THUMBNAIL) / natural.width().max(natural.height()).max(1e-9);
-    let png = vectorcraft_render::Renderer::new().render_region(&d, natural, k, false).to_png().map_err(EngineError::Other)?;
-    Ok(vectorcraft_format::base64_encode(&png))
+    let png = logocraft_render::Renderer::new().render_region(&d, natural, k, false).to_png().map_err(EngineError::Other)?;
+    Ok(logocraft_format::base64_encode(&png))
 }
 
 fn info(_: &mut Session, p: &Value) -> Result<Value> {

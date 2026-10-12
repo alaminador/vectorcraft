@@ -3,11 +3,11 @@
 
 use std::sync::Arc;
 
+use logocraft_color::{Color, Paint, Swatch};
+use logocraft_doc::{Appearance, Artboard, Document, LayerColor, Node, NodeKind};
+use logocraft_geom::{Rect, shapes};
+use logocraft_testkit::raster::render_region;
 use serde_json::json;
-use vectorcraft_color::{Color, Paint, Swatch};
-use vectorcraft_doc::{Appearance, Artboard, Document, LayerColor, Node, NodeKind};
-use vectorcraft_geom::{Rect, shapes};
-use vectorcraft_testkit::raster::render_region;
 
 use crate::*;
 
@@ -218,7 +218,7 @@ fn print_layers_and_template_layers() {
 #[test]
 fn cmyk_and_a_spot_separate_into_five_plates() {
     let mut d = doc(200.0, 100.0, &[]);
-    d.color_mode = vectorcraft_doc::ColorMode::Cmyk;
+    d.color_mode = logocraft_doc::ColorMode::Cmyk;
     d.swatches.push(Swatch { name: "Gold".into(), paint: Paint::solid(Color::cmyk(0.0, 0.2, 0.8, 0.1)), global: true, spot: true });
     let layer = d.default_layer().unwrap();
     let cyan = Paint::solid(Color::cmyk(1.0, 0.0, 0.0, 0.0));

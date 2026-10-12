@@ -2361,6 +2361,402 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
+name = "logocraft"
+version = "0.10.0"
+dependencies = [
+ "arboard",
+ "block2 0.6.2",
+ "clipboard-win",
+ "eframe",
+ "egui",
+ "image",
+ "log",
+ "logocraft-engine",
+ "logocraft-text",
+ "logocraft-ui-egui",
+ "muda",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "objc2-core-foundation",
+ "objc2-core-text",
+ "objc2-foundation 0.3.2",
+ "pollster 1.0.1",
+ "raw-window-handle",
+ "rfd",
+ "serde_json",
+ "wayland-client",
+ "wayland-protocols",
+ "webbrowser",
+ "windows",
+ "winit",
+ "winresource",
+ "winsafe",
+]
+
+[[package]]
+name = "logocraft-affinity"
+version = "0.10.0"
+dependencies = [
+ "crc32fast",
+ "flate2",
+ "image",
+ "proptest",
+ "ruzstd",
+]
+
+[[package]]
+name = "logocraft-brush"
+version = "0.10.0"
+dependencies = [
+ "kurbo 0.13.1",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-geom",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "logocraft-cli"
+version = "0.10.0"
+dependencies = [
+ "log",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-engine",
+ "logocraft-format",
+ "logocraft-geom",
+ "logocraft-mcp",
+ "logocraft-render",
+ "logocraft-svg",
+ "logocraft-testkit",
+ "logocraft-text",
+ "objc2-core-foundation",
+ "objc2-core-text",
+ "serde_json",
+ "windows",
+]
+
+[[package]]
+name = "logocraft-color"
+version = "0.10.0"
+dependencies = [
+ "kurbo 0.13.1",
+ "moxcms",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "logocraft-doc"
+version = "0.10.0"
+dependencies = [
+ "image",
+ "jpeg-encoder",
+ "kurbo 0.13.1",
+ "logocraft-color",
+ "logocraft-geom",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tiff",
+ "zune-jpeg",
+]
+
+[[package]]
+name = "logocraft-effects"
+version = "0.10.0"
+dependencies = [
+ "kurbo 0.13.1",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-geom",
+ "logocraft-pathops",
+ "logocraft-text",
+ "serde_json",
+]
+
+[[package]]
+name = "logocraft-engine"
+version = "0.10.0"
+dependencies = [
+ "crc32fast",
+ "flate2",
+ "image",
+ "kurbo 0.13.1",
+ "log",
+ "logocraft-affinity",
+ "logocraft-brush",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-eps",
+ "logocraft-format",
+ "logocraft-geom",
+ "logocraft-pathops",
+ "logocraft-pdf",
+ "logocraft-render",
+ "logocraft-svg",
+ "logocraft-testkit",
+ "logocraft-text",
+ "logocraft-tools",
+ "logocraft-trace",
+ "proptest",
+ "ruzstd",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "logocraft-eps"
+version = "0.10.0"
+dependencies = [
+ "flate2",
+ "image",
+ "kurbo 0.13.1",
+ "logocraft-brush",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-effects",
+ "logocraft-geom",
+ "logocraft-pdf",
+ "logocraft-render",
+ "logocraft-testkit",
+ "logocraft-text",
+ "ruzstd",
+]
+
+[[package]]
+name = "logocraft-format"
+version = "0.10.0"
+dependencies = [
+ "flate2",
+ "logocraft-doc",
+ "logocraft-geom",
+ "logocraft-testkit",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "logocraft-geom"
+version = "0.10.0"
+dependencies = [
+ "kurbo 0.13.1",
+ "logocraft-testkit",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "logocraft-mcp"
+version = "0.10.0"
+dependencies = [
+ "image",
+ "log",
+ "logocraft-doc",
+ "logocraft-engine",
+ "logocraft-format",
+ "logocraft-geom",
+ "logocraft-render",
+ "logocraft-svg",
+ "logocraft-testkit",
+ "logocraft-tools",
+ "proptest",
+ "serde_json",
+ "socket2",
+]
+
+[[package]]
+name = "logocraft-pathops"
+version = "0.10.0"
+dependencies = [
+ "kurbo 0.13.1",
+ "linesweeper",
+ "logocraft-geom",
+ "logocraft-testkit",
+ "proptest",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "logocraft-pdf"
+version = "0.10.0"
+dependencies = [
+ "aes",
+ "flate2",
+ "hayro-interpret",
+ "hayro-syntax",
+ "image",
+ "jpeg-encoder",
+ "krilla",
+ "kurbo 0.13.1",
+ "log",
+ "logocraft-brush",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-effects",
+ "logocraft-geom",
+ "logocraft-testkit",
+ "logocraft-text",
+ "md-5",
+ "serde",
+ "serde_json",
+ "sha2",
+ "skrifa 0.47.0",
+ "smallvec",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "logocraft-render"
+version = "0.10.0"
+dependencies = [
+ "flate2",
+ "gif",
+ "image",
+ "jpeg-encoder",
+ "log",
+ "logocraft-brush",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-effects",
+ "logocraft-geom",
+ "logocraft-testkit",
+ "logocraft-text",
+ "proptest",
+ "serde_json",
+ "vello_common 0.2.0",
+ "vello_cpu 0.2.0",
+ "weezl",
+]
+
+[[package]]
+name = "logocraft-svg"
+version = "0.10.0"
+dependencies = [
+ "flate2",
+ "image",
+ "kurbo 0.13.1",
+ "logocraft-brush",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-effects",
+ "logocraft-geom",
+ "logocraft-testkit",
+ "logocraft-text",
+ "proptest",
+ "resvg",
+ "serde",
+ "serde_json",
+ "skrifa 0.47.0",
+ "svgtypes 0.16.1",
+ "thiserror 2.0.21",
+ "usvg 0.48.1",
+]
+
+[[package]]
+name = "logocraft-testkit"
+version = "0.10.0"
+dependencies = [
+ "image",
+ "kurbo 0.13.1",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-engine",
+ "logocraft-format",
+ "logocraft-geom",
+ "logocraft-render",
+ "logocraft-svg",
+ "proptest",
+ "serde_json",
+]
+
+[[package]]
+name = "logocraft-text"
+version = "0.10.0"
+dependencies = [
+ "harfrust 0.13.3",
+ "icu_segmenter",
+ "kurbo 0.13.1",
+ "log",
+ "logocraft-doc",
+ "logocraft-geom",
+ "skrifa 0.47.0",
+ "subsetter",
+ "unicode-bidi",
+ "unicode-general-category",
+ "unicode-script",
+ "unicode-segmentation",
+ "windows-registry",
+ "write-fonts",
+]
+
+[[package]]
+name = "logocraft-tools"
+version = "0.10.0"
+dependencies = [
+ "image",
+ "kurbo 0.13.1",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-geom",
+ "logocraft-pathops",
+ "logocraft-text",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "logocraft-trace"
+version = "0.10.0"
+dependencies = [
+ "image",
+ "kurbo 0.13.1",
+ "logocraft-geom",
+ "logocraft-pathops",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "logocraft-ui-egui"
+version = "0.10.0"
+dependencies = [
+ "craft-ui",
+ "egui",
+ "egui_extras",
+ "egui_kittest",
+ "image",
+ "log",
+ "logocraft-brush",
+ "logocraft-color",
+ "logocraft-doc",
+ "logocraft-effects",
+ "logocraft-engine",
+ "logocraft-eps",
+ "logocraft-format",
+ "logocraft-geom",
+ "logocraft-pdf",
+ "logocraft-render",
+ "logocraft-svg",
+ "logocraft-testkit",
+ "logocraft-text",
+ "logocraft-tools",
+ "serde",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
 name = "md-5"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4447,402 +4843,6 @@ dependencies = [
  "js-sys",
  "serde_core",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "vectorcraft"
-version = "0.10.0"
-dependencies = [
- "arboard",
- "block2 0.6.2",
- "clipboard-win",
- "eframe",
- "egui",
- "image",
- "log",
- "muda",
- "objc2 0.6.4",
- "objc2-app-kit 0.3.2",
- "objc2-core-foundation",
- "objc2-core-text",
- "objc2-foundation 0.3.2",
- "pollster 1.0.1",
- "raw-window-handle",
- "rfd",
- "serde_json",
- "vectorcraft-engine",
- "vectorcraft-text",
- "vectorcraft-ui-egui",
- "wayland-client",
- "wayland-protocols",
- "webbrowser",
- "windows",
- "winit",
- "winresource",
- "winsafe",
-]
-
-[[package]]
-name = "vectorcraft-affinity"
-version = "0.10.0"
-dependencies = [
- "crc32fast",
- "flate2",
- "image",
- "proptest",
- "ruzstd",
-]
-
-[[package]]
-name = "vectorcraft-brush"
-version = "0.10.0"
-dependencies = [
- "kurbo 0.13.1",
- "serde",
- "serde_json",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-geom",
-]
-
-[[package]]
-name = "vectorcraft-cli"
-version = "0.10.0"
-dependencies = [
- "log",
- "objc2-core-foundation",
- "objc2-core-text",
- "serde_json",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-engine",
- "vectorcraft-format",
- "vectorcraft-geom",
- "vectorcraft-mcp",
- "vectorcraft-render",
- "vectorcraft-svg",
- "vectorcraft-testkit",
- "vectorcraft-text",
- "windows",
-]
-
-[[package]]
-name = "vectorcraft-color"
-version = "0.10.0"
-dependencies = [
- "kurbo 0.13.1",
- "moxcms",
- "proptest",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "vectorcraft-doc"
-version = "0.10.0"
-dependencies = [
- "image",
- "jpeg-encoder",
- "kurbo 0.13.1",
- "proptest",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tiff",
- "vectorcraft-color",
- "vectorcraft-geom",
- "zune-jpeg",
-]
-
-[[package]]
-name = "vectorcraft-effects"
-version = "0.10.0"
-dependencies = [
- "kurbo 0.13.1",
- "serde_json",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-geom",
- "vectorcraft-pathops",
- "vectorcraft-text",
-]
-
-[[package]]
-name = "vectorcraft-engine"
-version = "0.10.0"
-dependencies = [
- "crc32fast",
- "flate2",
- "image",
- "kurbo 0.13.1",
- "log",
- "proptest",
- "ruzstd",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "vectorcraft-affinity",
- "vectorcraft-brush",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-eps",
- "vectorcraft-format",
- "vectorcraft-geom",
- "vectorcraft-pathops",
- "vectorcraft-pdf",
- "vectorcraft-render",
- "vectorcraft-svg",
- "vectorcraft-testkit",
- "vectorcraft-text",
- "vectorcraft-tools",
- "vectorcraft-trace",
-]
-
-[[package]]
-name = "vectorcraft-eps"
-version = "0.10.0"
-dependencies = [
- "flate2",
- "image",
- "kurbo 0.13.1",
- "ruzstd",
- "vectorcraft-brush",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-effects",
- "vectorcraft-geom",
- "vectorcraft-pdf",
- "vectorcraft-render",
- "vectorcraft-testkit",
- "vectorcraft-text",
-]
-
-[[package]]
-name = "vectorcraft-format"
-version = "0.10.0"
-dependencies = [
- "flate2",
- "proptest",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "vectorcraft-doc",
- "vectorcraft-geom",
- "vectorcraft-testkit",
-]
-
-[[package]]
-name = "vectorcraft-geom"
-version = "0.10.0"
-dependencies = [
- "kurbo 0.13.1",
- "proptest",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "vectorcraft-testkit",
-]
-
-[[package]]
-name = "vectorcraft-mcp"
-version = "0.10.0"
-dependencies = [
- "image",
- "log",
- "proptest",
- "serde_json",
- "socket2",
- "vectorcraft-doc",
- "vectorcraft-engine",
- "vectorcraft-format",
- "vectorcraft-geom",
- "vectorcraft-render",
- "vectorcraft-svg",
- "vectorcraft-testkit",
- "vectorcraft-tools",
-]
-
-[[package]]
-name = "vectorcraft-pathops"
-version = "0.10.0"
-dependencies = [
- "kurbo 0.13.1",
- "linesweeper",
- "proptest",
- "thiserror 2.0.21",
- "vectorcraft-geom",
- "vectorcraft-testkit",
-]
-
-[[package]]
-name = "vectorcraft-pdf"
-version = "0.10.0"
-dependencies = [
- "aes",
- "flate2",
- "hayro-interpret",
- "hayro-syntax",
- "image",
- "jpeg-encoder",
- "krilla",
- "kurbo 0.13.1",
- "log",
- "md-5",
- "serde",
- "serde_json",
- "sha2",
- "skrifa 0.47.0",
- "smallvec",
- "thiserror 2.0.21",
- "vectorcraft-brush",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-effects",
- "vectorcraft-geom",
- "vectorcraft-testkit",
- "vectorcraft-text",
-]
-
-[[package]]
-name = "vectorcraft-render"
-version = "0.10.0"
-dependencies = [
- "flate2",
- "gif",
- "image",
- "jpeg-encoder",
- "log",
- "proptest",
- "serde_json",
- "vectorcraft-brush",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-effects",
- "vectorcraft-geom",
- "vectorcraft-testkit",
- "vectorcraft-text",
- "vello_common 0.2.0",
- "vello_cpu 0.2.0",
- "weezl",
-]
-
-[[package]]
-name = "vectorcraft-svg"
-version = "0.10.0"
-dependencies = [
- "flate2",
- "image",
- "kurbo 0.13.1",
- "proptest",
- "resvg",
- "serde",
- "serde_json",
- "skrifa 0.47.0",
- "svgtypes 0.16.1",
- "thiserror 2.0.21",
- "usvg 0.48.1",
- "vectorcraft-brush",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-effects",
- "vectorcraft-geom",
- "vectorcraft-testkit",
- "vectorcraft-text",
-]
-
-[[package]]
-name = "vectorcraft-testkit"
-version = "0.10.0"
-dependencies = [
- "image",
- "kurbo 0.13.1",
- "proptest",
- "serde_json",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-engine",
- "vectorcraft-format",
- "vectorcraft-geom",
- "vectorcraft-render",
- "vectorcraft-svg",
-]
-
-[[package]]
-name = "vectorcraft-text"
-version = "0.10.0"
-dependencies = [
- "harfrust 0.13.3",
- "icu_segmenter",
- "kurbo 0.13.1",
- "log",
- "skrifa 0.47.0",
- "subsetter",
- "unicode-bidi",
- "unicode-general-category",
- "unicode-script",
- "unicode-segmentation",
- "vectorcraft-doc",
- "vectorcraft-geom",
- "windows-registry",
- "write-fonts",
-]
-
-[[package]]
-name = "vectorcraft-tools"
-version = "0.10.0"
-dependencies = [
- "image",
- "kurbo 0.13.1",
- "serde",
- "serde_json",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-geom",
- "vectorcraft-pathops",
- "vectorcraft-text",
-]
-
-[[package]]
-name = "vectorcraft-trace"
-version = "0.10.0"
-dependencies = [
- "image",
- "kurbo 0.13.1",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "vectorcraft-geom",
- "vectorcraft-pathops",
-]
-
-[[package]]
-name = "vectorcraft-ui-egui"
-version = "0.10.0"
-dependencies = [
- "craft-ui",
- "egui",
- "egui_extras",
- "egui_kittest",
- "image",
- "log",
- "serde",
- "serde_json",
- "toml",
- "vectorcraft-brush",
- "vectorcraft-color",
- "vectorcraft-doc",
- "vectorcraft-effects",
- "vectorcraft-engine",
- "vectorcraft-eps",
- "vectorcraft-format",
- "vectorcraft-geom",
- "vectorcraft-pdf",
- "vectorcraft-render",
- "vectorcraft-svg",
- "vectorcraft-testkit",
- "vectorcraft-text",
- "vectorcraft-tools",
 ]
 
 [[package]]

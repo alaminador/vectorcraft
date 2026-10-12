@@ -8,10 +8,10 @@
 
 use std::sync::{Arc, OnceLock};
 
+use logocraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
+use logocraft_geom::Point;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use vectorcraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
-use vectorcraft_geom::Point;
 
 use crate::{
     Appearance, AppearanceItem, Arrowhead, Dash, Document, Effect, FillLayer, GraphicStyle, Knockout, LineCap, LineJoin, PatternDef, StrokeAlign,
@@ -474,7 +474,7 @@ mod tests {
         let mut lib = (*builtin_style_library("gradient-finishes").unwrap()).clone();
         lib.styles.extend(builtin_style_library("blends-transparency").unwrap().styles.iter().cloned());
         let text = write(&lib);
-        assert!(sniff(&text) && !sniff("{\"format\": \"vectorcraft\"}") && !sniff("GIMP Palette"));
+        assert!(sniff(&text) && !sniff("{\"format\": \"logocraft\"}") && !sniff("GIMP Palette"));
         assert_eq!(read(&text, "Fallback").unwrap(), lib);
         // An unnamed library takes the file's name; other JSON isn't a library.
         let unnamed = write(&StyleLibrary { name: " ".into(), ..lib.clone() });

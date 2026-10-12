@@ -19,18 +19,18 @@
 //! (edited in the Color panel), opacity and spread, with Delete Point.
 
 use egui::{Color32, Pos2, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
-use serde_json::{Value, json};
-use vectorcraft_color::gradient::{
+use logocraft_color::gradient::{
     MIN_STOPS, duplicate_stop, insert_stop, midpoint_from_pos, midpoint_pos, move_stop, remove_stop, set_midpoint, swap_stop_colors,
 };
-use vectorcraft_color::{Color, Freeform, FreeformMode, Gradient, GradientKind, GradientPaint, GradientStop, Paint};
-use vectorcraft_doc::{NodeId, StrokeGradientMode};
+use logocraft_color::{Color, Freeform, FreeformMode, Gradient, GradientKind, GradientPaint, GradientStop, Paint};
+use logocraft_doc::{NodeId, StrokeGradientMode};
+use serde_json::{Value, json};
 
 use super::{active_paint, live_run, pstate, set_pstate};
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::widgets::{self, Live, PanelDrag, menu_item};
-use crate::{VectorcraftApp, icons};
+use crate::{LogocraftApp, icons};
 
 /// Dragging a stop this far below the ramp removes it.
 const REMOVE_DISTANCE: f32 = 28.0;
@@ -45,7 +45,7 @@ const MID_SELECTED: &str = "grad-mid";
 
 /// Select stop `i` (the session's selected stop, shared with the Gradient tool's annotator, the
 /// Color panel and agents), or none.
-fn select_stop(app: &mut VectorcraftApp, i: Option<usize>) {
+fn select_stop(app: &mut LogocraftApp, i: Option<usize>) {
     app.run("gradient.selectStop", json!({ "index": i })).ok();
 }
 
@@ -57,7 +57,7 @@ pub fn x_to_offset(x: f32, left: f32, width: f32) -> f32 {
 }
 
 /// Stops as `paint.editGradient` JSON.
-pub use vectorcraft_tools::params::stops_json;
+pub use logocraft_tools::params::stops_json;
 
 /// A colour dropped on the ramp: recolours stop `on` (fully opaque), or adds an opaque stop of
 /// that colour at `offset`, linked to `link` (a global swatch and tint) when given. Returns the
@@ -74,7 +74,7 @@ fn drop_color(g: &Gradient, on: Option<usize>, offset: f32, c: Color, link: Opti
 
 /// The swatch link a dropped paint's params give a stop: `{swatch, tint?}` of a global or spot
 /// colour or a tint swatch (a proxy's tint carries its percentage); none for other colours.
-pub(crate) fn dropped_link(app: &VectorcraftApp, params: &Value) -> Option<(String, f32)> {
+pub(crate) fn dropped_link(app: &LogocraftApp, params: &Value) -> Option<(String, f32)> {
     let name = params.get("swatch")?.as_str()?;
     let d = &app.session.active()?.doc;
     let (base, own) = d.swatch_link(name)?;
@@ -97,7 +97,7 @@ fn dragged_stops(origin: &[GradientStop], i: usize, offset: f32, copy: bool, ove
 
 /// The Type row: Linear, Radial and Freeform for the paint behind the active proxy (one of them
 /// lit when it is a gradient). The Gradient panel's and the Properties panel's.
-pub(crate) fn type_row(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub(crate) fn type_row(app: &mut LogocraftApp, ui: &mut Ui) {
     let kind = current(app).map(|g| g.gradient.kind);
     ui.horizontal(|ui| {
         widgets::dim_label(ui, tl!("Type:"));
@@ -114,12 +114,12 @@ pub(crate) fn type_row(app: &mut VectorcraftApp, ui: &mut Ui) {
 }
 
 /// Set how the Gradient tool adds the points of the freeform gradient behind the active proxy.
-fn set_draw_mode(app: &mut VectorcraftApp, mode: FreeformMode) {
+fn set_draw_mode(app: &mut LogocraftApp, mode: FreeformMode) {
     edit(app, json!({ "mode": mode.label().to_lowercase() }), Live::Released);
 }
 
 /// The Properties panel's Draw row for a freeform gradient: Points and Lines as radio buttons.
-pub(crate) fn draw_radios(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub(crate) fn draw_radios(app: &mut LogocraftApp, ui: &mut Ui) {
     let Some(g) = current(app).filter(|g| g.gradient.kind == GradientKind::Freeform) else { return };
     let mode = shown_points(&g).mode;
     ui.horizontal(|ui| {
@@ -133,7 +133,7 @@ pub(crate) fn draw_radios(app: &mut VectorcraftApp, ui: &mut Ui) {
 }
 
 /// The gradient behind the active proxy.
-fn current(app: &VectorcraftApp) -> Option<GradientPaint> {
+fn current(app: &LogocraftApp) -> Option<GradientPaint> {
     match active_paint(app) {
         Paint::Gradient(g) => Some(*g),
         _ => None,
@@ -141,7 +141,7 @@ fn current(app: &VectorcraftApp) -> Option<GradientPaint> {
 }
 
 /// Edit the gradient behind the active proxy (`paint.editGradient` params).
-fn edit(app: &mut VectorcraftApp, params: Value, phase: Live) {
+fn edit(app: &mut LogocraftApp, params: Value, phase: Live) {
     let mut p = params;
     p["stroke"] = json!(!app.session.fill_active);
     live_run(app, "Gradient", "paint.editGradient", p, phase);
@@ -149,7 +149,7 @@ fn edit(app: &mut VectorcraftApp, params: Value, phase: Live) {
 
 /// Write `stops` to the gradient behind the active proxy (live while dragging) and, once
 /// released, select stop `select` (the panel, the stop popover and the Color panel share this).
-pub(crate) fn set_stops(app: &mut VectorcraftApp, stops: &[GradientStop], select: Option<usize>, phase: Live) {
+pub(crate) fn set_stops(app: &mut LogocraftApp, stops: &[GradientStop], select: Option<usize>, phase: Live) {
     edit(app, json!({ "stops": stops_json(stops) }), phase);
     if phase == Live::Released
         && let Some(i) = select
@@ -160,12 +160,12 @@ pub(crate) fn set_stops(app: &mut VectorcraftApp, stops: &[GradientStop], select
 }
 
 /// Save the gradient as a swatch.
-fn save_to_swatches(app: &mut VectorcraftApp, g: &GradientPaint) {
+fn save_to_swatches(app: &mut LogocraftApp, g: &GradientPaint) {
     app.run("swatch.new", super::paint_params(&Paint::Gradient(Box::new(g.clone())))).ok();
 }
 
 /// The document's gradient swatches (groups included): name and gradient.
-fn gradient_swatches(app: &VectorcraftApp) -> Vec<(String, Gradient)> {
+fn gradient_swatches(app: &LogocraftApp) -> Vec<(String, Gradient)> {
     let Some(st) = app.session.active() else { return vec![] };
     let d = &st.doc;
     d.swatches
@@ -180,12 +180,12 @@ fn gradient_swatches(app: &VectorcraftApp) -> Vec<(String, Gradient)> {
 
 /// The selected midpoint diamond: kept for the object it was picked on, and given up when a stop
 /// is selected.
-fn selected_mid(app: &VectorcraftApp, ctx: &egui::Context, stops: usize) -> Option<usize> {
+fn selected_mid(app: &LogocraftApp, ctx: &egui::Context, stops: usize) -> Option<usize> {
     let (i, owner) = pstate::<Option<(usize, Option<NodeId>)>>(ctx, MID_SELECTED)?;
     (app.session.selected_stop().is_none() && i + 1 < stops && owner == first_id(app)).then_some(i)
 }
 
-fn first_id(app: &VectorcraftApp) -> Option<NodeId> {
+fn first_id(app: &LogocraftApp) -> Option<NodeId> {
     app.session.active().and_then(|d| d.selection.objects.first().copied())
 }
 
@@ -204,7 +204,7 @@ enum Drag {
     Mid(usize),
 }
 
-pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let gp = current(app);
     let is_grad = gp.is_some();
@@ -300,18 +300,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// The freeform points shown: the gradient's own, else (unplaced) as many as it places, coloured
 /// along the stops.
 pub(crate) fn shown_points(g: &GradientPaint) -> std::borrow::Cow<'_, Freeform> {
-    g.freeform_on(vectorcraft_geom::Rect::new(0.0, 0.0, 1.0, 1.0))
+    g.freeform_on(logocraft_geom::Rect::new(0.0, 0.0, 1.0, 1.0))
 }
 
 /// Run a `paint.freeform.*` command on the paint behind the active proxy.
-pub(crate) fn edit_point(app: &mut VectorcraftApp, cmd: &str, mut params: Value) {
+pub(crate) fn edit_point(app: &mut LogocraftApp, cmd: &str, mut params: Value) {
     params["stroke"] = json!(!app.session.fill_active);
     live_run(app, "Gradient", cmd, params, Live::Released);
 }
 
 /// The freeform section: the proxy beside the Draw toggle, then the selected point's colour,
 /// opacity and spread, and Delete Point.
-fn freeform_section(app: &mut VectorcraftApp, ui: &mut Ui, g: &GradientPaint) {
+fn freeform_section(app: &mut LogocraftApp, ui: &mut Ui, g: &GradientPaint) {
     let f = shown_points(g);
     let mode = f.mode;
     ui.horizontal(|ui| {
@@ -367,7 +367,7 @@ fn freeform_section(app: &mut VectorcraftApp, ui: &mut Ui, g: &GradientPaint) {
 
 /// The gradient thumbnail (click: apply a gradient; drag: onto art) and its menu of gradient
 /// swatches with Save to Swatches.
-fn thumbnail(app: &mut VectorcraftApp, ui: &mut Ui, g: &GradientPaint, is_grad: bool) {
+fn thumbnail(app: &mut LogocraftApp, ui: &mut Ui, g: &GradientPaint, is_grad: bool) {
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(vec2(40.0, 40.0), Sense::click_and_drag());
     widgets::gradient_chip(ui, r, &g.gradient);
@@ -419,7 +419,7 @@ fn thumbnail(app: &mut VectorcraftApp, ui: &mut Ui, g: &GradientPaint, is_grad: 
 
 /// The selected stop's colour (click: its popover; the eyedropper samples one from the art),
 /// opacity and location (a selected diamond's midpoint instead), and Delete Stop.
-fn stop_fields(app: &mut VectorcraftApp, ui: &mut Ui, g: &Gradient, is_grad: bool) {
+fn stop_fields(app: &mut LogocraftApp, ui: &mut Ui, g: &Gradient, is_grad: bool) {
     let stops = &g.stops;
     let sel = app.session.selected_stop().filter(|i| *i < stops.len() && is_grad);
     let mid = selected_mid(app, ui.ctx(), stops.len()).filter(|_| is_grad);
@@ -431,7 +431,7 @@ fn stop_fields(app: &mut VectorcraftApp, ui: &mut Ui, g: &Gradient, is_grad: boo
             widgets::swatch_tile(ui, r, &Paint::solid(s.color), false, resp.hovered());
             // A linked stop names its swatch and tint.
             let label = match &s.swatch {
-                Some(n) => format!("{n} {}%", vectorcraft_color::tint_percent(s.tint)),
+                Some(n) => format!("{n} {}%", logocraft_color::tint_percent(s.tint)),
                 None => s.color.to_hex().to_uppercase(),
             };
             widgets::dim_name(ui, &label);
@@ -485,20 +485,20 @@ fn stop_fields(app: &mut VectorcraftApp, ui: &mut Ui, g: &Gradient, is_grad: boo
 
 /// The stop's eyedropper: the Eyedropper tool samples the next colour clicked on the art into the
 /// selected stop, then hands back to the current tool.
-fn stop_eyedropper(app: &mut VectorcraftApp) {
+fn stop_eyedropper(app: &mut LogocraftApp) {
     let back = app.session.tool_id();
     app.select_tool("eyedropper");
     app.session.set_tool_option("stop", &json!(back));
 }
 
 /// Open the stop popover for stop `i` at screen position `at`.
-fn open_popover(app: &mut VectorcraftApp, i: usize, at: Pos2) {
+fn open_popover(app: &mut LogocraftApp, i: usize, at: Pos2) {
     select_stop(app, Some(i));
     app.ui.dialog = Some(Dialog::new("gradientStop", json!({ "index": i, "screen": [at.x, at.y], "tab": "color" })));
 }
 
 /// The gradient slider: ramp, stops below, midpoint diamonds above.
-fn ramp(app: &mut VectorcraftApp, ui: &mut Ui, g: &Gradient, is_grad: bool) {
+fn ramp(app: &mut LogocraftApp, ui: &mut Ui, g: &Gradient, is_grad: bool) {
     let t = Tokens::get(ui.ctx());
     let w = ui.available_width();
     let (area, area_resp) = ui.allocate_exact_size(vec2(w, 50.0), Sense::hover());
@@ -691,7 +691,7 @@ fn ramp(app: &mut VectorcraftApp, ui: &mut Ui, g: &Gradient, is_grad: bool) {
     }
 }
 
-pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let g = current(app);
     let hidden: bool = pstate(ui.ctx(), HIDE_OPTIONS);
     if menu_item(ui, if hidden { tl!("Show Options") } else { tl!("Hide Options") }, true, false) {
@@ -714,7 +714,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 #[cfg(test)]
 mod tests {
     use egui::{Event, Modifiers, PointerButton};
-    use vectorcraft_engine::Session;
+    use logocraft_engine::Session;
 
     use super::*;
 
@@ -755,8 +755,8 @@ mod tests {
     // ---------- headless frames ----------
 
     /// A selected rectangle filled with `fill` (`paint.setFill` params).
-    fn app(fill: Value) -> VectorcraftApp {
-        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    fn app(fill: Value) -> LogocraftApp {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
         app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap();
         app.run("paint.setFill", fill).unwrap();
@@ -777,7 +777,7 @@ mod tests {
         }
 
         /// One frame with `events` (and `modifiers` held); returns the texts drawn and where.
-        fn frame(&mut self, app: &mut VectorcraftApp, events: Vec<Event>, modifiers: Modifiers) -> Vec<(String, Pos2)> {
+        fn frame(&mut self, app: &mut LogocraftApp, events: Vec<Event>, modifiers: Modifiers) -> Vec<(String, Pos2)> {
             fn texts(s: &egui::Shape, out: &mut Vec<(String, Pos2)>) {
                 match s {
                     egui::Shape::Text(t) => out.push((t.galley.text().to_string(), t.pos + t.galley.rect.center().to_vec2())),
@@ -808,7 +808,7 @@ mod tests {
                 .expect("widget drawn")
         }
 
-        fn click(&mut self, app: &mut VectorcraftApp, at: Pos2) -> Vec<(String, Pos2)> {
+        fn click(&mut self, app: &mut LogocraftApp, at: Pos2) -> Vec<(String, Pos2)> {
             let b = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
             self.frame(app, vec![Event::PointerMoved(at), b(true)], Modifiers::NONE);
             self.frame(app, vec![b(false)], Modifiers::NONE);
@@ -834,7 +834,7 @@ mod tests {
         }
 
         /// Press at `from`, move to `to` in steps and release there, with `m` held.
-        fn drag(&mut self, app: &mut VectorcraftApp, from: Pos2, to: Pos2, m: Modifiers) {
+        fn drag(&mut self, app: &mut LogocraftApp, from: Pos2, to: Pos2, m: Modifiers) {
             let b = |at, pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: m };
             self.frame(app, vec![Event::PointerMoved(from), b(from, true)], m);
             for k in 1..=4 {
@@ -845,14 +845,14 @@ mod tests {
         }
     }
 
-    fn fill(app: &VectorcraftApp) -> GradientPaint {
+    fn fill(app: &LogocraftApp) -> GradientPaint {
         match crate::panels::current_paints(app).0 {
             Paint::Gradient(g) => *g,
             p => panic!("expected a gradient fill, got {p:?}"),
         }
     }
 
-    fn hexes(app: &VectorcraftApp) -> Vec<String> {
+    fn hexes(app: &LogocraftApp) -> Vec<String> {
         fill(app).gradient.stops.iter().map(|s| s.color.to_hex()).collect()
     }
 
@@ -879,7 +879,7 @@ mod tests {
         let mut app = app(json!({"gradient": {}}));
         app.run("paint.setStroke", json!({"gradient": {}, "focus": false})).unwrap();
         assert!(app.session.fill_active);
-        let mode = |app: &VectorcraftApp| app.session.shown_stroke().unwrap().gradient_mode;
+        let mode = |app: &LogocraftApp| app.session.shown_stroke().unwrap().gradient_mode;
         let mut p = Panel::new();
         let texts = p.frame(&mut app, vec![], Modifiers::NONE);
         let label = texts.iter().find(|(t, _)| t == "Stroke:").expect("the Stroke buttons").1;
@@ -953,7 +953,7 @@ mod tests {
         p.frame(&mut app, vec![], Modifiers::NONE);
         let (a, b) = (p.widget(("grad-stop", 0)).center(), p.widget(("grad-stop", 1)).center());
         let mid = pos2((a.x + b.x) / 2.0, a.y);
-        let offsets = |app: &VectorcraftApp| fill(app).gradient.stops.iter().map(|s| (s.offset * 10.0).round() / 10.0).collect::<Vec<_>>();
+        let offsets = |app: &LogocraftApp| fill(app).gradient.stops.iter().map(|s| (s.offset * 10.0).round() / 10.0).collect::<Vec<_>>();
         // A plain drag moves the stop.
         p.drag(&mut app, a, mid, Modifiers::NONE);
         assert_eq!(offsets(&app), [0.5, 1.0]);
@@ -977,7 +977,7 @@ mod tests {
         let mut p = Panel::new();
         p.frame(&mut app, vec![], Modifiers::NONE);
         let (a, b) = (p.widget(("grad-stop", 0)).center(), p.widget(("grad-stop", 1)).center());
-        let drop = |p: &mut Panel, app: &mut VectorcraftApp, at: Pos2| {
+        let drop = |p: &mut Panel, app: &mut LogocraftApp, at: Pos2| {
             egui::DragAndDrop::set_payload(&p.ctx, PanelDrag::paint(Paint::solid(Color::rgb(1.0, 0.0, 0.0))));
             p.frame(app, vec![Event::PointerMoved(at)], Modifiers::NONE);
             let up = Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE };

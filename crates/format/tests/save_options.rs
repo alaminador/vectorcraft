@@ -6,11 +6,11 @@
 
 use std::sync::Arc;
 
+use logocraft_doc::links::LinkInfo;
+use logocraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
+use logocraft_format::{ICC_MIME, SaveOptions, load, load_file, pdf_content, save_with};
+use logocraft_geom::Affine;
 use serde_json::Value;
-use vectorcraft_doc::links::LinkInfo;
-use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind};
-use vectorcraft_format::{ICC_MIME, SaveOptions, load, load_file, pdf_content, save_with};
-use vectorcraft_geom::Affine;
 
 fn json_of(bytes: &[u8]) -> Value {
     serde_json::from_slice(bytes).unwrap()
