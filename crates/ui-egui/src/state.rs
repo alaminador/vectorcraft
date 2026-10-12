@@ -105,7 +105,7 @@ pub const ICON_PANELS: &[(&str, &str, &str)] = &[
     ("color", "Color", "palette"),
     ("swatches", "Swatches", "swatch-book"),
     ("brushes", "Brushes", "paintbrush"),
-    ("symbols", "Symbols", "spray-can"),
+    ("symbols", "Components", "shapes"),
     ("patternOptions", "Pattern Options", "grid-3x3"),
     ("stroke", "Stroke", "dc-stroke"),
     ("gradient", "Gradient", "dc-gradient"),

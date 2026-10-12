@@ -554,6 +554,10 @@ pub struct NodeExtras {
     pub slice: Option<Box<crate::SliceOptions>>,
     /// Object › Perspective: the perspective grid plane the object is attached to.
     pub perspective: Option<Box<crate::PerspectiveAttachment>>,
+    /// Object › Create Component: this object is the main component of the symbol with this name
+    /// (`Document::symbols`). It stays on the canvas, editable; the symbol's art follows it and
+    /// every instance with it.
+    pub component: Option<String>,
 }
 
 /// No extras: what [`Node::extras`] gives for a node without any.
@@ -568,6 +572,7 @@ static NO_EXTRAS: NodeExtras = NodeExtras {
     attrs: None,
     slice: None,
     perspective: None,
+    component: None,
 };
 
 /// A node's [`NodeExtras`], if it has any ([`Node::extras`]). Extras that are all unset equal
@@ -698,6 +703,7 @@ impl Serialize for Node {
             e.slice.is_none(),
             is_default(&self.bbox_angle),
             e.perspective.is_none(),
+            e.component.is_none(),
         ];
         let mut st = s.serialize_struct("Node", skips.iter().filter(|s| !**s).count())?;
         let mut skip = skips.into_iter();
@@ -732,6 +738,7 @@ impl Serialize for Node {
         field!("slice", &e.slice);
         field!("bbox_angle", &self.bbox_angle);
         field!("perspective", &e.perspective);
+        field!("component", &e.component);
         st.end()
     }
 }
@@ -783,6 +790,8 @@ struct NodeWire {
     bbox_angle: f64,
     #[serde(default)]
     perspective: Option<Box<crate::PerspectiveAttachment>>,
+    #[serde(default)]
+    component: Option<String>,
 }
 
 impl From<NodeWire> for Node {
@@ -798,6 +807,7 @@ impl From<NodeWire> for Node {
             attrs: w.attrs,
             slice: w.slice,
             perspective: w.perspective,
+            component: w.component,
         };
         Node {
             id: w.id,
@@ -1855,6 +1865,7 @@ mod tests {
             e.attrs = Some(Box::default());
             e.slice = Some(Box::default());
             e.perspective = Some(Box::new(crate::PerspectiveAttachment::new("left", 1.0)));
+            e.component = Some("Logo".into());
         }
         /// The top-level keys of a JSON object, in the order written.
         struct Keys(Vec<String>);
@@ -1895,6 +1906,7 @@ mod tests {
             "slice",
             "bbox_angle",
             "perspective",
+            "component",
         ];
         assert_eq!(keys, order);
         assert_eq!(serde_json::from_value::<Node>(v).unwrap(), n);

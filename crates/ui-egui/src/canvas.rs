@@ -1252,6 +1252,15 @@ fn stroke_path(p: &egui::Painter, bp: &BezPath, xf: &Xf, s: Stroke) {
     }
 }
 
+/// The colour object `id` is highlighted and selected in: its layer's colour, or Figma's component
+/// purple for a main component or an instance.
+fn selection_color(doc: &logocraft_doc::Document, id: logocraft_doc::NodeId) -> Color32 {
+    match doc.node(id) {
+        Some(n) if n.extras().component.is_some() || matches!(n.kind, NodeKind::SymbolInstance { .. }) => crate::panels::properties::COMPONENT_PURPLE,
+        _ => c32(doc.layer_color(id)),
+    }
+}
+
 fn c32(rgb: [u8; 3]) -> Color32 {
     Color32::from_rgb(rgb[0], rgb[1], rgb[2])
 }
@@ -1436,7 +1445,7 @@ fn hover_highlight(app: &LogocraftApp, p: &egui::Painter, xf: &Xf) {
         return;
     }
     if let Some(n) = st.doc.node(id).filter(|n| !too_many_anchors([*n])) {
-        let color = c32(st.doc.layer_color(id));
+        let color = selection_color(&st.doc, id);
         stroke_path(p, &node_outline(n), xf, Stroke::new(1.5, color));
     }
 }
@@ -1588,7 +1597,7 @@ fn selection_overlay(app: &mut LogocraftApp, p: &egui::Painter, xf: &Xf, curve_p
     }
     for id in st.selection.objects.iter().filter(|_| !big) {
         let Some(n) = st.doc.node(*id) else { continue };
-        let color = c32(st.doc.layer_color(*id));
+        let color = selection_color(&st.doc, *id);
         let partial = st.selection.partial(*id);
         // Path outlines.
         stroke_path(p, &node_outline(n), xf, Stroke::new(1.0, color));
@@ -1709,7 +1718,7 @@ fn selection_overlay(app: &mut LogocraftApp, p: &egui::Painter, xf: &Xf, curve_p
     }
     // Bounding box with handles (Selection tool).
     if let Some(b) = bbox {
-        let color = c32(st.doc.layer_color(st.selection.objects[0]));
+        let color = selection_color(&st.doc, st.selection.objects[0]);
         p.add(Shape::closed_line(b.corners().iter().map(|q| xf.to_screen(*q)).collect(), Stroke::new(1.0, color)));
         for h in logocraft_tools::bbox::Handle::ALL {
             let c = xf.to_screen(b.to_doc() * h.pos(b.rect));

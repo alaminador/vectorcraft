@@ -2106,7 +2106,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 panel("Properties", "properties"),
                 panel("Stroke", "stroke"),
                 panel("Swatches", "swatches"),
-                panel("Symbols", "symbols"),
+                panel("Components", "symbols"),
                 panel("Transform", "transform"),
                 panel("Transparency", "transparency"),
                 sub(
@@ -2124,7 +2124,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 Sep,
                 sub("Brush Libraries", library_placeholders()),
                 sub("Swatch Libraries", crate::panels::swatches::window_menu()),
-                sub("Symbol Libraries", library_placeholders()),
             ],
         ),
         (
@@ -3530,7 +3529,7 @@ mod tests {
 
     #[test]
     fn long_menus_scroll_inside_a_short_window() {
-        // The Window menu is taller than a 600 pt window: it stops above the bottom edge and
+        // The Window menu is taller than a 450 pt window: it stops above the bottom edge and
         // scrolls instead of running off screen.
         let app = LogocraftApp::new(logocraft_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
@@ -3552,8 +3551,8 @@ mod tests {
             }
             ctx.memory(|m| m.area_rect(id)).unwrap()
         };
-        let short = rect(600.0);
-        assert!(short.bottom() <= 600.0, "Window menu ends at {} in a 600 pt window", short.bottom());
+        let short = rect(450.0);
+        assert!(short.bottom() <= 450.0, "Window menu ends at {} in a 450 pt window", short.bottom());
         // With room to spare it shows whole, taller than the short window allowed.
         let tall = rect(3000.0);
         assert!(tall.height() > short.height() + 100.0, "{} vs {}", tall.height(), short.height());

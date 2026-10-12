@@ -1362,6 +1362,8 @@ impl Session {
             Ok(v) => match Ok::<(), EngineError>(()) {
                 Err(e) => Err(e),
                 Ok(()) => {
+                    // Main components: copies become instances, instances follow their main.
+                    cmd::components::sync(&before, Arc::make_mut(&mut st.doc));
                     // Inline graphics in text follow their symbols.
                     cmd::inline::refresh(&before, Arc::make_mut(&mut st.doc));
                     // Text Wrap: area type follows its wrap objects; then threads re-flow.
@@ -1616,6 +1618,8 @@ mod tests_cmykflatten;
 mod tests_colorguide;
 #[cfg(test)]
 mod tests_colormgmt;
+#[cfg(test)]
+mod tests_components;
 #[cfg(test)]
 mod tests_containers;
 #[cfg(test)]

@@ -27,7 +27,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "object.blend.make",
             "Make",
             ["Object", "Blend"],
-            Some("Cmd+Alt+B"),
+            // Cmd+Alt+B is Detach Instance (components, as in Figma).
+            None,
             "{ids?, steps?: n | distance?: pt | smooth?: bool, orientation?: page|path (default: the Blend Options set with nothing selected, else smooth colour and page), starts?: [anchor index | null, …] (per object of `ids`, else of the selection in paint order: the anchor of its first subpath the blend starts from; an open path's last anchor runs it the other way)} blend the selected objects (paint order) into a live blend; a blend among them takes the others in as more key objects (keeping its options, name and transparency) instead of nesting → {id}",
             has_doc,
             blend_make

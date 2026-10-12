@@ -186,7 +186,7 @@ fn ids_json(ids: &[NodeId]) -> Value {
     Value::Array(ids.iter().map(|i| Value::from(i.0)).collect())
 }
 
-fn roots(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
+pub(crate) fn roots(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
     match ids_param(p, "ids").or_else(|| id_param(p, "id").map(|i| vec![i])) {
         Some(mut v) => {
             // Explicit ids: only existing, non-layer objects.
@@ -484,7 +484,7 @@ fn brush_freehand(s: &mut Session, p: &Value) -> Result<Value> {
 
 // ---------- symbols ----------
 
-fn natural_size(d: &Document, name: &str) -> (f64, f64) {
+pub(crate) fn natural_size(d: &Document, name: &str) -> (f64, f64) {
     d.unknown
         .get(SIZES_KEY)
         .and_then(|m| m.get(name))
@@ -492,7 +492,7 @@ fn natural_size(d: &Document, name: &str) -> (f64, f64) {
         .unwrap_or((2.0 * HALF, 2.0 * HALF))
 }
 
-fn set_natural_size(d: &mut Document, name: &str, size: Option<(f64, f64)>) {
+pub(crate) fn set_natural_size(d: &mut Document, name: &str, size: Option<(f64, f64)>) {
     let m = d.unknown.entry(SIZES_KEY.to_string()).or_insert_with(|| json!({}));
     if let Some(o) = m.as_object_mut() {
         match size {
@@ -503,12 +503,12 @@ fn set_natural_size(d: &mut Document, name: &str, size: Option<(f64, f64)>) {
 }
 
 /// Instance transform for a symbol of natural size `(w, h)` centred at `c`.
-fn place_xf(c: Point, (w, h): (f64, f64)) -> Affine {
+pub(crate) fn place_xf(c: Point, (w, h): (f64, f64)) -> Affine {
     Affine::translate(c.to_vec2()) * Affine::scale_non_uniform(w / (2.0 * HALF), h / (2.0 * HALF))
 }
 
 /// Normalise art for a symbol definition: returns (art, natural size, centre in the document).
-fn normalize(mut art: Node) -> Result<(Node, (f64, f64), Point)> {
+pub(crate) fn normalize(mut art: Node) -> Result<(Node, (f64, f64), Point)> {
     let b = art.geometric_bounds().ok_or_else(|| EngineError::Other("the art has no bounds".into()))?;
     let (w, h) = (b.width().max(1.0), b.height().max(1.0));
     let c = b.center();
@@ -517,7 +517,7 @@ fn normalize(mut art: Node) -> Result<(Node, (f64, f64), Point)> {
     Ok((art, (w, h), c))
 }
 
-fn unique_symbol_name(d: &Document, base: &str) -> String {
+pub(crate) fn unique_symbol_name(d: &Document, base: &str) -> String {
     let taken = |n: &str| d.symbols.iter().any(|s| s.name == n);
     if !taken(base) {
         return base.to_string();
@@ -525,7 +525,7 @@ fn unique_symbol_name(d: &Document, base: &str) -> String {
     (2..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
 }
 
-fn instances_of(d: &Document, name: Option<&str>) -> Vec<NodeId> {
+pub(crate) fn instances_of(d: &Document, name: Option<&str>) -> Vec<NodeId> {
     let mut v = vec![];
     d.walk(|n| {
         if let NodeKind::SymbolInstance { symbol, .. } = &n.kind
@@ -636,7 +636,7 @@ fn expanded_instance(d: &mut Document, inst: &Node) -> Option<Node> {
     Some(art)
 }
 
-fn break_links(d: &mut Document, ids: &[NodeId]) -> Result<Vec<NodeId>> {
+pub(crate) fn break_links(d: &mut Document, ids: &[NodeId]) -> Result<Vec<NodeId>> {
     let mut out = vec![];
     for id in ids {
         let Some(inst) = d.node(*id).cloned() else { continue };
@@ -650,7 +650,7 @@ fn break_links(d: &mut Document, ids: &[NodeId]) -> Result<Vec<NodeId>> {
     Ok(out)
 }
 
-fn selected_instances(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
+pub(crate) fn selected_instances(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
     let d = &s.doc()?.doc;
     let mut out = vec![];
     for id in roots(s, p)? {

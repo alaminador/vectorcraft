@@ -26,6 +26,8 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         (None, _) => tl!("Document").to_string(),
         (_, n) if n > 1 => crate::i18n::tn(n as u64, "{n} Object", "{n} Objects"),
         (Some(n), _) if crate::panels::image_trace::is_trace(n) => tl!("Image Tracing").to_string(),
+        (Some(n), _) if n.extras().component.is_some() => tl!("Main Component").to_string(),
+        (Some(n), _) if matches!(n.kind, NodeKind::SymbolInstance { .. }) => tl!("Instance").to_string(),
         (Some(n), _) => tl!(n.kind_label()).to_string(),
     };
     ui.label(egui::RichText::new(label).size(11.5).color(t.text_dim));
@@ -40,6 +42,12 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     }
     transform_section(app, ui);
     divider(ui);
+    if n_sel == 1
+        && let Some(n) = &first
+        && component_section(app, ui, n)
+    {
+        divider(ui);
+    }
     // The Gradient tool: the gradient's type and, for a freeform one, how clicks add points (#921).
     if app.session.tool_id() == "gradient" {
         section_header(ui, tl!("Gradient"));
@@ -110,6 +118,10 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     if is_live {
         actions.push((tl!("Expand Shape"), "object.expandShape"));
     }
+    let is_component = first.as_ref().is_some_and(|n| n.extras().component.is_some() || matches!(n.kind, NodeKind::SymbolInstance { .. }));
+    if !is_component {
+        actions.push((tl!("Create Component"), "component.create"));
+    }
     if multi_color(app, ui.ctx()) {
         actions.push((tl!("Recolor"), "ui.recolorDialog"));
     }
@@ -132,6 +144,83 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
             }
         });
     }
+}
+
+/// Figma's component purple: main components and instances show in it.
+pub(crate) const COMPONENT_PURPLE: egui::Color32 = egui::Color32::from_rgb(0x97, 0x47, 0xFF);
+
+/// The selected main component (its instances, Create Instance, Select Instances) or instance (its
+/// component, swapping it for another, Go to Main Component, Detach Instance). → whether it drew.
+fn component_section(app: &mut LogocraftApp, ui: &mut Ui, n: &logocraft_doc::Node) -> bool {
+    let names: Vec<String> = app.session.active().map(|st| st.doc.symbols.iter().map(|s| s.name.clone()).collect()).unwrap_or_default();
+    let w = (ui.available_width() - 6.0) / 2.0;
+    if let Some(name) = n.extras().component.clone() {
+        let count = app
+            .run("component.list", json!({}))
+            .ok()
+            .and_then(|v| v["components"].as_array()?.iter().find(|c| c["name"] == name.as_str()).and_then(|c| c["instances"].as_u64()));
+        section_header(ui, tl!("Component"));
+        ui.label(egui::RichText::new(format!("◆ {name}")).size(12.5).color(COMPONENT_PURPLE).strong());
+        dim_label(ui, &crate::i18n::tn(count.unwrap_or(0), "{n} instance", "{n} instances"));
+        ui.add_space(4.0);
+        ui.horizontal(|ui| {
+            if widgets::flat_button(ui, tl!("Create Instance"), w).clicked() {
+                // Beside the main, to the right.
+                let at = n.geometric_bounds().map(|b| (b.x1 + b.width() / 2.0 + 20.0, b.center().y));
+                let mut p = json!({ "name": name });
+                if let Some((x, y)) = at {
+                    p["x"] = json!(x);
+                    p["y"] = json!(y);
+                }
+                if let Err(e) = app.run("symbol.place", p) {
+                    app.status(e);
+                }
+            }
+            if widgets::flat_button(ui, tl!("Select Instances"), w).clicked()
+                && let Err(e) = app.run("symbol.selectInstances", json!({ "name": name }))
+            {
+                app.status(e);
+            }
+        });
+        return true;
+    }
+    let NodeKind::SymbolInstance { symbol, .. } = &n.kind else { return false };
+    let symbol = symbol.clone();
+    section_header(ui, tl!("Instance"));
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new("◇").size(13.0).color(COMPONENT_PURPLE));
+        let options: Vec<&str> = names.iter().map(String::as_str).collect();
+        // Swap instance: the same place, another component.
+        if let Some(i) = widgets::dropdown_names(ui, "pr-swap-component", &symbol, &options, ui.available_width() - 4.0)
+            && let Some(other) = names.get(i)
+            && *other != symbol
+            && let Err(e) = app.run("symbol.replace", json!({ "name": other }))
+        {
+            app.status(e);
+        }
+    });
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        if widgets::flat_button(ui, tl!("Go to Main Component"), w).clicked() {
+            match app.run("component.goToMain", json!({})) {
+                // Scroll the main into the middle of the view.
+                Ok(r) => {
+                    let main = r["id"].as_u64().map(logocraft_doc::NodeId);
+                    let centre = main.and_then(|id| app.session.active()?.doc.node(id)?.geometric_bounds()).map(|b| b.center());
+                    if let (Some(c), Some(v)) = (centre, app.view_mut()) {
+                        v.center = c;
+                    }
+                }
+                Err(e) => app.status(e),
+            }
+        }
+        if widgets::flat_button(ui, tl!("Detach Instance"), w).clicked()
+            && let Err(e) = app.run("component.detach", json!({}))
+        {
+            app.status(e);
+        }
+    });
+    true
 }
 
 /// The one selected image: its file (or Embedded), colour mode and resolution, and the Links
@@ -580,6 +669,33 @@ mod tests {
                 }
             })
             .collect()
+    }
+
+    /// A selected main component shows its section (instances, Create Instance); an instance shows
+    /// its component, Go to Main Component and Detach Instance, and both go through their commands.
+    #[test]
+    fn components_show_their_section() {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 40, "height": 20})).unwrap();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        let texts = |app: &mut LogocraftApp| frame(app, &ctx, vec![]).into_iter().map(|(t, _)| t).collect::<Vec<_>>();
+        assert!(texts(&mut app).iter().any(|t| t == "Create Component"), "a quick action before");
+        let main = app.run("component.create", json!({})).unwrap()["id"].as_u64().unwrap();
+        let shown = texts(&mut app);
+        for label in ["Main Component", "Create Instance", "Select Instances", "0 instances"] {
+            assert!(shown.iter().any(|t| t == label), "{label} in {shown:?}");
+        }
+        assert!(!shown.iter().any(|t| t == "Create Component"));
+        let inst = app.run("symbol.place", json!({"name": "Component 1"})).unwrap()["id"].as_u64().unwrap();
+        let shown = texts(&mut app);
+        for label in ["Instance", "Go to Main Component", "Detach Instance", "Component 1"] {
+            assert!(shown.iter().any(|t| t == label), "{label} in {shown:?}");
+        }
+        app.run("component.goToMain", json!({})).unwrap();
+        assert_eq!(app.session.active().unwrap().selection.objects, vec![logocraft_doc::NodeId(main)]);
+        assert_ne!(inst, main);
     }
 
     fn click(app: &mut LogocraftApp, ctx: &egui::Context, texts: &[(String, Rect)], label: &str) {

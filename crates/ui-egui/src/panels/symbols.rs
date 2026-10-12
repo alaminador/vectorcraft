@@ -86,7 +86,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         ui.set_min_height(110.0);
         ui.set_width(ui.available_width());
         if names.is_empty() {
-            super::empty_state(ui, "spray-can", tl!("No symbols in this document"), tl!("Select art and click New Symbol to make one."));
+            super::empty_state(ui, "shapes", tl!("No components yet"), tl!("Select art and press Cmd+Alt+K (Create Component)."));
             return ui.min_rect();
         }
         if list {
@@ -133,7 +133,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     });
     let zone = ui.interact(list_rect, ui.id().with("symbols-drop"), Sense::hover());
     if let Some(ids) = widgets::art_drop(ui, &zone)
-        && let Err(e) = app.run("symbol.new", json!({ "ids": ids }))
+        && let Err(e) = app.run("component.create", json!({ "ids": ids }))
     {
         app.status(e);
     }
@@ -146,18 +146,19 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let has_sel = app.session.active().is_some_and(|d| !d.selection.is_empty());
     let inst = has_instances_selected(app);
     widgets::bottom_bar(ui, |ui| {
-        widgets::icon_button_enabled(ui, "library", tl!("Symbol Libraries (on the roadmap)"), false, false, 24.0);
-        if widgets::icon_button_enabled(ui, "dc-place-symbol", tl!("Place Symbol Instance"), false, sel.is_some(), 24.0).clicked() {
+        if widgets::icon_button_enabled(ui, "dc-place-symbol", tl!("Create Instance"), false, sel.is_some(), 24.0).clicked() {
             app.run("symbol.place", json!({})).ok();
         }
-        if widgets::icon_button_enabled(ui, "link-2-off", tl!("Break Link to Symbol"), false, inst, 24.0).clicked() {
-            app.run("symbol.breakLink", json!({})).ok();
+        if widgets::icon_button_enabled(ui, "link-2-off", tl!("Detach Instance (Cmd+Alt+B)"), false, inst, 24.0).clicked() {
+            app.run("component.detach", json!({})).ok();
         }
         ui.add_space((ui.available_width() - 2.0 * 28.0).max(0.0));
-        if widgets::icon_button_enabled(ui, "dc-new-item", tl!("New Symbol"), false, has_sel, 24.0).clicked() {
-            app.run("symbol.new", json!({})).ok();
+        if widgets::icon_button_enabled(ui, "dc-new-item", tl!("Create Component (Cmd+Alt+K)"), false, has_sel, 24.0).clicked()
+            && let Err(e) = app.run("component.create", json!({}))
+        {
+            app.status(e);
         }
-        if widgets::icon_button_enabled(ui, "trash-2", tl!("Delete Symbol"), false, sel.is_some(), 24.0).clicked()
+        if widgets::icon_button_enabled(ui, "trash-2", tl!("Delete Component"), false, sel.is_some(), 24.0).clicked()
             && let Some(n) = &sel
         {
             app.run("symbol.delete", json!({"name": n})).ok();
@@ -170,16 +171,15 @@ pub fn menu(app: &mut LogocraftApp, ui: &mut Ui) {
     let has_sel = app.session.active().is_some_and(|d| !d.selection.is_empty());
     let inst = has_instances_selected(app);
     let name = json!({"name": sel});
-    let items: [(&str, bool, &str, Value); 9] = [
-        (tl!("New Symbol…"), has_sel, "symbol.new", json!({})),
-        (tl!("Redefine Symbol"), has_sel && sel.is_some(), "symbol.update", name.clone()),
-        (tl!("Duplicate Symbol"), sel.is_some(), "symbol.duplicate", name.clone()),
-        (tl!("Delete Symbol"), sel.is_some(), "symbol.delete", name.clone()),
-        (tl!("Edit Symbol"), inst, "symbol.edit", json!({})),
-        (tl!("Place Symbol Instance"), sel.is_some(), "symbol.place", name.clone()),
-        (tl!("Replace Symbol"), inst && sel.is_some(), "symbol.replace", name.clone()),
-        (tl!("Break Link to Symbol"), inst, "symbol.breakLink", json!({})),
-        (tl!("Select All Instances"), sel.is_some(), "symbol.selectInstances", name),
+    let items: [(&str, bool, &str, Value); 8] = [
+        (tl!("Create Component"), has_sel, "component.create", json!({})),
+        (tl!("Go to Main Component"), inst, "component.goToMain", json!({})),
+        (tl!("Create Instance"), sel.is_some(), "symbol.place", name.clone()),
+        (tl!("Swap Instance"), inst && sel.is_some(), "symbol.replace", name.clone()),
+        (tl!("Detach Instance"), inst, "component.detach", json!({})),
+        (tl!("Select All Instances"), sel.is_some(), "symbol.selectInstances", name.clone()),
+        (tl!("Duplicate Component"), sel.is_some(), "symbol.duplicate", name.clone()),
+        (tl!("Delete Component"), sel.is_some(), "symbol.delete", name),
     ];
     for (label, enabled, cmd, params) in items {
         if menu_item(ui, label, enabled, false) {
@@ -221,7 +221,7 @@ mod tests {
     }
 
     #[test]
-    fn art_dropped_on_the_panel_becomes_a_symbol_and_a_symbol_drags_out() {
+    fn art_dropped_on_the_panel_becomes_a_component_and_its_tile_drags_out() {
         let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
         let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap()["id"].as_u64().unwrap();
@@ -236,7 +236,7 @@ mod tests {
         assert_eq!(names.len(), 1, "{names:?}");
         let doc = &app.session.active().unwrap().doc;
         let first = doc.layers[0].children().unwrap().first().unwrap();
-        assert!(matches!(first.kind, NodeKind::SymbolInstance { .. }), "the art became an instance");
+        assert_eq!(first.extras().component.as_deref(), Some(names[0].as_str()), "the art became the main component, in place");
         // Dragging the symbol's tile out of the panel carries the symbol.
         frame(&ctx, &mut app, vec![]);
         let tile = pos2(26.0, 26.0);
