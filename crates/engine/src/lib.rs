@@ -1730,6 +1730,8 @@ mod tests_outlinestroke;
 #[cfg(test)]
 mod tests_overprint;
 #[cfg(test)]
+mod tests_overrides;
+#[cfg(test)]
 mod tests_paintproxy;
 #[cfg(test)]
 mod tests_panelcmds;

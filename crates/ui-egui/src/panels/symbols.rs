@@ -78,7 +78,7 @@ fn has_instances_selected(app: &LogocraftApp) -> bool {
 pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some(doc) = app.session.active().map(|d| d.doc.clone()) else { return };
-    let names: Vec<String> = doc.symbols.iter().map(|s| s.name.clone()).collect();
+    let names: Vec<String> = doc.symbols.iter().filter(|s| !logocraft_engine::cmd::components::is_derived(&s.name)).map(|s| s.name.clone()).collect();
     let list: bool = pstate(ui.ctx(), "sym-list");
     let sel = current(app);
     let mut clicked: Option<(String, bool)> = None;

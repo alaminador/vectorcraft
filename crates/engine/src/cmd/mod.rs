@@ -9,7 +9,7 @@ mod buildcmds;
 pub mod clipboard;
 mod colorcmds;
 pub mod colormgmt;
-pub(crate) mod components;
+pub mod components;
 mod create;
 pub(crate) mod distortcmds;
 mod docinfo;

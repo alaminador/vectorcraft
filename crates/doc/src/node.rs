@@ -567,6 +567,13 @@ pub struct NodeExtras {
     pub component_set: Option<String>,
     /// This main component's variant properties in its component set, in order (`State=Hover`).
     pub variant: Option<Vec<(String, String)>>,
+    /// A main component's properties (Boolean, Text, Instance swap), by name.
+    pub component_props: Option<std::collections::BTreeMap<String, crate::component::PropDef>>,
+    /// Inside a main component: which property drives this layer's field (`visible`,
+    /// `characters`, `mainComponent` → property name).
+    pub prop_refs: Option<std::collections::BTreeMap<String, String>>,
+    /// An instance's component, property values and overrides.
+    pub instance: Option<Box<crate::component::InstanceData>>,
 }
 
 /// No extras: what [`Node::extras`] gives for a node without any.
@@ -586,6 +593,9 @@ static NO_EXTRAS: NodeExtras = NodeExtras {
     layout_item: None,
     component_set: None,
     variant: None,
+    component_props: None,
+    prop_refs: None,
+    instance: None,
 };
 
 /// A node's [`NodeExtras`], if it has any ([`Node::extras`]). Extras that are all unset equal
@@ -721,6 +731,9 @@ impl Serialize for Node {
             e.layout_item.is_none(),
             e.component_set.is_none(),
             e.variant.is_none(),
+            e.component_props.is_none(),
+            e.prop_refs.is_none(),
+            e.instance.is_none(),
         ];
         let mut st = s.serialize_struct("Node", skips.iter().filter(|s| !**s).count())?;
         let mut skip = skips.into_iter();
@@ -760,6 +773,9 @@ impl Serialize for Node {
         field!("layout_item", &e.layout_item);
         field!("component_set", &e.component_set);
         field!("variant", &e.variant);
+        field!("component_props", &e.component_props);
+        field!("prop_refs", &e.prop_refs);
+        field!("instance", &e.instance);
         st.end()
     }
 }
@@ -821,6 +837,12 @@ struct NodeWire {
     component_set: Option<String>,
     #[serde(default)]
     variant: Option<Vec<(String, String)>>,
+    #[serde(default)]
+    component_props: Option<std::collections::BTreeMap<String, crate::component::PropDef>>,
+    #[serde(default)]
+    prop_refs: Option<std::collections::BTreeMap<String, String>>,
+    #[serde(default)]
+    instance: Option<Box<crate::component::InstanceData>>,
 }
 
 impl From<NodeWire> for Node {
@@ -841,6 +863,9 @@ impl From<NodeWire> for Node {
             layout_item: w.layout_item,
             component_set: w.component_set,
             variant: w.variant,
+            component_props: w.component_props,
+            prop_refs: w.prop_refs,
+            instance: w.instance,
         };
         Node {
             id: w.id,
@@ -1909,6 +1934,9 @@ mod tests {
             e.layout_item = Some(crate::layout::LayoutItem { absolute: true, ..Default::default() });
             e.component_set = Some("Button".into());
             e.variant = Some(vec![("State".into(), "Hover".into())]);
+            e.component_props = Some([("Label".to_string(), crate::component::PropDef::Text { default: "OK".into() })].into());
+            e.prop_refs = Some([("characters".to_string(), "Label".to_string())].into());
+            e.instance = Some(Box::new(crate::component::InstanceData { component: "Button".into(), ..Default::default() }));
         }
         /// The top-level keys of a JSON object, in the order written.
         struct Keys(Vec<String>);
@@ -1954,6 +1982,9 @@ mod tests {
             "layout_item",
             "component_set",
             "variant",
+            "component_props",
+            "prop_refs",
+            "instance",
         ];
         assert_eq!(keys, order);
         assert_eq!(serde_json::from_value::<Node>(v).unwrap(), n);

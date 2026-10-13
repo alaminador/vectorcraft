@@ -101,8 +101,8 @@ pub(crate) fn section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) -> bool {
     let current: Vec<(String, String)> = v["variants"]
         .as_array()
         .and_then(|vs| {
-            let NodeKind::SymbolInstance { symbol, .. } = &n.kind else { return None };
-            vs.iter().find(|x| x["symbol"].as_str() == Some(symbol.as_str()))
+            let base = logocraft_engine::cmd::components::base_of(n)?;
+            vs.iter().find(|x| x["symbol"].as_str() == Some(base.as_str()))
         })
         .and_then(|x| x["props"].as_object().map(|o| o.iter().map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string())).collect()))
         .unwrap_or_default();

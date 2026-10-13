@@ -56,6 +56,13 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     {
         divider(ui);
     }
+    // Component properties: a main's, a bound layer's, an instance's values and overrides.
+    if n_sel == 1
+        && let Some(n) = &first
+        && super::instance_props::sections(app, ui, n)
+    {
+        divider(ui);
+    }
     // Auto layout: a frame's settings, and a frame child's sizing (a nested frame shows both).
     if n_sel == 1
         && let Some(n) = &first
@@ -185,7 +192,11 @@ pub(crate) const COMPONENT_PURPLE: egui::Color32 = egui::Color32::from_rgb(0x97,
 /// The selected main component (its instances, Create Instance, Select Instances) or instance (its
 /// component, swapping it for another, Go to Main Component, Detach Instance). → whether it drew.
 fn component_section(app: &mut LogocraftApp, ui: &mut Ui, n: &logocraft_doc::Node) -> bool {
-    let names: Vec<String> = app.session.active().map(|st| st.doc.symbols.iter().map(|s| s.name.clone()).collect()).unwrap_or_default();
+    let names: Vec<String> = app
+        .session
+        .active()
+        .map(|st| st.doc.symbols.iter().filter(|s| !logocraft_engine::cmd::components::is_derived(&s.name)).map(|s| s.name.clone()).collect())
+        .unwrap_or_default();
     let w = (ui.available_width() - 6.0) / 2.0;
     if let Some(name) = n.extras().component.clone() {
         let count = app
@@ -217,8 +228,10 @@ fn component_section(app: &mut LogocraftApp, ui: &mut Ui, n: &logocraft_doc::Nod
         });
         return true;
     }
-    let NodeKind::SymbolInstance { symbol, .. } = &n.kind else { return false };
-    let symbol = symbol.clone();
+    if !matches!(n.kind, NodeKind::SymbolInstance { .. }) {
+        return false;
+    }
+    let Some(symbol) = logocraft_engine::cmd::components::base_of(n) else { return false };
     section_header(ui, tl!("Instance"));
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("◇").size(13.0).color(COMPONENT_PURPLE));

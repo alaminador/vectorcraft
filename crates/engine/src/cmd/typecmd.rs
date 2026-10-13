@@ -332,17 +332,22 @@ pub(crate) fn style_chars(t: &mut TextObject, range: Option<TextRange>, mut f: i
     }
 }
 
+/// Replace the whole text of `t` by `text`, in its first character and paragraph style.
+pub(crate) fn replace_text(t: &mut TextObject, text: &str) {
+    let style = t.first_style();
+    // Every paragraph of the new text takes the first paragraph's attributes.
+    t.splice_paras(0, logocraft_text::edit::runs_len(&t.runs), text);
+    t.runs = vec![logocraft_doc::TextRun { text: text.to_string(), style, inline: None }];
+    refresh_bounds(t);
+}
+
 fn set_text(s: &mut Session, p: &Value) -> Result<Value> {
     let text = str_param(p, "text").ok_or_else(|| bad("text.setText", "missing `text`"))?.to_string();
     let ids = text_targets(s, p, "text.setText")?;
     s.edit("Typing", |d, _| {
         for id in &ids {
             let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
-            let style = t.first_style();
-            // Every paragraph of the new text takes the first paragraph's attributes.
-            t.splice_paras(0, logocraft_text::edit::runs_len(&t.runs), &text);
-            t.runs = vec![logocraft_doc::TextRun { text: text.clone(), style, inline: None }];
-            refresh_bounds(t);
+            replace_text(t, &text);
         }
         Ok(())
     })?;
