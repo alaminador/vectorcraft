@@ -230,13 +230,21 @@ pub(crate) fn bind_button(app: &mut LogocraftApp, ui: &mut Ui, n: &Node, field: 
     let bound = n.extras().bound.as_ref().and_then(|b| b.get(field)).cloned();
     if let Some(vid) = bound {
         let name = vars.iter().find(|v| v["id"] == vid.as_str()).and_then(|v| v["name"].as_str()).unwrap_or("?").to_string();
-        let chip = ui.add(egui::Button::new(egui::RichText::new(format!("⬡ {name}")).size(11.0).color(super::properties::COMPONENT_PURPLE)).small());
+        let purple = super::properties::COMPONENT_PURPLE;
+        let galley = ui.painter().layout_no_wrap(name, egui::FontId::proportional(11.0), purple);
+        let (rect, chip) = ui.allocate_exact_size(vec2(galley.size().x + 24.0, 20.0), Sense::click());
+        if chip.hovered() {
+            ui.painter().rect_filled(rect, 3.0, purple.gamma_multiply(0.15));
+        }
+        let icon = egui::Rect::from_center_size(rect.left_center() + vec2(9.0, 0.0), vec2(12.0, 12.0));
+        crate::icons::paint(ui, "variable", icon, purple);
+        ui.painter().galley(egui::pos2(rect.left() + 19.0, rect.center().y - galley.size().y / 2.0), galley, purple);
         if chip.on_hover_text(tl!("Bound to a variable: click to detach (the value stays)")).clicked() {
             run(app, "variable.bind", json!({ "field": field, "variable": null }));
         }
         return;
     }
-    let resp = ui.add(egui::Button::new(egui::RichText::new("⬡").size(12.0)).small()).on_hover_text(tl!("Apply variable"));
+    let resp = widgets::icon_button(ui, "variable", tl!("Apply variable"), false, 20.0);
     egui::Popup::menu(&resp).show(|ui| {
         ui.set_min_width(180.0);
         let fitting: Vec<&Value> = vars.iter().filter(|v| v["type"] == kind || (field == "characters" && v["type"] == "number")).collect();

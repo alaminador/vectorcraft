@@ -180,6 +180,7 @@ pub static ICONS: &[(&str, &[u8])] = &[
     ("ellipsis", include_bytes!("../../../assets/icons/ellipsis.svg")),
     ("eraser", include_bytes!("../../../assets/icons/eraser.svg")),
     ("eye", include_bytes!("../../../assets/icons/eye.svg")),
+    ("variable", include_bytes!("../../../assets/icons/variable.svg")),
     ("eye-off", include_bytes!("../../../assets/icons/eye-off.svg")),
     ("file-plus", include_bytes!("../../../assets/icons/file-plus.svg")),
     ("flip-horizontal-2", include_bytes!("../../../assets/icons/flip-horizontal-2.svg")),

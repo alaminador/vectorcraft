@@ -2,8 +2,8 @@
 //! https://help.figma.com/hc/en-us/articles/360041488473): + adds an effect; each row has its eye,
 //! its type (Drop shadow, Inner shadow, Layer blur, Background blur, Noise, Texture) and its
 //! settings (offset, blur, spread, colour and opacity through the app's colour picker, or the
-//! effect's own), and − removes it. Effects of other kinds (Illustrator's) show by name with their
-//! dialog. Every change is an `effect.*` command on the object's own effects.
+//! effect's own), and − removes it. The type menu also lists every other effect of the app, grouped
+//! by its menu (Blur, Distort & Transform, Stylize, Artistic…); those keep their dialog behind the gear. Every change is an `effect.*` command on the object's own effects.
 
 use egui::{Sense, Ui, vec2};
 use logocraft_color::{Color, Paint};
@@ -37,6 +37,58 @@ pub(crate) fn kinds() -> [(&'static str, &'static str, Value); 6] {
 /// The Figma type of effect `id`, if it is one.
 fn kind_of(id: &str) -> Option<usize> {
     kinds().iter().position(|(_, k, _)| *k == id)
+}
+
+/// Effect groups: (group, [(label, id)]).
+type Groups = Vec<(String, Vec<(String, &'static str)>)>;
+
+/// Every other effect of the catalog, grouped by its menu (its last level: Blur, Distort &
+/// Transform, Stylize, Artistic…) in catalog order: (group, [(label, id)]). Built once.
+fn catalog_groups() -> &'static Groups {
+    static GROUPS: std::sync::OnceLock<Groups> = std::sync::OnceLock::new();
+    GROUPS.get_or_init(|| {
+        let mut out: Groups = vec![];
+        for e in logocraft_effects::effect_catalog() {
+            if kind_of(e.id).is_some() {
+                continue;
+            }
+            // A top-level effect (Crop Marks) goes under Other.
+            let group = if e.menu.len() > 1 { e.menu.last().copied().unwrap_or("Other") } else { "Other" }.to_string();
+            let label = e.label.trim_end_matches('…').to_string();
+            match out.iter_mut().find(|(g, _)| *g == group) {
+                Some((_, items)) => items.push((label, e.id)),
+                None => out.push((group, vec![(label, e.id)])),
+            }
+        }
+        out
+    })
+}
+
+/// The type menu of an effect row: Figma's six types, then every other effect by group. →
+/// the effect chosen, with the params it starts from (Figma's defaults, else the effect's).
+fn type_menu(ui: &mut Ui, i: usize, current: &str) -> Option<(&'static str, Value)> {
+    let mut chosen = None;
+    let resp = ui.add_sized([128.0, 22.0], egui::Button::new(egui::RichText::new(format!("{current}  \u{25BE}")).size(12.0)).truncate());
+    egui::Popup::menu(&resp).id(egui::Id::new(("fx-type-menu", i))).show(|ui| {
+        ui.set_min_width(170.0);
+        for (label, id, defaults) in kinds() {
+            if ui.button(tl!(label)).clicked() {
+                chosen = Some((id, defaults));
+            }
+        }
+        ui.separator();
+        for (group, items) in catalog_groups() {
+            ui.menu_button(group.as_str(), |ui| {
+                ui.set_min_width(180.0);
+                for (label, id) in items {
+                    if ui.button(label.as_str()).clicked() {
+                        chosen = Some((*id, logocraft_effects::default_params(id).unwrap_or_else(|| json!({}))));
+                    }
+                }
+            });
+        }
+    });
+    chosen
 }
 
 /// Panel state: the effect rows whose settings are open (by index).
@@ -89,21 +141,19 @@ fn row(app: &mut LogocraftApp, ui: &mut Ui, i: usize, e: &Effect) {
         if widgets::icon_button(ui, eye, if e.visible { tl!("Hide effect") } else { tl!("Show effect") }, false, 22.0).clicked() {
             run(app, "effect.setParams", json!({ "index": i, "item": null, "visible": !e.visible }));
         }
-        match kind {
-            Some(k) => {
-                let labels: Vec<&str> = kinds().iter().map(|(l, _, _)| tl!(*l)).collect();
-                if let Some(n) = widgets::dropdown(ui, ("fx-kind", i), labels[k], &labels, 128.0)
-                    && n != k
-                    && let Some((_, id, defaults)) = kinds().get(n).cloned()
-                {
-                    run(app, "effect.setType", json!({ "index": i, "item": null, "effect": id, "params": defaults }));
-                }
-            }
-            None => {
-                let label = logocraft_effects::effect_info(&e.id).map(|x| x.label.trim_end_matches('…').to_string()).unwrap_or_else(|| e.id.clone());
-                if ui.link(egui::RichText::new(label).size(12.0)).on_hover_text(tl!("Open its options")).clicked() {
-                    run(app, "effect.dialog", json!({ "effect": e.id, "index": i, "item": null }));
-                }
+        // Any effect: Figma's types first, then every effect of the app by group.
+        let current = match kind {
+            Some(k) => kinds().get(k).map(|(l, _, _)| tl!(*l).to_string()).unwrap_or_default(),
+            None => logocraft_effects::effect_info(&e.id).map(|x| x.label.trim_end_matches('…').to_string()).unwrap_or_else(|| e.id.clone()),
+        };
+        if let Some((id, params)) = type_menu(ui, i, &current)
+            && id != e.id
+        {
+            run(app, "effect.setType", json!({ "index": i, "item": null, "effect": id, "params": params }));
+            // A Figma type opens its settings; another effect has its dialog behind the gear.
+            if kind_of(id).is_some() && !open.contains(&i) {
+                open.push(i);
+                set_pstate(&ctx, OPEN, open.clone());
             }
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -111,6 +161,10 @@ fn row(app: &mut LogocraftApp, ui: &mut Ui, i: usize, e: &Effect) {
                 run(app, "effect.remove", json!({ "index": i, "item": null }));
                 open.retain(|o| *o != i);
                 set_pstate(&ctx, OPEN, open.clone());
+            }
+            // Other effects: the gear opens their dialog.
+            if kind.is_none() && widgets::icon_button(ui, "settings", tl!("Effect options"), false, 22.0).clicked() {
+                run(app, "effect.dialog", json!({ "effect": e.id, "index": i, "item": null }));
             }
             if kind.is_some() && widgets::icon_button(ui, "settings", tl!("Effect settings"), is_open, 22.0).clicked() {
                 if is_open {
@@ -264,6 +318,17 @@ fn color_row(app: &mut LogocraftApp, ui: &mut Ui, i: usize, p: &Value) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The type menu lists every effect of the app: Figma's six, then all the others by group.
+    #[test]
+    fn the_type_menu_lists_every_effect() {
+        let listed: Vec<&str> =
+            kinds().iter().map(|(_, id, _)| *id).chain(catalog_groups().iter().flat_map(|(_, items)| items.iter().map(|(_, id)| *id))).collect();
+        for e in logocraft_effects::effect_catalog() {
+            assert_eq!(listed.iter().filter(|id| **id == e.id).count(), 1, "{} listed once", e.id);
+        }
+        assert!(catalog_groups().len() > 5, "{:?}", catalog_groups().iter().map(|(g, _)| g).collect::<Vec<_>>());
+    }
 
     #[test]
     fn every_figma_kind_is_a_known_effect() {

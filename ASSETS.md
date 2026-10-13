@@ -189,6 +189,7 @@ Generated-in-code art is original and has no file to list. This covers the defau
 | `assets/icons/dc-scallop.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-screen-mode.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-selection.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/variable.svg` | alaminador (LogoCraft repository owner) | Original icon drawn by the owner, supplied as `Asset 2.svg` (2026-10-13); recoloured to `currentColor` and framed square | MIT OR Apache-2.0, as supplied by the owner | Design variables (bind buttons, Variables window) |
 | `assets/icons/dc-shape-builder.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-shear.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-smooth.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
