@@ -323,6 +323,9 @@ impl DocSettings {
                 rect,
                 show_center_mark: false,
                 show_cross_hairs: false,
+                fill: None,
+                clip: false,
+                radius: 0.0,
             })
             .collect();
         d

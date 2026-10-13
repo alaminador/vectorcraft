@@ -23,7 +23,16 @@ fn doc(w: f64, h: f64, shapes_: &[(Rect, Paint)]) -> Document {
 }
 
 fn artboard(id: u32, x: f64) -> Artboard {
-    Artboard { id, name: format!("Artboard {id}"), rect: Rect::new(x, 0.0, x + 100.0, 100.0), show_center_mark: false, show_cross_hairs: false }
+    Artboard {
+        id,
+        name: format!("Artboard {id}"),
+        rect: Rect::new(x, 0.0, x + 100.0, 100.0),
+        show_center_mark: false,
+        show_cross_hairs: false,
+        fill: None,
+        clip: false,
+        radius: 0.0,
+    }
 }
 
 fn rgb(r: f32, g: f32, b: f32) -> Paint {

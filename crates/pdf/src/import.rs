@@ -283,6 +283,9 @@ pub fn import_with_report(bytes: &[u8], opts: &ImportOptions) -> Result<ImportRe
             rect: ab,
             show_center_mark: false,
             show_cross_hairs: false,
+            fill: None,
+            clip: false,
+            radius: 0.0,
         });
         let page_layer = |b: &mut Builder<'_>, art: Vec<Arc<Node>>, shown: bool| {
             let name = if shown { format!("Page {}", number + 1) } else { format!("Page {} (unsorted)", number + 1) };

@@ -465,6 +465,9 @@ mod tests {
             rect: logocraft_geom::Rect::new(600.0, 0.0, 900.0, 300.0),
             show_center_mark: false,
             show_cross_hairs: false,
+            fill: None,
+            clip: false,
+            radius: 0.0,
         });
         d.guides = vec![Guide { artboard: Some(id), ..Guide::new(false, 150.0) }];
         let (s, p) = (Selection::default(), paint());

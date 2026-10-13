@@ -137,13 +137,9 @@ fn the_path_menu_and_bars_run_it_for_direct_selected_anchors() {
         assert!(row.min.x >= -0.5 && button(&props, &ctx, label, 2).x + 12.0 <= 230.5, "properties clips the {label} row: {row:?}");
     }
 
-    // The task bar's area settles on the second frame.
     let ctx = egui::Context::default();
     crate::theme::install_fonts(&ctx);
     canvas_frame(&mut app, &ctx, vec![]);
-    let texts = canvas_frame(&mut app, &ctx, vec![]);
-    assert!(has(&texts, LABEL), "task bar: {texts:?}");
-
     // Right-click keeps the anchor selection (the object is already selected) and runs the item.
     let p = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap()).to_screen(Point::new(100.0, 90.0));
     let texts = click_canvas(&mut app, &ctx, p, PointerButton::Secondary);

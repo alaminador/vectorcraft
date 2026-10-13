@@ -1,7 +1,7 @@
 //! The document canvas: rendering, rulers, navigation, pointer routing to tools and on-canvas
 //! selection visuals (bounding box, anchors, handles, smart-guide style labels).
 
-use egui::{Color32, CornerRadius, Pos2, Sense, Shape, Stroke, StrokeKind, Ui, Vec2, pos2, vec2};
+use egui::{Color32, CornerRadius, Pos2, Sense, Shape, Stroke, StrokeKind, Ui, pos2, vec2};
 use logocraft_doc::{Node, NodeKind, Unit};
 use logocraft_geom::{Affine, BezPath, PathEl, Point, Rect};
 use logocraft_tools::{Cursor, Mods, Overlay, PointerEvent, PointerKind};
@@ -177,7 +177,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     // alone would leave open); the tool doesn't get it.
     if resp.context_menu_opened() && resp.hovered() && ui.input(|i| i.pointer.any_pressed()) {
         egui::Popup::close_all(ui.ctx());
-    } else {
+    } else if !frame_label_input(app, ui, &resp, rect) {
         handle_input(app, ui, &resp, rect);
     }
     let v = *app.view().unwrap_or(&View::default());
@@ -198,7 +198,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         let grid = (st.transparency_grid && setup.background == logocraft_doc::Background::Transparent).then(|| checker_texture(ui.ctx(), setup));
         let paper = if setup.simulate_paper { crate::panels::c32(&setup.paper()) } else { Color32::WHITE };
         for ab in &doc.artboards {
-            let q = xf.quad(ab.rect);
+            let q = frame_quad(&xf, ab);
             // Hard 2 pt drop shadow, right and bottom (measured: #4d4d4d then #565656 on #606060).
             let shift = |d: f32| q.iter().map(|p| *p + vec2(d, d)).collect::<Vec<_>>();
             painter.add(Shape::convex_polygon(shift(2.0), Color32::from_black_alpha(26), Stroke::NONE));
@@ -212,7 +212,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         }
     } else if app.ui.view.outline {
         for ab in &doc.artboards {
-            painter.add(Shape::convex_polygon(xf.quad(ab.rect), Color32::WHITE, Stroke::NONE));
+            painter.add(Shape::convex_polygon(frame_quad(&xf, ab), Color32::WHITE, Stroke::NONE));
         }
     }
     // The grid behind the art (Guides & Grid › Grids In Back), else over it below.
@@ -372,16 +372,19 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let tool_labelled = artboard_tool.then(|| app.session.tool_options()["active"].as_u64()).flatten();
     for (i, ab) in doc.artboards.iter().enumerate() {
         let c = if i == active_ab { Color32::from_gray(0) } else { Color32::from_gray(120) };
-        painter.add(Shape::closed_line(xf.quad(ab.rect), Stroke::new(if i == active_ab { 1.0 } else { 0.6 }, c)));
+        painter.add(Shape::closed_line(frame_quad(&xf, ab), Stroke::new(if i == active_ab { 1.0 } else { 0.6 }, c)));
         // The bleed (Document Setup) as a red outline around the artboard.
         if doc.setup.has_bleed() {
             painter.add(Shape::closed_line(xf.quad(doc.setup.bleed_rect(ab.rect)), Stroke::new(1.0, t.bleed)));
         }
-        if (artboard_tool || doc.artboards.len() > 1) && tool_labelled != u64::try_from(i).ok() {
+        if tool_labelled != u64::try_from(i).ok() {
             // At the artboard's own top-left corner, which a rotated view turns away from its
-            // bounding box's (#1095).
+            // bounding box's (#1095). As Figma names its frames: always, the bare name (the
+            // Artboard tool numbers them); hovered or dragged by it, in the selection colour.
             let corner = xf.to_screen(Point::new(ab.rect.x0, ab.rect.y0));
-            artboard_label(&painter, corner, (ab.rect.width() * xf.zoom) as f32, &format!("{:02} - {}", i + 1, ab.name), t.text_dim);
+            let name = if artboard_tool { format!("{:02} - {}", i + 1, ab.name) } else { ab.name.clone() };
+            let hot = frame_label_hot(ui.ctx()) == Some(i);
+            artboard_label(&painter, corner, (ab.rect.width() * xf.zoom) as f32, &name, if hot { t.selection } else { t.text_dim });
         }
     }
     if app.ui.view.guides {
@@ -434,9 +437,6 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
             painter.line_segment([pos2(rect.left(), at.y), pos2(rect.right(), at.y)], Stroke::new(1.0, t.text_dim));
         }
         rulers(ui, full, &xf, app.hover_doc, app.session.general_unit(), origin_preview.unwrap_or_else(|| app.ruler_origin()), &t);
-    }
-    if app.ui.task_bar && !app.session.tool_busy() && app.ui.screen_mode < 3 {
-        task_bar(app, ui, &xf);
     }
     if app.ui.screen_mode < 3 {
         crate::free_transform::show(app, ui, xf.rect);
@@ -1259,37 +1259,79 @@ fn stroke_path(p: &egui::Painter, bp: &BezPath, xf: &Xf, s: Stroke) {
 const LAYOUT_PINK: Color32 = Color32::from_rgb(0xF2, 0x48, 0x9B);
 
 /// The component sets of the document (their frames' bounds), per document revision.
-fn component_sets(app: &LogocraftApp, ctx: &egui::Context) -> Vec<Rect> {
+/// A component set on the canvas: its frame, name, variant count and id.
+#[derive(Clone)]
+struct SetOnCanvas {
+    id: logocraft_doc::NodeId,
+    frame: Rect,
+    name: String,
+    variants: usize,
+}
+
+fn component_sets(app: &LogocraftApp, ctx: &egui::Context) -> Vec<SetOnCanvas> {
     let Some(st) = app.session.active() else { return vec![] };
     let key = (st.uid, st.revision);
-    if let Some((k, v)) = crate::panels::pstate::<Option<((u64, u64), Vec<Rect>)>>(ctx, "component-sets")
+    if let Some((k, v)) = crate::panels::pstate::<Option<((u64, u64), Vec<SetOnCanvas>)>>(ctx, "component-sets")
         && k == key
     {
         return v;
     }
     let mut out = vec![];
     st.doc.walk(|n| {
-        if n.extras().component_set.is_some()
+        if let Some(name) = &n.extras().component_set
             && n.visible
             && let Some(l) = n.extras().layout.as_deref()
         {
-            out.push(l.frame);
+            let variants = n.children().map_or(0, |ch| ch.iter().filter(|c| c.extras().component.is_some()).count());
+            out.push(SetOnCanvas { id: n.id, frame: l.frame, name: name.clone(), variants });
         }
     });
     crate::panels::set_pstate(ctx, "component-sets", Some((key, out.clone())));
     out
 }
 
+/// Where a selected set's "N Variants" pill and its + (Add Variant) button sit on screen.
+fn set_badges(p: &egui::Painter, xf: &Xf, set: &SetOnCanvas) -> (egui::Rect, std::sync::Arc<egui::Galley>, egui::Rect) {
+    let q = xf.quad(set.frame);
+    let bottom = q.iter().fold(f32::MIN, |m, v| m.max(v.y));
+    let cx = q.iter().map(|v| v.x).sum::<f32>() / q.len().max(1) as f32;
+    let text = crate::i18n::tn(set.variants as u64, "{n} Variant", "{n} Variants");
+    let galley = p.layout_no_wrap(text, egui::FontId::proportional(11.0), Color32::WHITE);
+    let pill = egui::Rect::from_center_size(pos2(cx - 11.0, bottom + 8.0 + galley.size().y / 2.0 + 2.0), galley.size() + vec2(12.0, 4.0));
+    let plus = egui::Rect::from_center_size(pos2(pill.right() + 13.0, pill.center().y), vec2(18.0, 18.0));
+    (pill, galley, plus)
+}
+
 /// Auto layout on the canvas, as Figma shows it: component sets in a dashed purple border; for
 /// the selected frame, its padding (pink bands) and the gaps between its children (pink
 /// hatching); while a child is dragged in its frame, the line where it will drop.
 fn autolayout_overlay(app: &LogocraftApp, p: &egui::Painter, xf: &Xf) {
-    for r in component_sets(app, p.ctx()) {
-        let mut q = xf.quad(r);
-        if let Some(first) = q.first().copied() {
+    let purple = crate::panels::properties::COMPONENT_PURPLE;
+    let selected: Vec<logocraft_doc::NodeId> = app.session.active().map(|st| st.selection.objects.clone()).unwrap_or_default();
+    for set in component_sets(app, p.ctx()) {
+        let mut q = xf.quad(set.frame);
+        let corner = q.first().copied();
+        if let Some(first) = corner {
             q.push(first);
         }
-        p.extend(Shape::dashed_line(&q, Stroke::new(1.0, crate::panels::properties::COMPONENT_PURPLE), 4.0, 3.0));
+        let on = selected.contains(&set.id);
+        p.extend(Shape::dashed_line(&q, Stroke::new(if on { 1.5 } else { 1.0 }, purple), 4.0, 3.0));
+        // Its name above its top-left corner, in purple with the component mark, as in Figma.
+        if let Some(c) = corner {
+            let g = p.layout_no_wrap(format!("\u{2756} {}", set.name), egui::FontId::proportional(11.0), purple);
+            p.galley(c - vec2(0.0, 4.0 + g.size().y), g, purple);
+        }
+        // Selected: "N Variants" below it and the + that adds a variant.
+        if on && !app.session.in_interaction() {
+            let (pill, galley, plus) = set_badges(p, xf, &set);
+            p.rect_filled(pill, 3.0, purple);
+            p.galley(pill.min + vec2(6.0, 2.0), galley, Color32::WHITE);
+            let hot = p.ctx().pointer_hover_pos().is_some_and(|h| plus.contains(h));
+            p.circle_filled(plus.center(), 9.0, if hot { purple.gamma_multiply(0.8) } else { purple });
+            let (c, r) = (plus.center(), 4.0);
+            p.line_segment([c - vec2(r, 0.0), c + vec2(r, 0.0)], Stroke::new(1.5, Color32::WHITE));
+            p.line_segment([c - vec2(0.0, r), c + vec2(0.0, r)], Stroke::new(1.5, Color32::WHITE));
+        }
     }
     let Some(st) = app.session.active() else { return };
     let busy = app.session.in_interaction();
@@ -1326,7 +1368,9 @@ fn autolayout_overlay(app: &LogocraftApp, p: &egui::Painter, xf: &Xf) {
 
 fn selection_color(doc: &logocraft_doc::Document, id: logocraft_doc::NodeId) -> Color32 {
     match doc.node(id) {
-        Some(n) if n.extras().component.is_some() || matches!(n.kind, NodeKind::SymbolInstance { .. }) => crate::panels::properties::COMPONENT_PURPLE,
+        Some(n) if n.extras().component.is_some() || n.extras().component_set.is_some() || matches!(n.kind, NodeKind::SymbolInstance { .. }) => {
+            crate::panels::properties::COMPONENT_PURPLE
+        }
         _ => c32(doc.layer_color(id)),
     }
 }
@@ -1673,7 +1717,10 @@ fn selection_overlay(app: &mut LogocraftApp, p: &egui::Painter, xf: &Xf, curve_p
         let Some(n) = st.doc.node(*id) else { continue };
         let color = selection_color(&st.doc, *id);
         let partial = st.selection.partial(*id);
-        // Path outlines.
+        // Path outlines (a component set shows its dashed border instead).
+        if n.extras().component_set.is_some() {
+            continue;
+        }
         stroke_path(p, &node_outline(n), xf, Stroke::new(1.0, color));
         // Anchors (and handles for selected anchors in direct mode); a gradient mesh's or a mesh
         // envelope's points.
@@ -1838,13 +1885,131 @@ const MIN_LABELLED_ARTBOARD: f32 = 24.0;
 /// Artboard `name` above its top-left `corner` on screen, no wider than the artboard (`width` on
 /// screen): a longer name ends in "…", and an artboard too narrow shows none (#949).
 fn artboard_label(painter: &egui::Painter, corner: Pos2, width: f32, name: &str, color: Color32) {
+    if let Some((pos, galley)) = label_galley(painter, corner, width, name, color) {
+        painter.galley(pos, galley, color);
+    }
+}
+
+/// Where [`artboard_label`] draws `name`, and its layout (None: too narrow for a name).
+fn label_galley(painter: &egui::Painter, corner: Pos2, width: f32, name: &str, color: Color32) -> Option<(Pos2, std::sync::Arc<egui::Galley>)> {
     if !width.is_finite() || width < MIN_LABELLED_ARTBOARD {
-        return;
+        return None;
     }
     let mut job = egui::text::LayoutJob::simple_singleline(name.to_owned(), egui::FontId::proportional(11.0), color);
     job.wrap = egui::text::TextWrapping { max_width: width, max_rows: 1, break_anywhere: true, overflow_character: Some('…') };
     let galley = painter.layout_job(job);
-    painter.galley(corner - vec2(0.0, 4.0 + galley.size().y), galley, color);
+    Some((corner - vec2(0.0, 4.0 + galley.size().y), galley))
+}
+
+/// An artboard's outline on screen: its rectangle with its corner radius (a Figma frame's).
+fn frame_quad(xf: &Xf, ab: &logocraft_doc::Artboard) -> Vec<Pos2> {
+    if ab.radius <= 0.0 {
+        return xf.quad(ab.rect);
+    }
+    let mut pts = vec![];
+    logocraft_geom::kurbo::flatten(ab.outline(), 0.25 / xf.zoom.max(1e-6), |el| match el {
+        PathEl::MoveTo(p) | PathEl::LineTo(p) => pts.push(xf.to_screen(p)),
+        _ => {}
+    });
+    if pts.len() > 1 && pts.first() == pts.last() {
+        pts.pop();
+    }
+    pts
+}
+
+/// The artboard whose name label is under the pointer or being dragged.
+fn frame_label_hot(ctx: &egui::Context) -> Option<usize> {
+    ctx.data(|d| d.get_temp::<Option<usize>>(egui::Id::new("frame-label-hot"))).flatten()
+}
+
+/// A drag by an artboard's name label: the artboard and the point it was grabbed at.
+#[derive(Clone, Copy)]
+struct LabelDrag {
+    index: usize,
+    origin: Rect,
+    grab: Point,
+}
+
+/// Figma's frame names: a click on an artboard's name selects it (the Artboard tool on it), a
+/// drag by its name moves it with its art. With the Selection tools only. → whether the pointer
+/// went to a label (the tool then gets nothing).
+fn frame_label_input(app: &mut LogocraftApp, ui: &Ui, resp: &egui::Response, rect: egui::Rect) -> bool {
+    let drag_key = egui::Id::new("frame-label-drag");
+    let hot_key = egui::Id::new("frame-label-hot");
+    let ctx = ui.ctx().clone();
+    let dragging = ctx.data(|d| d.get_temp::<LabelDrag>(drag_key));
+    let tool = app.session.tool_id();
+    if dragging.is_none() && (!matches!(tool, "selection" | "directSelection" | "groupSelection") || app.session.in_interaction()) {
+        ctx.data_mut(|d| d.insert_temp::<Option<usize>>(hot_key, None));
+        return false;
+    }
+    let Some(v) = app.view().copied() else { return false };
+    let xf = Xf::new(rect, &v);
+    let painter = ui.painter_at(rect);
+    let pointer = ctx.pointer_latest_pos();
+    let Some(st) = app.session.active() else { return false };
+    let hit = |p: Pos2| {
+        st.doc.artboards.iter().enumerate().rev().find_map(|(i, ab)| {
+            let corner = xf.to_screen(Point::new(ab.rect.x0, ab.rect.y0));
+            let (pos, g) = label_galley(&painter, corner, (ab.rect.width() * xf.zoom) as f32, &ab.name, Color32::WHITE)?;
+            egui::Rect::from_min_size(pos, g.size()).expand(2.0).contains(p).then_some(i)
+        })
+    };
+    let over = pointer.filter(|p| rect.contains(*p)).and_then(hit);
+    ctx.data_mut(|d| d.insert_temp::<Option<usize>>(hot_key, dragging.map(|g| g.index).or(over)));
+    if let Some(g) = dragging {
+        ctx.set_cursor_icon(egui::CursorIcon::Grabbing);
+        let Some(p) = pointer else { return true };
+        let at = xf.to_doc(p);
+        let d = at - g.grab;
+        if ui.input(|i| i.pointer.primary_down()) {
+            if d.hypot() * xf.zoom > 2.0 {
+                let _ = app.session.begin_interaction("Move Artboard");
+                // A failed preview leaves the artboard where it was; nothing to report mid-drag.
+                let _ = app
+                    .session
+                    .preview("artboard.setProps", &json!({"index": g.index, "x": g.origin.x0 + d.x, "y": g.origin.y0 + d.y, "moveArt": true}));
+            }
+        } else {
+            ctx.data_mut(|dm| dm.remove::<LabelDrag>(drag_key));
+            if app.session.in_interaction() {
+                if let Err(e) = app.session.commit_interaction() {
+                    app.status(e.to_string());
+                }
+            } else {
+                // A click: the artboard selected, as a frame is in Figma.
+                app.select_tool("artboard");
+                crate::panels::artboards::select(app, g.index);
+            }
+        }
+        return true;
+    }
+    // A selected component set's + adds a variant.
+    if let Some(p) = pointer
+        && over.is_none()
+    {
+        let sets = component_sets(app, &ctx);
+        let selected = app.session.active().map(|st| st.selection.objects.clone()).unwrap_or_default();
+        if let Some(set) = sets.iter().find(|set| selected.contains(&set.id) && set_badges(&painter, &xf, set).2.contains(p)) {
+            ctx.set_cursor_icon(egui::CursorIcon::PointingHand);
+            if resp.is_pointer_button_down_on()
+                && ui.input(|inp| inp.pointer.primary_pressed())
+                && let Err(e) = app.run("component.addVariant", json!({ "id": set.id.0 }))
+            {
+                app.status(e);
+            }
+            return true;
+        }
+    }
+    let Some(i) = over else { return false };
+    ctx.set_cursor_icon(egui::CursorIcon::PointingHand);
+    if resp.is_pointer_button_down_on() && ui.input(|inp| inp.pointer.primary_pressed()) {
+        let Some(ab) = st.doc.artboards.get(i) else { return true };
+        let grab = pointer.map(|p| xf.to_doc(p)).unwrap_or(Point::new(ab.rect.x0, ab.rect.y0));
+        let drag = LabelDrag { index: i, origin: ab.rect, grab };
+        ctx.data_mut(|d| d.insert_temp(drag_key, drag));
+    }
+    true
 }
 
 /// Is overlay label `text` the Artboard tool's "01 - <artboard name>"? It holds a name, so it is
@@ -2015,166 +2180,6 @@ fn pixel_region(xf: &Xf) -> Option<[i64; 4]> {
     // A document pixel is bigger than a screen pixel here, so the region is about canvas-sized.
     let ok = [x0, y0, x1, y1].iter().all(|c| c.is_finite() && c.abs() < 1e9) && x1 > x0 && y1 > y0 && x1 - x0 <= 16384.0 && y1 - y0 <= 16384.0;
     ok.then_some([x0 as i64, y0 as i64, x1 as i64, y1 as i64])
-}
-
-/// The Contextual Task Bar's area.
-fn task_bar_id() -> egui::Id {
-    egui::Id::new("task-bar")
-}
-
-/// Where the Contextual Task Bar was last drawn (none while it isn't shown).
-pub(crate) fn task_bar_rect(ctx: &egui::Context) -> Option<egui::Rect> {
-    let id = task_bar_id();
-    ctx.memory(|m| m.areas().is_visible(&egui::LayerId::new(egui::Order::Middle, id)).then(|| m.area_rect(id)).flatten())
-}
-
-/// The Contextual Task Bar: a floating pill under the selection with the most likely next actions.
-/// Its handle drags it anywhere on the canvas; unpinned it keeps that offset as it follows the
-/// selection, pinned it stays put ([`crate::state::TaskBarPlace`]).
-fn task_bar(app: &mut LogocraftApp, ui: &mut Ui, xf: &Xf) {
-    let t = Tokens::get(ui.ctx());
-    if app.session.active().is_none_or(|st| st.selection.is_empty())
-        || !matches!(app.session.tool_id(), "selection" | "directSelection" | "groupSelection")
-    {
-        return;
-    }
-    let Some(b) = app.selection_bounds() else { return };
-    let Some(st) = app.session.active() else { return };
-    let n = st.selection.len();
-    let first = st.selection.objects.first().and_then(|id| st.doc.node(*id)).cloned();
-    let is_group = first.as_ref().is_some_and(|f| matches!(f.kind, NodeKind::Group { .. }));
-    let is_text = first.as_ref().is_some_and(|f| matches!(f.kind, NodeKind::Text(_)));
-    let mut items: Vec<(&str, &str, &str)> = vec![]; // (label, icon, command)
-    // Direct-selected anchors take the place of a path's Offset Path and Simplify.
-    let anchors = !st.selection.anchors.is_empty();
-    if anchors {
-        items.push((tl!("Remove Anchor Points"), "pen-tool-delete", "path.removeAnchors"));
-        items.push((tl!("Cut Path"), "scissors", "path.cutAtAnchors"));
-    }
-    if n > 1 {
-        items.push((tl!("Group"), "group", "object.group"));
-        items.push((tl!("Unite"), "squares-unite", "object.pathfinder.unite"));
-    } else if is_group {
-        items.push((tl!("Ungroup"), "ungroup", "object.ungroup"));
-        items.push((tl!("Isolate"), "square-dashed", "object.isolate"));
-    } else if is_text {
-        items.push((tl!("Create Outlines"), "type", "type.createOutlines"));
-    } else if !anchors {
-        items.push((tl!("Offset Path"), "square-dashed", "object.path.offsetPath"));
-        items.push((tl!("Simplify"), "spline", "object.path.simplify"));
-    }
-    items.push((tl!("Duplicate"), "copy", "edit.duplicate"));
-    let fill = first.as_ref().map(|f| f.appearance.fill_paint()).unwrap_or_default();
-    let doc = st.uid;
-    let anchor = xf.to_screen(Point::new(b.center().x, b.y1));
-    let est_w = 118.0 + items.iter().map(|(l, _, _)| l.len() as f32 * 7.2 + 44.0).sum::<f32>();
-    // Its place under the selection, then where the handle moved it, kept on the canvas (with the
-    // bar's size last frame, the estimate before it first shows).
-    let under = pos2(anchor.x - est_w / 2.0, anchor.y + 28.0);
-    let id = task_bar_id();
-    let size = egui::AreaState::load(ui.ctx(), id).and_then(|s| s.size).unwrap_or(vec2(est_w, 44.0));
-    let bounds = xf.rect.shrink(8.0);
-    let keep_in = |p: Pos2| p.clamp(bounds.min, (bounds.max - size).max(bounds.min));
-    let place = &mut app.ui.task_bar_place;
-    // Just unpinned: follow the selection from the pinned spot.
-    if !place.pinned
-        && let Some(at) = place.pin_at.take()
-    {
-        place.offset = Some((doc, xf.rect.min + at - under));
-    }
-    let pos = keep_in(match place.pin_at {
-        Some(at) => xf.rect.min + at,
-        None => under + place.offset.filter(|(d, _)| *d == doc).map_or(Vec2::ZERO, |(_, o)| o),
-    });
-    place.shown_at = Some(pos - xf.rect.min);
-    // Pinned before it ever showed: hold it here.
-    if place.pinned && place.pin_at.is_none() {
-        place.pin_at = place.shown_at;
-    }
-    let pinned = place.pinned;
-    let mut moved = Vec2::ZERO;
-    let mut run: Option<(&str, serde_json::Value)> = None;
-    egui::Area::new(id).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
-        egui::Frame::NONE
-            .fill(t.panel)
-            .stroke(Stroke::new(1.0, t.tool_active))
-            .corner_radius(CornerRadius::same(5))
-            .inner_margin(egui::Margin::symmetric(8, 6))
-            .shadow(egui::epaint::Shadow { offset: [0, 3], blur: 10, spread: 0, color: Color32::from_black_alpha(70) })
-            .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 6.0;
-                    let (g, grip) = ui.allocate_exact_size(vec2(4.0, 28.0), Sense::drag());
-                    let active = grip.hovered() || grip.dragged();
-                    ui.painter().rect_filled(g.shrink2(vec2(0.5, 4.0)), CornerRadius::same(2), if active { t.text_dim } else { t.button_border });
-                    if grip.dragged() {
-                        ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
-                        moved = grip.drag_delta();
-                    } else if grip.hovered() {
-                        ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
-                    }
-                    for (label, icon, cmd) in &items {
-                        let galley = ui.painter().layout_no_wrap(label.to_string(), egui::FontId::proportional(13.0), t.text_strong);
-                        let (r, resp) = ui.allocate_exact_size(vec2(galley.size().x + 38.0, 30.0), Sense::click());
-                        if resp.hovered() {
-                            ui.painter().rect_filled(r, CornerRadius::same(3), t.hover);
-                        }
-                        ui.painter().rect_stroke(r, CornerRadius::same(3), Stroke::new(1.0, t.button_border), StrokeKind::Inside);
-                        crate::icons::paint(ui, icon, egui::Rect::from_min_size(r.min + vec2(8.0, 7.0), vec2(16.0, 16.0)), t.icon);
-                        ui.painter().galley(pos2(r.left() + 30.0, r.center().y - galley.size().y / 2.0), galley, t.text_strong);
-                        if resp.clicked() {
-                            run = Some((*cmd, json!({})));
-                        }
-                    }
-                    let (r, resp) = ui.allocate_exact_size(vec2(26.0, 30.0), Sense::click());
-                    widgets::paint_chip(ui, egui::Rect::from_center_size(r.center(), vec2(16.0, 16.0)), &fill);
-                    ui.painter().rect_stroke(
-                        egui::Rect::from_center_size(r.center(), vec2(16.0, 16.0)),
-                        0.0,
-                        Stroke::new(1.0, t.button_border),
-                        StrokeKind::Outside,
-                    );
-                    if resp.on_hover_text(tl!("Fill")).clicked() {
-                        app.session.fill_active = true;
-                        app.ui.open_panel = Some("swatches".into());
-                    }
-                    if widgets::icon_button(ui, "lock", tl!("Lock (⌘2)"), false, 30.0).clicked() {
-                        run = Some(("object.lock", json!({})));
-                    }
-                    let more = widgets::icon_button(ui, "ellipsis", tl!("More Options"), false, 30.0);
-                    egui::Popup::menu(&more).show(|ui| {
-                        ui.set_min_width(170.0);
-                        let bar = [
-                            (tl!("Hide Bar"), "window.taskBar", false),
-                            (tl!("Pin Bar Position"), "window.taskBar.pin", pinned),
-                            (tl!("Reset Bar Position"), "window.taskBar.reset", false),
-                        ];
-                        for (label, cmd, checked) in bar {
-                            if widgets::menu_item(ui, label, true, checked) {
-                                run = Some((cmd, json!({})));
-                            }
-                        }
-                        ui.separator();
-                        if widgets::menu_item(ui, tl!("Show Properties Panel"), true, false) {
-                            run = Some(("window.panel", json!({"panel": "properties"})));
-                        }
-                    });
-                });
-            });
-    });
-    if moved != Vec2::ZERO {
-        let to = keep_in(pos + moved);
-        let place = &mut app.ui.task_bar_place;
-        if place.pinned {
-            place.pin_at = Some(to - xf.rect.min);
-        } else {
-            place.offset = Some((doc, to - under));
-        }
-        ui.ctx().request_repaint();
-    }
-    if let Some((c, p)) = run {
-        crate::menus::invoke(app, c, p);
-    }
 }
 
 #[cfg(test)]
@@ -2720,7 +2725,6 @@ mod tests {
     fn a_segment_pick_has_hollow_anchors_and_only_its_own_handles() {
         let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width":400,"height":300})).unwrap();
-        app.ui.task_bar = false;
         app.ui.view.rulers = false;
         let id = app.run("shape.rectangle", json!({"x":50,"y":50,"width":200,"height":150})).unwrap()["id"].as_u64().unwrap();
         app.run("select.none", json!({})).unwrap();
@@ -3441,7 +3445,7 @@ mod tests {
             let before = *app.view().unwrap();
             // egui-winit moves the pointer with the first finger, as here.
             frame(&mut app, &ctx, vec![egui::Event::PointerMoved(c - vec2(40.0, 0.0))]);
-            frame(&mut app, &ctx, fingers(egui::TouchPhase::Start, Vec2::ZERO));
+            frame(&mut app, &ctx, fingers(egui::TouchPhase::Start, egui::Vec2::ZERO));
             for k in 1..=3 {
                 frame(&mut app, &ctx, fingers(egui::TouchPhase::Move, vec2(10.0, 8.0) * k as f32));
             }
@@ -4031,84 +4035,5 @@ mod tests {
         let doc = app.session.active().unwrap();
         assert_eq!(doc.selection.objects, vec![logocraft_doc::NodeId(id)]);
         assert_eq!(doc.doc.art_bounds(), before, "the tap moved nothing");
-    }
-
-    /// The Contextual Task Bar's handle drags it: unpinned it keeps that offset as it follows the
-    /// selection, pinned it stays put when the selection changes, unpinned again it follows from
-    /// there, and Reset Bar Position puts it back under the selection. It never leaves the canvas,
-    /// also when the window shrinks.
-    #[test]
-    fn the_task_bar_is_dragged_by_its_handle_pinned_and_reset() {
-        let mut app = LogocraftApp::new(Session::new(), Default::default());
-        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
-        let mut square =
-            |x: f64, y: f64| app.session.execute("shape.rectangle", &json!({"x": x, "y": y, "width": 40, "height": 40})).unwrap()["id"].clone();
-        let (a, b) = (square(120.0, 40.0), square(220.0, 150.0));
-        app.select_tool("selection");
-        let ctx = egui::Context::default();
-        let bar = || task_bar_rect(&ctx).expect("the task bar shows");
-        let select = |app: &mut LogocraftApp, id: &serde_json::Value| {
-            app.session.execute("select.set", &json!({"ids": [id]})).unwrap();
-            frame(app, &ctx, vec![]);
-            frame(app, &ctx, vec![]);
-            bar().min
-        };
-        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
-        let drag = |app: &mut LogocraftApp, by: Vec2| {
-            let grip = pos2(bar().left() + 11.0, bar().center().y);
-            frame(app, &ctx, vec![egui::Event::PointerMoved(grip)]);
-            frame(app, &ctx, vec![button(grip, true)]);
-            frame(app, &ctx, vec![egui::Event::PointerMoved(grip + by)]);
-            frame(app, &ctx, vec![button(grip + by, false)]);
-            frame(app, &ctx, vec![]);
-            bar().min
-        };
-        let near = |p: Pos2, q: Pos2| assert!((p - q).length() < 1.5, "{p:?} is not at {q:?}");
-        let (under_a, under_b) = (select(&mut app, &a), select(&mut app, &b));
-        assert!(under_b.y > under_a.y + 100.0, "each bar sits under its selection");
-
-        // Dragged unpinned: it keeps its offset from the selection.
-        select(&mut app, &a);
-        let by = vec2(40.0, -30.0);
-        near(drag(&mut app, by), under_a + by);
-        near(select(&mut app, &b), under_b + by);
-        assert!(!app.ui.task_bar_place.pinned);
-
-        // Pinned: it stays where it is across selection changes, and the handle still moves it.
-        assert_eq!(app.run("window.taskBar.pin", json!({})).unwrap(), json!(true));
-        assert_eq!(crate::menus::checked(&app, "window.taskBar.pin", &json!({})), Some(true));
-        near(select(&mut app, &a), under_b + by);
-        let spot = drag(&mut app, vec2(-20.0, 10.0));
-        near(spot, under_b + by + vec2(-20.0, 10.0));
-        near(select(&mut app, &b), spot);
-
-        // Unpinned: it follows the selection from where it is, kept on the canvas.
-        assert_eq!(app.run("window.taskBar.pin", json!({"pinned": false})).unwrap(), json!(false));
-        near(select(&mut app, &a), spot);
-        let canvas = app.canvas_rect.unwrap();
-        let last = canvas.max - vec2(8.0, 8.0) - bar().size();
-        near(select(&mut app, &b), (under_b + (spot - under_a)).min(last));
-        assert!(app.run("window.taskBar.pin", json!({"pinned": "yes"})).is_err());
-
-        // Kept on the canvas: dragged far off, then pinned in the corner of a shrinking window.
-        near(drag(&mut app, vec2(-2000.0, -2000.0)), canvas.min + vec2(8.0, 8.0));
-        app.run("window.taskBar.pin", json!({"pinned": true})).unwrap();
-        drag(&mut app, vec2(2000.0, 2000.0));
-        near(bar().max, canvas.max - vec2(8.0, 8.0));
-        let small = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(640.0, 480.0))), ..Default::default() };
-        for _ in 0..2 {
-            let mut out = ctx.run_ui(small.clone(), |ui| show(&mut app, ui));
-            out.textures_delta.clear();
-        }
-        let canvas = app.canvas_rect.unwrap();
-        assert!(canvas.width() < 700.0, "the canvas shrank: {canvas:?}");
-        near(bar().max, canvas.max - vec2(8.0, 8.0));
-
-        // Reset: back under the selection, unpinned.
-        frame(&mut app, &ctx, vec![]);
-        app.run("window.taskBar.reset", json!({})).unwrap();
-        assert!(!app.ui.task_bar_place.pinned);
-        near(select(&mut app, &a), under_a);
-        near(select(&mut app, &b), under_b);
     }
 }

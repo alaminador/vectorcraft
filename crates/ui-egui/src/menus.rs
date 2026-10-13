@@ -280,14 +280,6 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "",
         "{} put the current (Basic or Advanced) toolbar back as it ships, undoing Edit Toolbar's changes; returns its slots",
     ),
-    ("window.taskBar", "Contextual Task Bar", "", "{}"),
-    (
-        "window.taskBar.pin",
-        "Pin Bar Position",
-        "",
-        "{pinned?: bool} keep the Contextual Task Bar where it is instead of following the selection (true), let it follow the selection again from where it is (false) or toggle (omitted), as the bar's More Options menu does; returns the new state",
-    ),
-    ("window.taskBar.reset", "Reset Bar Position", "", "{} unpin the Contextual Task Bar and put it back under the selection"),
     ("window.dock", "Panels", "Tab", "{} show/hide all panels"),
     ("window.variables", "Variables", "", "{} open the Local variables window (design variables: collections, modes, values)"),
     ("window.panel", "Show Panel", "", "{panel: id} e.g. layers, swatches, stroke (case-insensitive; display labels like \"Layers\" work too)"),
@@ -879,24 +871,6 @@ pub fn run_ui_command(app: &mut LogocraftApp, id: &str, p: &Value) -> Option<Res
             let Some(tool) = s("tool") else { return Some(Err("tool (a tool id) is required".into())) };
             crate::toolbar::float_group(app, &tool, floating).map(Value::Bool)
         }
-        "window.taskBar" => flag(&mut app.ui.task_bar),
-        "window.taskBar.pin" => {
-            let place = &mut app.ui.task_bar_place;
-            opt_bool(p, "pinned").map(|pinned| {
-                let pinned = pinned.unwrap_or(!place.pinned);
-                // Pinning holds the bar where it shows; unpinning lets it follow the selection from
-                // there (the bar turns its pinned spot into an offset when it is next drawn).
-                if pinned && !place.pinned {
-                    place.pin_at = place.shown_at;
-                }
-                place.pinned = pinned;
-                json!(pinned)
-            })
-        }
-        "window.taskBar.reset" => {
-            app.ui.task_bar_place = Default::default();
-            Ok(Value::Null)
-        }
         "window.dock" => {
             let on = !(app.ui.dock && app.ui.toolbar);
             app.ui.dock = on;
@@ -1160,8 +1134,6 @@ pub fn checked(app: &LogocraftApp, id: &str, p: &Value) -> Option<bool> {
             let tool = p.get("tool").and_then(Value::as_str).unwrap_or("");
             app.ui.floating_flyouts.iter().any(|f| f.tools.iter().any(|id| id == tool))
         }
-        "window.taskBar" => app.ui.task_bar,
-        "window.taskBar.pin" => app.ui.task_bar_place.pinned,
         "window.panel" => {
             let panel = p.get("panel").and_then(Value::as_str).unwrap_or("");
             let canonical = normalize_panel(panel);
@@ -2090,7 +2062,6 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 sub("Workspace", crate::workspaces::menu_items()),
                 Sep,
                 c("Control", "window.control"),
-                c("Contextual Task Bar", "window.taskBar"),
                 c("Variables", "window.variables"),
                 c("Tools", "window.toolbar"),
                 sub("Toolbars", vec![c("Advanced", "window.toolbarAdvanced"), c("Double Column", "window.toolbarColumns")]),

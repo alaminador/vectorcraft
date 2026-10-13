@@ -58,7 +58,7 @@ the two can still win that race.
 | `engine.execute` | `{command, params}` | run any engine or UI command (see `engine.commands`) |
 | `engine.commands` | | every command with label, shortcut, params doc, enablement |
 | `document.inspect` | `{depth?, childLimit?}` | layer tree, selection, the key object (`key`, null without one), history, paint defaults; the options slice the layer tree as `document.node {summary: true}` does. Each node reports `opacity` below 1 and `blend` when it isn't Normal; objects and compound paths report `fill`, `stroke` and `strokeWidth`, a compound path's members `compoundMember: true` instead |
-| `ui.inspect` | | tool, UI state, `screenMode` (0 normal, 1 full screen with menu bar, 2 full screen, 3 Presentation Mode), `taskBar` (`pinned`, and `rect` `[x, y, w, h]` while the Contextual Task Bar shows), `freeTransformWidget` (`[x, y, w, h]` while the Free Transform widget shows), view, canvas rect, window size, perf, background saves and exports still running, `nativeMenuBar` (true when the menus are in the macOS menu bar rather than the window; `ui.menu.list` lists the in-window menus either way), `fileDialog` (`"open"`, `"place"`, `"save"` or `"folder"` while a native file dialog is open, `null` otherwise; see below) |
+| `ui.inspect` | | tool, UI state, `screenMode` (0 normal, 1 full screen with menu bar, 2 full screen, 3 Presentation Mode), `freeTransformWidget` (`[x, y, w, h]` while the Free Transform widget shows), view, canvas rect, window size, perf, background saves and exports still running, `nativeMenuBar` (true when the menus are in the macOS menu bar rather than the window; `ui.menu.list` lists the in-window menus either way), `fileDialog` (`"open"`, `"place"`, `"save"` or `"folder"` while a native file dialog is open, `null` otherwise; see below) |
 | `ui.menu.list` / `ui.menu.invoke` | `{command, params}` | the full menu tree / invoke an item |
 | `ui.contextMenu.list` | | the canvas context menu for the current selection, flattened like `ui.menu.list` (`path` holds its submenus). `ui.click {x, y, button: "right"}` on the canvas opens it, after selecting the object there unless it is already selected |
 | `ui.tool.select` / `ui.tool.list` | `{tool}` | |
@@ -260,14 +260,7 @@ group), from the toolbar into it to remove it, or within the toolbar to move it.
 place?}`, `toolbar.removeTool {tool, group?}` and `toolbar.reset` do the same for the current Basic or Advanced
 toolbar and return its slots; the edits (`ui.toolbar_edits`) are saved with the preferences.
 
-The Contextual Task Bar: its handle (the grip at its left end) drags it anywhere on the canvas, which always holds
-it whole, also when the window shrinks. Unpinned, the bar keeps that offset as it follows the selection, until
-another document becomes active. Its More Options (…) menu has Hide Bar (`window.taskBar`); Pin Bar Position
-(`window.taskBar.pin {pinned?}`, omitted toggles, checked while pinned), which holds the bar where it is across
-selection changes (the handle still moves it) and, turned off, lets it follow the selection again from there; Reset
-Bar Position (`window.taskBar.reset`), which unpins it and puts it back under the selection; and Show Properties
-Panel. As in Illustrator, neither the position nor the pin is saved: each launch starts with the bar under the
-selection.
+LogoCraft has no Contextual Task Bar (removed at the owner's request): the Properties panel holds those actions.
 
 The Free Transform widget: while the Free Transform tool (E) is active, a small box at the canvas's top left holds
 Constrain over the tool's three modes, Free Transform, Perspective Distort and Free Distort. The buttons set the tool's

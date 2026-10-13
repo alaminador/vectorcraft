@@ -364,6 +364,30 @@ pub struct Artboard {
     pub show_center_mark: bool,
     #[serde(default)]
     pub show_cross_hairs: bool,
+    /// Its background colour, as a Figma frame's fill (None: white paper). Drawn under the art on
+    /// screen and in exports.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fill: Option<logocraft_color::Color>,
+    /// Clip content, as a Figma frame's: art on it ([`Document::art_in_frame`]) shows only inside.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clip: bool,
+    /// Corner radius of its paper, fill and clip (points).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub radius: f64,
+}
+
+fn is_zero(v: &f64) -> bool {
+    *v == 0.0
+}
+
+impl Artboard {
+    /// Its outline: the rectangle, its corners rounded by `radius`.
+    pub fn outline(&self) -> kurbo::BezPath {
+        use kurbo::Shape;
+        let r = self.radius.max(0.0).min(self.rect.width().min(self.rect.height()) / 2.0);
+        let k = kurbo::Rect::new(self.rect.x0, self.rect.y0, self.rect.x1, self.rect.y1);
+        if r > 0.0 && r.is_finite() { k.to_rounded_rect(r).to_path(0.1) } else { k.to_path(0.1) }
+    }
 }
 
 /// Opacity-mask editing mode: `object`'s mask art lives on the temporary `layer` while editing.
@@ -723,6 +747,9 @@ impl Document {
                 rect: Rect::new(0.0, 0.0, width, height),
                 show_center_mark: false,
                 show_cross_hairs: false,
+                fill: None,
+                clip: false,
+                radius: 0.0,
             }],
             layers: vec![],
             swatches: swatches.into(),
@@ -1123,6 +1150,27 @@ impl Document {
                     && b.y1 <= rect.y1
                 {
                     out.push(c.id);
+                }
+            }
+        }
+        let mut art = vec![];
+        for l in self.layers.iter().filter(|l| l.rides_with_artboard(locked_and_hidden)) {
+            collect(l, rect, locked_and_hidden, &mut art);
+        }
+        art
+    }
+    /// The art of a frame-like artboard at `rect`, as clipping and moving it see it: top-level
+    /// objects whose centre lies on it (so art reaching past its edges belongs to it too).
+    pub fn art_in_frame(&self, rect: Rect, locked_and_hidden: bool) -> Vec<NodeId> {
+        fn collect(n: &Node, rect: Rect, all: bool, out: &mut Vec<NodeId>) {
+            for c in n.children().into_iter().flatten().filter(|c| c.rides_with_artboard(all)) {
+                if c.is_layer() {
+                    collect(c, rect, all, out);
+                } else if let Some(b) = c.geometric_bounds() {
+                    let m = b.center();
+                    if m.x >= rect.x0 && m.y >= rect.y0 && m.x <= rect.x1 && m.y <= rect.y1 {
+                        out.push(c.id);
+                    }
                 }
             }
         }

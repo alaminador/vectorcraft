@@ -1,11 +1,11 @@
 //! The Fill/Stroke proxies and chips (toolbar, Control bar, Properties), their fill picker
 //! popovers, the Recolor quick action and the panel shortcuts (M3.51).
 
-use egui::{Color32, Event, Modifiers, PointerButton, Pos2, Rect, Shape, vec2};
+use egui::{Event, Modifiers, PointerButton, Pos2, Rect, Shape, vec2};
 use logocraft_engine::Session;
 use serde_json::json;
 
-use crate::{LogocraftApp, chrome, panels, shortcut_editor, shortcuts, toolbar};
+use crate::{LogocraftApp, chrome, panels, shortcut_editor, shortcuts};
 
 fn app() -> LogocraftApp {
     let mut app = LogocraftApp::new(Session::new(), Default::default());
@@ -49,15 +49,6 @@ fn picker_tab(app: &mut LogocraftApp, ctx: &egui::Context, tab: &str, draw: fn(&
     click(app, ctx, r.center(), Modifiers::NONE, draw);
 }
 
-/// Whether `shapes` paint a rectangle filled with `color`.
-fn paints_rect(shapes: &[Shape], color: Color32) -> bool {
-    shapes.iter().any(|s| match s {
-        Shape::Rect(r) => r.fill == color,
-        Shape::Vec(v) => paints_rect(v, color),
-        _ => false,
-    })
-}
-
 /// The Fill and Stroke chips (22 pt squares with a chevron): left to right in the Control bar,
 /// top to bottom in the Properties panel.
 fn chips(ctx: &egui::Context) -> (Rect, Rect) {
@@ -74,17 +65,6 @@ fn control_bar(app: &mut LogocraftApp, ui: &mut egui::Ui) {
 
 fn fill_hex(app: &LogocraftApp) -> String {
     panels::current_paints(app).0.color().map(|c| c.to_hex()).unwrap_or_default()
-}
-
-#[test]
-fn red_text_shows_a_red_toolbar_fill() {
-    let mut app = app();
-    app.run("text.create", json!({"x": 20, "y": 60, "text": "Red"})).unwrap();
-    app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
-    let ctx = context();
-    frame(&mut app, &ctx, vec![], Modifiers::NONE, toolbar::show);
-    let shapes = frame(&mut app, &ctx, vec![], Modifiers::NONE, toolbar::show);
-    assert!(paints_rect(&shapes, Color32::from_rgb(255, 0, 0)), "the toolbar's Fill proxy shows the type's red");
 }
 
 #[test]

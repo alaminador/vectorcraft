@@ -114,6 +114,7 @@ fn white_background_hides_the_grid_and_paper_tints_the_artboard() {
 fn an_artboard_name_stays_at_its_corner_in_a_rotated_view() {
     let mut app = app();
     app.run("artboard.new", json!({})).unwrap();
+    let name = app.session.active().unwrap().doc.artboards[0].name.clone();
     for rotation in [0.0, 60.0, -74.0] {
         app.view_mut().unwrap().rotation = rotation;
         let (shapes, _, _) = frame(&mut app);
@@ -123,7 +124,7 @@ fn an_artboard_name_stays_at_its_corner_in_a_rotated_view() {
         let label = all
             .iter()
             .find_map(|s| match s {
-                egui::Shape::Text(t) if t.galley.text().starts_with("01 - ") => Some(t.pos + egui::vec2(0.0, t.galley.size().y + 4.0)),
+                egui::Shape::Text(t) if t.galley.text() == name => Some(t.pos + egui::vec2(0.0, t.galley.size().y + 4.0)),
                 _ => None,
             })
             .unwrap_or_else(|| panic!("{rotation}°: no name"));

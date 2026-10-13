@@ -372,6 +372,8 @@ fn artboard_sections(app: &mut LogocraftApp, ui: &mut Ui) {
         artboard_size_row(app, ui, i, ab.rect.width(), ab.rect.height());
         ui.add_space(2.0);
         super::artboards::art_options(app, ui);
+        divider(ui);
+        frame_section(app, ui, i, &ab);
     }
     ui.add_space(4.0);
     let w = (ui.available_width() - 6.0) / 2.0;
@@ -389,6 +391,57 @@ fn artboard_sections(app: &mut LogocraftApp, ui: &mut Ui) {
         rearrange_button(app, ui, n, w);
         if widgets::flat_button(ui, tl!("Exit"), w).clicked() {
             app.select_tool("selection");
+        }
+    });
+}
+
+/// An artboard as a Figma frame: its fill (white paper when none), Clip content and corner radius.
+fn frame_section(app: &mut LogocraftApp, ui: &mut Ui, i: usize, ab: &logocraft_doc::Artboard) {
+    section_header(ui, tl!("Frame"));
+    let shown = ab.fill.unwrap_or(logocraft_color::Color::WHITE);
+    ui.horizontal(|ui| {
+        let (rect, resp) = ui.allocate_exact_size(egui::vec2(22.0, 22.0), egui::Sense::click());
+        widgets::swatch_tile(ui, rect, &logocraft_color::Paint::solid(shown), false, resp.hovered());
+        let resp = resp.on_hover_text(tl!("Fill"));
+        widgets::popover(&resp, resp.clicked(), |ui| {
+            ui.set_width(super::fill_picker::WIDTH);
+            let e = super::fill_picker::color_controls(ui, &format!("ab-fill-{i}"), shown, None);
+            if let Some((c, phase)) = e.color {
+                super::live_run(app, "Artboard Frame", "artboard.setFrame", json!({ "index": i, "fill": c.to_hex() }), phase);
+            }
+        });
+        ui.label(egui::RichText::new(tl!("Fill")).size(12.0));
+        ui.add_space(4.0);
+        match ab.fill {
+            Some(c) => {
+                if let Some(t) =
+                    widgets::text_field(ui, ("ab-fill-hex", i), Some(c.to_hex().trim_start_matches('#').to_ascii_uppercase().as_str()), 64.0, 1)
+                    && let Some(c) = logocraft_color::Color::from_hex(t.trim())
+                {
+                    app.run("artboard.setFrame", json!({ "index": i, "fill": c.to_hex() })).ok();
+                }
+                if widgets::icon_button(ui, "minus", tl!("Remove fill (white paper)"), false, 22.0).clicked() {
+                    app.run("artboard.setFrame", json!({ "index": i, "fill": null })).ok();
+                }
+            }
+            None => {
+                dim_label(ui, tl!("White"));
+            }
+        }
+    });
+    let mut clip = ab.clip;
+    if ui
+        .checkbox(&mut clip, tl!("Clip content"))
+        .on_hover_text(tl!("Art centred on the artboard shows only inside it, as in a Figma frame"))
+        .changed()
+    {
+        app.run("artboard.setFrame", json!({ "index": i, "clip": clip })).ok();
+    }
+    let fw = super::field_width(ui);
+    ui.horizontal(|ui| {
+        dim_label(ui, tl!("Corner Radius:"));
+        if let Some(r) = widgets::num_field(ui, ("ab-radius", i), Some(ab.radius), app.session.general_unit(), fw) {
+            app.run("artboard.setFrame", json!({ "index": i, "radius": r.max(0.0) })).ok();
         }
     });
 }

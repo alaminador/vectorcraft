@@ -1,12 +1,11 @@
 //! The Tools panel. Default: Illustrator 2026's categorized single-column toolbar (Select, Shapes,
-//! Draw, Modify, Type, Navigate, Color). Window → Toolbars → Advanced shows every tool group; the
+//! Draw, Modify, Type, Navigate). Window → Toolbars → Advanced shows every tool group; the
 //! double arrow at the top (or Window → Toolbars → Double Column, `window.toolbarColumns`) lays the
 //! tools out in one or two columns.
-//! Bottom: fill/stroke proxy, colour/gradient/none, drawing modes, screen mode, Edit Toolbar (its
+//! Bottom: Edit Toolbar (its
 //! All Tools drawer and the toolbar edits it makes: `edit_toolbar`).
 
 use egui::{Color32, CornerRadius, Sense, Stroke, Ui, pos2, vec2};
-use logocraft_color::Paint;
 use logocraft_tools::{Mods, TOOL_GROUPS, ToolInfo, ToolKey, tool_info};
 use serde_json::{Value, json};
 
@@ -47,7 +46,6 @@ pub const BASIC: &[(&str, &[&[&str]])] = &[
     ("Modify", &[&["width"], &["rotate", "reflect", "scale", "shear", "freeTransform"], &["shapeBuilder"]]),
     ("Type", &[&["areaType", "typeOnPath"], &["type"]]),
     ("Navigate", &[&["zoom"], &["hand"]]),
-    ("Color", &[&["gradient"], &["eyedropper"]]),
 ];
 
 pub(crate) fn tip(t: &ToolInfo) -> String {
@@ -411,62 +409,11 @@ fn crop_options(app: &mut LogocraftApp, ui: &mut Ui) {
     ui.separator();
 }
 
-/// The Fill/Stroke proxy, Color/Gradient/None, the drawing modes, screen mode and Edit Toolbar, as
-/// large as the toolbar's `cols` (one or two) leave room for (#1129): in two columns the proxy and
-/// buttons grow and the three drawing modes show side by side.
-fn bottom_controls(app: &mut LogocraftApp, ui: &mut Ui, t: &Tokens, cols: usize) {
-    let two = cols == 2;
-    ui.vertical_centered(|ui| crate::panels::proxy(app, ui, if two { 54.0 } else { 36.0 }));
-    ui.add_space(5.0);
-    // Color (the last solid colour), Gradient (the last gradient) and None, as commands.
-    let (chip, gap) = if two { (17.0, 4.0) } else { (11.0, 2.0) };
-    ui.horizontal(|ui| {
-        ui.add_space((ui.available_width() - 3.0 * chip - 2.0 * gap) / 2.0);
-        ui.spacing_mut().item_spacing.x = gap;
-        let mut clicked = None;
-        for (tip, cmd) in [("Color (,)", "paint.lastColor"), ("Gradient (.)", "paint.lastGradient"), ("None (/)", "paint.none")] {
-            let (r, resp) = ui.allocate_exact_size(vec2(chip, chip), Sense::click());
-            match cmd {
-                "paint.lastColor" => widgets::paint_chip(ui, r, &Paint::solid(app.session.last_solid)),
-                "paint.lastGradient" => widgets::gradient_chip(ui, r, &app.session.last_gradient.gradient),
-                _ => widgets::paint_chip(ui, r, &Paint::None),
-            }
-            if resp.on_hover_text(tl!(tip)).clicked() {
-                clicked = Some(cmd);
-            }
-        }
-        if let Some(cmd) = clicked {
-            app.run(cmd, json!({})).ok();
-        }
-    });
-    ui.add_space(6.0);
-    let modes = [
-        (logocraft_engine::DrawMode::Normal, "dc-draw-normal", "Draw Normal", "normal"),
-        (logocraft_engine::DrawMode::Behind, "dc-draw-behind", "Draw Behind", "behind"),
-        (logocraft_engine::DrawMode::Inside, "dc-draw-inside", "Draw Inside", "inside"),
-    ];
-    if two {
-        // Side by side, each one a click away.
-        ui.horizontal(|ui| {
-            ui.add_space((ui.available_width() - 3.0 * 22.0) / 2.0);
-            for (mode, icon, name, id) in modes {
-                if widgets::icon_button(ui, icon, &format!("{} (Shift+D)", tl!(name)), app.session.draw_mode == mode, 22.0).clicked() {
-                    app.run("view.drawMode", json!({ "mode": id })).ok();
-                }
-            }
-        });
-    }
+/// Edit Toolbar's button at the bottom. LogoCraft's toolbar has no colour block (Fill/Stroke
+/// proxy, Color/Gradient/None, drawing and screen modes): colour lives in the Properties panel's
+/// Figma picker; the tools and modes keep their keys (G, I, Shift+D, F).
+fn bottom_controls(app: &mut LogocraftApp, ui: &mut Ui, _t: &Tokens, _cols: usize) {
     ui.vertical_centered(|ui| {
-        // One column: the current mode's button, which cycles them.
-        if !two
-            && let Some((mode, icon, name, _)) = modes.into_iter().find(|m| m.0 == app.session.draw_mode)
-            && widgets::icon_button(ui, icon, &format!("{} (Shift+D)", tl!(name)), mode != logocraft_engine::DrawMode::Normal, 26.0).clicked()
-        {
-            app.run("view.drawMode", json!({})).ok();
-        }
-        if widgets::icon_button(ui, "dc-screen-mode", "Change Screen Mode (F)", false, 26.0).clicked() {
-            app.run("view.screenMode", json!({})).ok();
-        }
         // Edit Toolbar: the All Tools drawer opens beside the toolbar, by this button.
         let edit = widgets::icon_button(ui, "ellipsis", "Edit Toolbar", app.ui.tools_drawer, 26.0);
         ui.data_mut(|d| d.insert_temp(crate::edit_toolbar::button_id(), edit.rect));
@@ -474,7 +421,6 @@ fn bottom_controls(app: &mut LogocraftApp, ui: &mut Ui, t: &Tokens, cols: usize)
             app.run("window.editToolbar", json!({})).ok();
         }
     });
-    let _ = t;
 }
 
 /// Where `window.floatTools` puts a strip (the next one a row lower), right of the toolbar; it's
@@ -888,8 +834,10 @@ pub(crate) mod tests {
         let mut app = LogocraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
         let ctx = egui::Context::default();
+        // Added to the end of the toolbar (it has no Color category): Gradient, then Eyedropper.
+        app.run("toolbar.addTool", json!({"tool": "gradient"})).unwrap();
+        app.run("toolbar.addTool", json!({"tool": "eyedropper"})).unwrap();
         let buttons = frame(&mut app, &ctx, 0.0, vec![]);
-        // The Color category's slots close the list: Gradient, then Eyedropper.
         let (gradient, eyedropper) = (buttons[buttons.len() - 2], buttons[buttons.len() - 1]);
         double_click(&mut app, &ctx, 1.0, gradient.center());
         assert_eq!((app.session.tool_id(), app.ui.open_panel.as_deref()), ("gradient", Some("gradient")));
@@ -1094,25 +1042,6 @@ pub(crate) mod tests {
         frame_in(app, ctx, time, vec![Event::PointerMoved(at), b(true)], height);
         frame_in(app, ctx, time + 0.05, vec![b(false)], height);
         frame_in(app, ctx, time + 0.1, vec![], height)
-    }
-
-    /// The Color, Gradient and None buttons grow with the toolbar, and in two columns the three
-    /// drawing modes sit side by side, each setting its mode (#1129).
-    #[test]
-    fn the_paint_and_drawing_mode_buttons_fit_the_toolbar_width() {
-        let mut app = LogocraftApp::new(Session::new(), Default::default());
-        app.run("file.new", serde_json::json!({"width": 200, "height": 200})).unwrap();
-        let ctx = egui::Context::default();
-        frame_in(&mut app, &ctx, 0.0, vec![], 900.0);
-        assert_eq!(widget_rects(&ctx, vec2(11.0, 11.0)).len(), 3, "one column: three 11 pt chips");
-        app.ui.toolbar_double = true;
-        frame_in(&mut app, &ctx, 1.0, vec![], 900.0);
-        assert_eq!(widget_rects(&ctx, vec2(17.0, 17.0)).len(), 3, "two columns: three 17 pt chips");
-        let modes = widget_rects(&ctx, vec2(22.0, 22.0));
-        assert_eq!(modes.len(), 3, "the three drawing modes side by side");
-        assert!(modes.iter().all(|r| (r.top() - modes[0].top()).abs() < 0.5), "{modes:?}");
-        click_in(&mut app, &ctx, 2.0, modes[1].center(), PointerButton::Primary, 900.0);
-        assert_eq!(app.session.draw_mode, logocraft_engine::DrawMode::Behind);
     }
 
     /// How many columns of tool buttons `rects` make.

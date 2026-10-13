@@ -435,9 +435,23 @@ fn combine_variants(s: &mut Session, p: &Value) -> Result<Value> {
     let bounds: Vec<logocraft_geom::Rect> = mains.iter().filter_map(|id| d.node(*id).and_then(|n| n.geometric_bounds())).collect();
     let union = bounds.iter().skip(1).fold(bounds.first().copied().unwrap_or(logocraft_geom::Rect::ZERO), |a, b| a.union(*b));
     let top = *mains.last().ok_or_else(|| EngineError::Other("nothing selected".into()))?;
+    // As they are arranged: a stack stays a column, a row a row, in their order on the page.
+    let centres: Vec<(NodeId, logocraft_geom::Point)> =
+        mains.iter().filter_map(|id| Some((*id, d.node(*id).and_then(|n| n.geometric_bounds())?.center()))).collect();
+    let spread = |f: fn(&logocraft_geom::Point) -> f64| {
+        let v: Vec<f64> = centres.iter().map(|(_, c)| f(c)).collect();
+        v.iter().copied().fold(f64::MIN, f64::max) - v.iter().copied().fold(f64::MAX, f64::min)
+    };
+    let vertical = spread(|c| c.y) > spread(|c| c.x);
+    let mut mains = mains;
+    let key = |id: &NodeId| centres.iter().find(|(m, _)| m == id).map(|(_, c)| if vertical { c.y } else { c.x }).unwrap_or(0.0);
+    mains.sort_by(|a, b| key(a).total_cmp(&key(b)));
     let id = s.edit("Combine as Variants", |d, sel| {
-        let mut layout = logocraft_doc::layout::AutoLayout::new(logocraft_doc::layout::Direction::Horizontal, 20.0, union);
+        use logocraft_doc::layout::{Align, AutoLayout, Direction};
+        let direction = if vertical { Direction::Vertical } else { Direction::Horizontal };
+        let mut layout = AutoLayout::new(direction, 20.0, union);
         layout.padding = [20.0; 4];
+        layout.align_cross = Align::Center;
         let set = super::autolayout::wrap_in_frame(d, &mains, top, layout, &name)?;
         if let Some(n) = d.node_mut(set) {
             n.extras_mut().component_set = Some(name.clone());

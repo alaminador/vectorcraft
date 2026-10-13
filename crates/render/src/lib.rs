@@ -435,6 +435,8 @@ pub struct Renderer {
     /// Clip paths pushed on the current context (path, rule, transform): starting the context
     /// again from a picture of it pushes them again (see [`Self::group`]).
     clip_paths: Vec<(BezPath, FillRule, Affine)>,
+    /// Top-level objects on a Clip content artboard, with its outline (set per frame).
+    frame_clips: std::collections::HashMap<NodeId, Arc<BezPath>>,
     /// What clipping paths paint, per clipping path (see [`Self::clip_paint_of`]).
     clip_paints: FrameCache<usize, ClipPaintEntry>,
     /// Gradients along or across strokes, keyed like `strokes` (see [`Self::fill_path_gradient`]).
@@ -545,6 +547,7 @@ impl Renderer {
             backdrop: None,
             blends: PtrMap::default(),
             clip_paths: vec![],
+            frame_clips: Default::default(),
             clip_paints: FrameCache::new(lru::CLIP_BUDGET, 256),
             stroke_slices: PtrMap::default(),
             adjusts: HashMap::new(),
@@ -677,6 +680,26 @@ impl Renderer {
             ctx.set_paint(peniko::Color::WHITE);
             for ab in &f.doc.artboards {
                 ctx.fill_rect(&ab.rect);
+            }
+        }
+        // Artboard fills (a Figma frame's fill): under the art on screen and in exports alike.
+        if !opts.outline {
+            ctx.set_transform(f.view);
+            for ab in &f.doc.artboards {
+                if let Some(c) = &ab.fill {
+                    ctx.set_paint(f.ink.fixed(c.to_rgba8(1.0)));
+                    ctx.fill_path(&ab.outline());
+                }
+            }
+        }
+        // Clip content: the art on such an artboard shows only inside it.
+        self.frame_clips.clear();
+        if !opts.outline {
+            for ab in f.doc.artboards.iter().filter(|a| a.clip) {
+                let outline = Arc::new(ab.outline());
+                for id in f.doc.art_in_frame(ab.rect, true) {
+                    self.frame_clips.entry(id).or_insert_with(|| outline.clone());
+                }
             }
         }
         (self.nested, self.backdrop) = (0, None);
@@ -920,6 +943,12 @@ impl Renderer {
 
     fn draw_arc(&mut self, ctx: &mut RenderContext, f: &Frame, a: &Arc<Node>) {
         if self.skipped(f, a) {
+            return;
+        }
+        if let Some(clip) = self.frame_clips.remove(&a.id) {
+            // Once: the object draws inside its artboard's clip, then as usual.
+            self.group(ctx, f, Composite { clip: Some((&clip, FillRule::NonZero)), ..Default::default() }, &mut |r, c, fr| r.draw_arc(c, fr, a));
+            self.frame_clips.insert(a.id, clip);
             return;
         }
         if let Some(m) = a.extras().mask.as_deref()

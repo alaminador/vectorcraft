@@ -336,8 +336,8 @@ fn heading(id: &str) -> &'static str {
         return cat;
     }
     match id {
-        // With the Eyedropper, as in the Advanced toolbar.
-        "measure" => "Color",
+        // The Basic toolbar has no Color category: they keep that heading in the drawer.
+        "gradient" | "eyedropper" | "measure" => "Color",
         "artboard" => "Artboards",
         _ => "More",
     }
@@ -579,7 +579,7 @@ mod tests {
         assert!(all.iter().all(|id| listed.contains(id)));
         let heads: Vec<&str> = s.iter().map(|(c, _)| *c).collect();
         assert_eq!(&heads[..3], ["Select", "Shapes", "Draw"]);
-        assert!(heads.contains(&"Color") && heads.contains(&"Artboards"), "{heads:?}");
+        assert!(heads.contains(&"Artboards"), "{heads:?}");
         assert!(!heads.contains(&"More"), "every tool has a named heading: {heads:?}");
     }
 

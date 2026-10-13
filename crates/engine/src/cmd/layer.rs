@@ -148,6 +148,15 @@ pub fn specs() -> Vec<CommandSpec> {
             artboard_set
         ),
         cmd!(
+            "artboard.setFrame",
+            "Artboard Frame",
+            ["Window", "Artboards"],
+            None,
+            "{index?, fill?: hex|{c,m,y,k}|null (null: white paper), clip?: bool (Clip content: art centred on it shows only inside), radius?: number (corner radius, pt)} the artboard as a Figma frame",
+            has_doc,
+            artboard_set_frame
+        ),
+        cmd!(
             "artboard.fitToArt",
             "Fit to Artwork Bounds",
             ["Object", "Artboards"],
@@ -756,7 +765,7 @@ fn artboard_new(s: &mut Session, p: &Value) -> Result<Value> {
     let idx = s.edit("New Artboard", |d, _| {
         let id = d.next_artboard_id();
         let name = str_param(p, "name").map(str::to_string).unwrap_or_else(|| format!("Artboard {}", d.artboards.len() + 1));
-        d.artboards.push(Artboard { id, name, rect: r, show_center_mark: false, show_cross_hairs: false });
+        d.artboards.push(Artboard { id, name, rect: r, show_center_mark: false, show_cross_hairs: false, fill: None, clip: false, radius: 0.0 });
         Ok(d.artboards.len() - 1)
     })?;
     Ok(json!({ "index": idx }))
@@ -778,6 +787,40 @@ fn artboard_delete(s: &mut Session, p: &Value) -> Result<Value> {
     ok()
 }
 
+fn artboard_set_frame(s: &mut Session, p: &Value) -> Result<Value> {
+    let i = p.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
+    s.doc()?.doc.artboards.get(i).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
+    let fill = match p.get("fill") {
+        None => None,
+        Some(Value::Null) => Some(None),
+        Some(v) => Some(Some(super::color_value(v).ok_or_else(|| EngineError::Other("bad `fill` colour".into()))?)),
+    };
+    let clip = p.get("clip").and_then(Value::as_bool);
+    let radius = match p.get("radius") {
+        None => None,
+        Some(v) => Some(
+            v.as_f64()
+                .filter(|r| r.is_finite() && *r >= 0.0)
+                .ok_or_else(|| EngineError::Other("`radius` must be a number ≥ 0".into()))?
+                .min(100_000.0),
+        ),
+    };
+    s.edit("Artboard Frame", |d, _| {
+        let a = d.artboards.get_mut(i).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
+        if let Some(f) = fill {
+            a.fill = f;
+        }
+        if let Some(c) = clip {
+            a.clip = c;
+        }
+        if let Some(r) = radius {
+            a.radius = r;
+        }
+        Ok(())
+    })?;
+    Ok(Value::Null)
+}
+
 fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
     let i = p.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
     let was = s.doc()?.doc.artboards.get(i).map(|a| a.rect).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
@@ -797,7 +840,9 @@ fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
         // whatever the preference is then.
         let all = bool_or(p, "lockedAndHidden", s.prefs.move_locked_with_artboard);
         s.note_journal("lockedAndHidden", json!(all));
-        s.doc()?.doc.art_on_artboard(was, all)
+        let d = &s.doc()?.doc;
+        // A Clip content artboard carries its art as a frame does, reaching past its edges too.
+        if d.artboards.get(i).is_some_and(|a| a.clip) { d.art_in_frame(was, all) } else { d.art_on_artboard(was, all) }
     } else {
         vec![]
     };

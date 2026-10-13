@@ -13,11 +13,8 @@ use crate::theme::{self, Brightness, Tokens};
 use crate::{LogocraftApp, widgets};
 
 /// UI-only fields shown in the dialog (backed by `UiState`, not engine prefs).
-pub const UI_FIELDS: &[(&str, &str, &str)] = &[
-    ("__smartGuides", "Smart Guides", "Smart Guides (View → Smart Guides)"),
-    ("__snapToGrid", "Guides & Grid", "Snap to Grid"),
-    ("__taskBar", "General", "Enable Contextual Task Bar"),
-];
+pub const UI_FIELDS: &[(&str, &str, &str)] =
+    &[("__smartGuides", "Smart Guides", "Smart Guides (View → Smart Guides)"), ("__snapToGrid", "Guides & Grid", "Snap to Grid")];
 
 pub fn open(app: &mut LogocraftApp, category: Option<&str>) {
     // One field per preference key or group (the flattener presets have commands of their own).
@@ -31,7 +28,6 @@ pub fn open(app: &mut LogocraftApp, category: Option<&str>) {
     fields.insert("__category".into(), json!(cat));
     fields.insert("__smartGuides".into(), json!(app.ui.view.smart_guides));
     fields.insert("__snapToGrid".into(), json!(app.ui.view.snap_to_grid));
-    fields.insert("__taskBar".into(), json!(app.ui.task_bar));
     app.ui.dialog = Some(Dialog { kind: "preferences".into(), fields });
 }
 
@@ -42,7 +38,6 @@ pub fn confirm(app: &mut LogocraftApp) -> Result<Value, String> {
     app.run("prefs.set", json!({ "values": values }))?;
     app.ui.view.smart_guides = d.fields.get("__smartGuides").and_then(Value::as_bool).unwrap_or(app.ui.view.smart_guides);
     app.ui.view.snap_to_grid = d.fields.get("__snapToGrid").and_then(Value::as_bool).unwrap_or(app.ui.view.snap_to_grid);
-    app.ui.task_bar = d.fields.get("__taskBar").and_then(Value::as_bool).unwrap_or(app.ui.task_bar);
     app.ui.dialog = None;
     app.ui.engine_prefs = app.session.prefs.to_json();
     Ok(Value::Null)

@@ -20,7 +20,6 @@ pub struct Workspace {
     pub toolbar: bool,
     pub toolbar_double: bool,
     pub toolbar_advanced: bool,
-    pub task_bar: bool,
     pub dock: bool,
     pub dock_tab: DockTab,
     /// The dock's tabbed group is collapsed to icons (built-in workspaces: expanded).
@@ -66,7 +65,6 @@ pub fn builtins() -> Vec<Workspace> {
             x.control_bar = true;
             x.rulers = true;
             x.toolbar_advanced = true;
-            x.task_bar = false;
             x.open_panel = Some("color".into());
         }),
         w("Automation", &|x| {
@@ -98,7 +96,6 @@ pub fn builtins() -> Vec<Workspace> {
             x.control_bar = true;
             x.toolbar_advanced = true;
             x.dock_tab = DockTab::Layers;
-            x.task_bar = false;
         }),
         w("Typography", &|x| {
             x.control_bar = true;
@@ -128,7 +125,6 @@ pub fn capture(ui: &UiState, name: &str) -> Workspace {
         toolbar: ui.toolbar,
         toolbar_double: ui.toolbar_double,
         toolbar_advanced: ui.toolbar_advanced,
-        task_bar: ui.task_bar,
         dock: ui.dock,
         dock_tab: ui.dock_tab,
         dock_collapsed: ui.dock_collapsed,
@@ -150,7 +146,6 @@ pub fn apply(ui: &mut UiState, w: &Workspace) {
     ui.toolbar = w.toolbar;
     ui.toolbar_double = w.toolbar_double;
     ui.toolbar_advanced = w.toolbar_advanced;
-    ui.task_bar = w.task_bar;
     ui.dock = w.dock;
     ui.dock_tab = w.dock_tab;
     ui.dock_collapsed = w.dock_collapsed;

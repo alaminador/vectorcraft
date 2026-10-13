@@ -249,12 +249,6 @@ pub struct UiState {
     /// Advanced toolbar (every tool group) instead of the categorized Basic toolbar.
     #[serde(default)]
     pub toolbar_advanced: bool,
-    #[serde(default = "yes")]
-    pub task_bar: bool,
-    /// Where the Contextual Task Bar was dragged or pinned. Not saved, as in Illustrator: the bar
-    /// starts under the selection at every launch.
-    #[serde(skip)]
-    pub task_bar_place: TaskBarPlace,
     /// Last tool shown in each toolbar slot (keyed by the slot's first tool id).
     #[serde(default)]
     pub slot_tool: std::collections::BTreeMap<String, String>,
@@ -437,24 +431,6 @@ pub struct ToolbarEdits {
     pub advanced: Option<Vec<ToolbarCategory>>,
 }
 
-/// Where the Contextual Task Bar sits once its handle has moved it (`window.taskBar.pin`,
-/// `window.taskBar.reset`).
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct TaskBarPlace {
-    /// More Options › Pin Bar Position: the bar stays where it is instead of following the selection.
-    pub pinned: bool,
-    /// Where a pinned bar's top-left corner sits from the canvas's top-left (none when it was
-    /// pinned before it ever showed, until it is drawn). Unpinning leaves it for the next frame
-    /// to turn into `offset`.
-    pub pin_at: Option<egui::Vec2>,
-    /// Where the bar was last drawn, from the canvas's top-left: where pinning holds it.
-    pub shown_at: Option<egui::Vec2>,
-    /// How far an unpinned bar was dragged from its place under the selection, which it keeps while
-    /// it follows the selection, and the document (`DocState::uid`) it was moved in: in another
-    /// document the bar starts under the selection again.
-    pub offset: Option<(u64, egui::Vec2)>,
-}
-
 /// A group of panels dragged out of the dock: it floats as a stack of tabs, one panel shown.
 ///
 /// Groups sharing a `column` float as one set, stacked top to bottom in list order, like the panel
@@ -579,8 +555,6 @@ impl Default for UiState {
             toolbar: true,
             toolbar_double: false,
             toolbar_advanced: false,
-            task_bar: true,
-            task_bar_place: TaskBarPlace::default(),
             slot_tool: Default::default(),
             floating_flyouts: vec![],
             toolbar_edits: ToolbarEdits::default(),
