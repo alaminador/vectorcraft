@@ -1355,6 +1355,7 @@ impl Session {
     /// undo step labelled `label`; inside one it just mutates (the interaction commits later).
     pub fn edit<T>(&mut self, label: &str, f: impl FnOnce(&mut Document, &mut Selection) -> Result<T>) -> Result<T> {
         let st = self.doc_mut()?;
+        let live = st.interaction.is_some();
         let before = st.doc.clone();
         let before_sel = st.selection.clone();
         let doc = Arc::make_mut(&mut st.doc);
@@ -1365,7 +1366,7 @@ impl Session {
                     // Main components: copies become instances, instances follow their main.
                     cmd::components::sync(&before, Arc::make_mut(&mut st.doc));
                     // Auto layout: frames lay their children out again.
-                    cmd::autolayout::sync(&before, Arc::make_mut(&mut st.doc));
+                    cmd::autolayout::sync(&before, Arc::make_mut(&mut st.doc), live);
                     // Inline graphics in text follow their symbols.
                     cmd::inline::refresh(&before, Arc::make_mut(&mut st.doc));
                     // Text Wrap: area type follows its wrap objects; then threads re-flow.
@@ -1493,6 +1494,14 @@ impl Session {
             ("Move", true) => it.label = "Copy".into(),
             ("Copy", false) if preview.0 == "object.transform" => it.label = "Move".into(),
             _ => {}
+        }
+        // Auto layout: a child dragged within its frame took its new place only now (while
+        // dragging it stayed under the pointer).
+        // (Only when the preview changed something: an unchanged document stays the same one, so
+        // no undo step is recorded for it.)
+        if !Arc::ptr_eq(&it.doc, &st.doc) {
+            let snapshot = it.doc.clone();
+            cmd::autolayout::sync(&snapshot, Arc::make_mut(&mut st.doc), false);
         }
         st.keep_interaction(it);
         if preview.0 == "object.transform" {
@@ -1809,6 +1818,8 @@ mod tests_typearea;
 mod tests_typescale;
 #[cfg(test)]
 mod tests_units;
+#[cfg(test)]
+mod tests_variants;
 #[cfg(test)]
 mod tests_webexport;
 #[cfg(test)]

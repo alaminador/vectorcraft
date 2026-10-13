@@ -222,3 +222,91 @@ fn shortcuts() {
     assert_eq!(find_command("layout.add").unwrap().shortcut, Some("Shift+A"));
     assert_eq!(find_command("layout.remove").unwrap().shortcut, Some("Alt+Shift+A"));
 }
+
+#[test]
+fn a_selected_frame_paints_and_shows_its_own_fill() {
+    let mut s = session();
+    let (f, [a, ..]) = three(&mut s);
+    s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
+    s.execute("paint.setFill", &json!({"color": "#00ff00"})).unwrap();
+    s.execute("select.set", &json!({"ids": [f.0]})).unwrap();
+    // The proxy shows the frame's (unpainted) background, not a mix of its children.
+    assert_eq!(s.proxy_paints().0, logocraft_color::Paint::None);
+    assert!(!s.proxy_mixed().0);
+    s.execute("paint.setFill", &json!({"color": "#ff0000"})).unwrap();
+    let bg = node(&s, f).children().unwrap()[0].clone();
+    assert_eq!(bg.appearance.fill_paint().color().unwrap().to_hex(), "#ff0000");
+    assert_eq!(node(&s, a).appearance.fill_paint().color().unwrap().to_hex(), "#00ff00", "children keep theirs");
+    assert_eq!(s.proxy_paints().0.color().unwrap().to_hex(), "#ff0000");
+}
+
+#[test]
+fn a_dragged_child_follows_the_pointer_and_drops_on_release() {
+    let mut s = session();
+    let (f, [a, b, c]) = three(&mut s);
+    s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
+    let start = bounds(&s, a);
+    s.begin_interaction("Move").unwrap();
+    s.preview("object.move", &json!({"dx": 100, "dy": 5})).unwrap();
+    // While dragging: where the pointer put it, the others where they were.
+    assert_eq!(bounds(&s, a).x0, start.x0 + 100.0);
+    let line = cmd::autolayout::drop_line(&s.doc().unwrap().doc, a).expect("a drop line");
+    assert!(line.0.x > bounds(&s, c).x0, "after c: {line:?}");
+    s.commit_interaction().unwrap();
+    let order: Vec<NodeId> = node(&s, f).children().unwrap().iter().skip(1).map(|c| c.id).collect();
+    assert_eq!(order, vec![b, c, a], "dropped after c");
+    assert_eq!(bounds(&s, b).x0, frame_of(&s, f).x0, "laid out on release");
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(bounds(&s, a), start, "one undo step");
+}
+
+#[test]
+fn clip_content_limits_and_guides() {
+    let mut s = session();
+    let (f, [a, b, _]) = three(&mut s);
+    s.execute("layout.set", &json!({"clip": true})).unwrap();
+    assert!(matches!(node(&s, f).kind, logocraft_doc::NodeKind::Group { clip: true, .. }));
+    assert_eq!(s.execute("layout.get", &json!({})).unwrap()["clip"], true);
+    // A filling child held by its max width.
+    s.execute("layout.set", &json!({"width": 300, "padding": 0, "gap": 10})).unwrap();
+    s.execute("layout.setItem", &json!({"ids": [b.0], "width": "fill", "maxWidth": 60})).unwrap();
+    assert!((bounds(&s, b).width() - 60.0).abs() < 1e-6, "{:?}", bounds(&s, b));
+    // The frame's own min height.
+    s.execute("layout.setItem", &json!({"ids": [f.0], "minHeight": 100})).unwrap();
+    assert!((frame_of(&s, f).height() - 100.0).abs() < 1e-6);
+    s.execute("layout.set", &json!({"ids": [f.0], "padding": 8})).unwrap();
+    let (padding, gaps) = cmd::autolayout::guides(&node(&s, f)).unwrap();
+    assert_eq!(padding.len(), 4);
+    assert_eq!(gaps.len(), 2);
+    assert!((gaps[0].x0 - bounds(&s, a).x1).abs() < 1e-6);
+}
+
+#[test]
+fn point_type_set_to_fill_becomes_auto_height_area_type() {
+    let mut s = session();
+    let t = id_of(&s.execute("text.create", &json!({"x": 10, "y": 30, "text": "Hello there"})).unwrap());
+    let r = rect(&mut s, 10.0, 60.0, 50.0, 20.0);
+    s.execute("select.set", &json!({"ids": [t.0, r.0]})).unwrap();
+    let f = id_of(&s.execute("layout.add", &json!({"direction": "vertical", "gap": 4})).unwrap());
+    s.execute("layout.set", &json!({"ids": [f.0], "width": 300})).unwrap();
+    s.execute("layout.setItem", &json!({"ids": [t.0], "width": "fill"})).unwrap();
+    let logocraft_doc::NodeKind::Text(text) = node(&s, t).kind else { panic!("not type") };
+    assert!(matches!(text.kind, logocraft_doc::TextKind::Area { .. }), "area type now");
+    assert_eq!(text.area.fit, logocraft_doc::AreaFit::AutoHeight);
+    assert!((bounds(&s, t).width() - 300.0).abs() < 1.0, "fills the frame: {:?}", bounds(&s, t));
+    let short = bounds(&s, t).height();
+    // Narrow the frame: the type wraps and grows downwards; the rectangle moves down with it.
+    s.execute("layout.set", &json!({"ids": [f.0], "width": 40})).unwrap();
+    assert!(bounds(&s, t).height() > short + 1.0, "{short} → {:?}", bounds(&s, t));
+    assert!((bounds(&s, r).y0 - (bounds(&s, t).y1 + 4.0)).abs() < 1e-6);
+}
+
+#[test]
+fn an_edit_away_from_frames_does_not_touch_them() {
+    let mut s = session();
+    let (f, _) = three(&mut s);
+    let before = s.doc().unwrap().doc.clone();
+    rect(&mut s, 300.0, 300.0, 10.0, 10.0);
+    let d = &s.doc().unwrap().doc;
+    assert!(std::ptr::eq(before.node(f).unwrap(), d.node(f).unwrap()), "the frame is still the same node");
+}

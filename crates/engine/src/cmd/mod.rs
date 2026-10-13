@@ -3,7 +3,7 @@
 pub(crate) mod appearance;
 mod assets;
 mod attributes;
-pub(crate) mod autolayout;
+pub mod autolayout;
 mod brushsym;
 mod buildcmds;
 pub mod clipboard;
@@ -396,6 +396,11 @@ pub(crate) fn leaf_targets(s: &Session, ids: &[NodeId]) -> Result<Vec<NodeId>> {
     let mut out = vec![];
     for id in ids {
         let Some(n) = d.node(*id) else { continue };
+        // An auto layout frame's fill and stroke are its background's (Figma's frame fill).
+        if let Some(bg) = autolayout::background_of(n) {
+            out.push(bg.id);
+            continue;
+        }
         match &n.kind {
             NodeKind::Group { .. } | NodeKind::Layer { .. } => n.walk(&mut |c| {
                 if !c.is_container() || matches!(c.kind, NodeKind::Compound { .. }) {

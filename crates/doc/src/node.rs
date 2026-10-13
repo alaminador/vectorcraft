@@ -562,6 +562,11 @@ pub struct NodeExtras {
     pub layout: Option<Box<crate::layout::AutoLayout>>,
     /// How this child of an auto layout frame sizes and whether it flows ([`crate::layout`]).
     pub layout_item: Option<crate::layout::LayoutItem>,
+    /// A component set (Figma's variants): this frame holds the variants of the component with
+    /// this name, each a main component with [`NodeExtras::variant`] properties.
+    pub component_set: Option<String>,
+    /// This main component's variant properties in its component set, in order (`State=Hover`).
+    pub variant: Option<Vec<(String, String)>>,
 }
 
 /// No extras: what [`Node::extras`] gives for a node without any.
@@ -579,6 +584,8 @@ static NO_EXTRAS: NodeExtras = NodeExtras {
     component: None,
     layout: None,
     layout_item: None,
+    component_set: None,
+    variant: None,
 };
 
 /// A node's [`NodeExtras`], if it has any ([`Node::extras`]). Extras that are all unset equal
@@ -712,6 +719,8 @@ impl Serialize for Node {
             e.component.is_none(),
             e.layout.is_none(),
             e.layout_item.is_none(),
+            e.component_set.is_none(),
+            e.variant.is_none(),
         ];
         let mut st = s.serialize_struct("Node", skips.iter().filter(|s| !**s).count())?;
         let mut skip = skips.into_iter();
@@ -749,6 +758,8 @@ impl Serialize for Node {
         field!("component", &e.component);
         field!("layout", &e.layout);
         field!("layout_item", &e.layout_item);
+        field!("component_set", &e.component_set);
+        field!("variant", &e.variant);
         st.end()
     }
 }
@@ -806,6 +817,10 @@ struct NodeWire {
     layout: Option<Box<crate::layout::AutoLayout>>,
     #[serde(default)]
     layout_item: Option<crate::layout::LayoutItem>,
+    #[serde(default)]
+    component_set: Option<String>,
+    #[serde(default)]
+    variant: Option<Vec<(String, String)>>,
 }
 
 impl From<NodeWire> for Node {
@@ -824,6 +839,8 @@ impl From<NodeWire> for Node {
             component: w.component,
             layout: w.layout,
             layout_item: w.layout_item,
+            component_set: w.component_set,
+            variant: w.variant,
         };
         Node {
             id: w.id,
@@ -1890,6 +1907,8 @@ mod tests {
             e.component = Some("Logo".into());
             e.layout = Some(Box::new(crate::layout::AutoLayout::new(Default::default(), 8.0, Default::default())));
             e.layout_item = Some(crate::layout::LayoutItem { absolute: true, ..Default::default() });
+            e.component_set = Some("Button".into());
+            e.variant = Some(vec![("State".into(), "Hover".into())]);
         }
         /// The top-level keys of a JSON object, in the order written.
         struct Keys(Vec<String>);
@@ -1933,6 +1952,8 @@ mod tests {
             "component",
             "layout",
             "layout_item",
+            "component_set",
+            "variant",
         ];
         assert_eq!(keys, order);
         assert_eq!(serde_json::from_value::<Node>(v).unwrap(), n);

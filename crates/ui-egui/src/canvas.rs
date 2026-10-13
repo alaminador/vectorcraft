@@ -415,6 +415,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     if app.ui.view.edges {
         hover_highlight(app, &painter, &xf);
         selection_overlay(app, &painter, &xf, overlays.iter().any(|o| matches!(o, Overlay::CurvePoint { .. })));
+        autolayout_overlay(app, &painter, &xf);
         if app.ui.view.text_threads {
             thread_overlay(app, &painter, &xf);
         }
@@ -1254,6 +1255,75 @@ fn stroke_path(p: &egui::Painter, bp: &BezPath, xf: &Xf, s: Stroke) {
 
 /// The colour object `id` is highlighted and selected in: its layer's colour, or Figma's component
 /// purple for a main component or an instance.
+/// Figma's auto layout pink: padding and gap guides and the drop line.
+const LAYOUT_PINK: Color32 = Color32::from_rgb(0xF2, 0x48, 0x9B);
+
+/// The component sets of the document (their frames' bounds), per document revision.
+fn component_sets(app: &LogocraftApp, ctx: &egui::Context) -> Vec<Rect> {
+    let Some(st) = app.session.active() else { return vec![] };
+    let key = (st.uid, st.revision);
+    if let Some((k, v)) = crate::panels::pstate::<Option<((u64, u64), Vec<Rect>)>>(ctx, "component-sets")
+        && k == key
+    {
+        return v;
+    }
+    let mut out = vec![];
+    st.doc.walk(|n| {
+        if n.extras().component_set.is_some()
+            && n.visible
+            && let Some(l) = n.extras().layout.as_deref()
+        {
+            out.push(l.frame);
+        }
+    });
+    crate::panels::set_pstate(ctx, "component-sets", Some((key, out.clone())));
+    out
+}
+
+/// Auto layout on the canvas, as Figma shows it: component sets in a dashed purple border; for
+/// the selected frame, its padding (pink bands) and the gaps between its children (pink
+/// hatching); while a child is dragged in its frame, the line where it will drop.
+fn autolayout_overlay(app: &LogocraftApp, p: &egui::Painter, xf: &Xf) {
+    for r in component_sets(app, p.ctx()) {
+        let mut q = xf.quad(r);
+        if let Some(first) = q.first().copied() {
+            q.push(first);
+        }
+        p.extend(Shape::dashed_line(&q, Stroke::new(1.0, crate::panels::properties::COMPONENT_PURPLE), 4.0, 3.0));
+    }
+    let Some(st) = app.session.active() else { return };
+    let busy = app.session.in_interaction();
+    if busy {
+        // The drop line of a child dragged in its frame.
+        for id in &st.selection.objects {
+            if let Some((a, b)) = logocraft_engine::cmd::autolayout::drop_line(&st.doc, *id) {
+                p.line_segment([xf.to_screen(a), xf.to_screen(b)], Stroke::new(2.0, LAYOUT_PINK));
+            }
+        }
+        return;
+    }
+    let [id] = st.selection.objects.as_slice() else { return };
+    let Some(n) = st.doc.node(*id) else { return };
+    let Some((padding, gaps)) = logocraft_engine::cmd::autolayout::guides(n) else { return };
+    let band = Color32::from_rgba_unmultiplied(0xF2, 0x48, 0x9B, 40);
+    for r in padding {
+        p.add(Shape::convex_polygon(xf.quad(r), band, Stroke::NONE));
+    }
+    for r in gaps {
+        let q = xf.quad(r);
+        p.add(Shape::convex_polygon(q.clone(), Color32::from_rgba_unmultiplied(0xF2, 0x48, 0x9B, 25), Stroke::NONE));
+        // Diagonal hatching across the gap.
+        let s = xf.rect_to_screen(r);
+        let step = 6.0;
+        let mut x = s.left() - s.height();
+        let clip = p.with_clip_rect(s.intersect(p.clip_rect()));
+        while x < s.right() {
+            clip.line_segment([pos2(x, s.bottom()), pos2(x + s.height(), s.top())], Stroke::new(1.0, LAYOUT_PINK.gamma_multiply(0.6)));
+            x += step;
+        }
+    }
+}
+
 fn selection_color(doc: &logocraft_doc::Document, id: logocraft_doc::NodeId) -> Color32 {
     match doc.node(id) {
         Some(n) if n.extras().component.is_some() || matches!(n.kind, NodeKind::SymbolInstance { .. }) => crate::panels::properties::COMPONENT_PURPLE,
@@ -1440,7 +1510,11 @@ fn hover_highlight(app: &LogocraftApp, p: &egui::Painter, xf: &Xf) {
     }
     let Some(st) = app.session.active() else { return };
     let Some(hit) = hit_at(app, h, xf.zoom) else { return };
-    let id = if app.session.tool_id() == "selection" { hit.top_object(st.isolation) } else { hit.leaf };
+    let id = if app.session.tool_id() == "selection" {
+        logocraft_tools::select::click_target(&st.doc, &st.selection, &hit, st.isolation)
+    } else {
+        hit.leaf
+    };
     if st.selection.contains(id) {
         return;
     }

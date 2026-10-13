@@ -260,7 +260,35 @@ pub(crate) fn frame_section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) -> bo
             run(app, "layout.set", json!({ "radius": v.max(0.0) }));
         }
     });
+    let mut clip = l.clip;
+    if ui.checkbox(&mut clip, tl!("Clip content")).changed() {
+        run(app, "layout.set", json!({ "clip": clip }));
+    }
+    limits_rows(app, ui, n, "al-own");
     true
+}
+
+/// Min and max width and height fields (blank: none); a frame's own, or a child's.
+fn limits_rows(app: &mut LogocraftApp, ui: &mut Ui, n: &Node, id: &str) {
+    let lim = n.extras().layout_item.map(|i| i.limits).unwrap_or_default();
+    for (axis, min_k, max_k, min, max) in
+        [("W", "minWidth", "maxWidth", lim.min_width, lim.max_width), ("H", "minHeight", "maxHeight", lim.min_height, lim.max_height)]
+    {
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 4.0;
+            label(ui, &format!("{} {axis}", tl!("Min")), 40.0);
+            let shown = |v: Option<f64>| v.map(|v| format!("{v}")).unwrap_or_default();
+            if let Some(t) = widgets::text_field(ui, (id, min_k), Some(&shown(min)), 52.0, 1) {
+                let v = t.trim().parse::<f64>().ok().filter(|v| v.is_finite() && *v >= 0.0);
+                run(app, "layout.setItem", json!({ "ids": [n.id.0], min_k: v }));
+            }
+            label(ui, tl!("Max"), 28.0);
+            if let Some(t) = widgets::text_field(ui, (id, max_k), Some(&shown(max)), 52.0, 1) {
+                let v = t.trim().parse::<f64>().ok().filter(|v| v.is_finite() && *v >= 0.0);
+                run(app, "layout.setItem", json!({ "ids": [n.id.0], max_k: v }));
+            }
+        });
+    }
 }
 
 /// The section for a selected child `n` of a frame. → whether it drew.
@@ -276,17 +304,17 @@ pub(crate) fn child_section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) -> bo
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 4.0;
             label(ui, axis, 14.0);
-            // Hug is a frame's; point type always hugs, so it has no Fill.
+            // Hug is a frame's (and point type's, which always hugs); Fill on point type makes it
+            // auto-height area type.
             let mut options: Vec<(&str, &str)> = vec![(tl!("Fixed"), "fixed")];
             if own.is_some() {
                 options.push((tl!("Hug contents"), "hug"));
             }
-            if !is_text_point {
-                options.push((tl!("Fill container"), "fill"));
-            }
+            options.push((tl!("Fill container"), "fill"));
             let current = match (sizing, own_sizing) {
                 (ItemSizing::Fill, _) => tl!("Fill container"),
                 (_, Some(Sizing::Hug)) => tl!("Hug contents"),
+                _ if is_text_point => tl!("Hug contents"),
                 _ => tl!("Fixed"),
             };
             let labels: Vec<&str> = options.iter().map(|(l, _)| *l).collect();
@@ -301,6 +329,9 @@ pub(crate) fn child_section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) -> bo
     let mut absolute = item.absolute;
     if ui.checkbox(&mut absolute, tl!("Absolute position")).on_hover_text(tl!("Out of the flow: stays where you put it")).changed() {
         run(app, "layout.setItem", json!({ "absolute": absolute }));
+    }
+    if !item.absolute {
+        limits_rows(app, ui, n, "al-item-limits");
     }
     true
 }
@@ -328,7 +359,7 @@ mod tests {
         assert!(text.lines().any(|l| l == "Add Auto Layout"), "a quick action: {text}");
         run(&mut app, "layout.add", json!({}));
         let text = crate::tests_labels::painted_text(&mut app, super::super::properties::show);
-        for s in ["Frame", "Auto layout", "Hug contents", "Gap", "Padding", "Fill", "Radius"] {
+        for s in ["Frame", "Auto layout", "Hug contents", "Gap", "Padding", "Fill", "Radius", "Clip content", "Max"] {
             assert!(text.lines().any(|l| l == s), "{s}: {text}");
         }
         assert!(!text.lines().any(|l| l == "Add Auto Layout"));

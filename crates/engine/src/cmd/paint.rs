@@ -225,6 +225,11 @@ fn same_in_proxy(a: &Paint, b: &Paint) -> bool {
 /// change ([`leaf_targets`]): groups and layers stand for their contents (and so do blends and
 /// other containers inside them), a compound path for its parts.
 pub(crate) fn painted<'a>(n: &'a Node, top: bool, out: &mut Vec<&'a Node>) {
+    // A selected auto layout frame shows its own fill and stroke (its background's).
+    if top && let Some(bg) = super::autolayout::background_of(n) {
+        out.push(bg);
+        return;
+    }
     let expand = match n.kind {
         NodeKind::Group { .. } | NodeKind::Layer { .. } => true,
         NodeKind::Compound { .. } => false,

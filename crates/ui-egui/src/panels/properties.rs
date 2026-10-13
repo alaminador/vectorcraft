@@ -27,6 +27,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         (_, n) if n > 1 => crate::i18n::tn(n as u64, "{n} Object", "{n} Objects"),
         (Some(n), _) if crate::panels::image_trace::is_trace(n) => tl!("Image Tracing").to_string(),
         (Some(n), _) if n.extras().component.is_some() => tl!("Main Component").to_string(),
+        (Some(n), _) if n.extras().component_set.is_some() => tl!("Component Set").to_string(),
         (Some(n), _) if n.extras().layout.is_some() => tl!("Frame").to_string(),
         (Some(n), _) if matches!(n.kind, NodeKind::SymbolInstance { .. }) => tl!("Instance").to_string(),
         (Some(n), _) => tl!(n.kind_label()).to_string(),
@@ -46,6 +47,12 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     if n_sel == 1
         && let Some(n) = &first
         && component_section(app, ui, n)
+    {
+        divider(ui);
+    }
+    if n_sel == 1
+        && let Some(n) = &first
+        && super::variants::section(app, ui, n)
     {
         divider(ui);
     }
@@ -136,6 +143,14 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     }
     if !first.as_ref().is_some_and(|n| n.extras().layout.is_some()) {
         actions.push((tl!("Add Auto Layout"), "layout.add"));
+    }
+    // Several main components: Figma's Combine as Variants.
+    let all_mains = n_sel > 1
+        && app.session.active().is_some_and(|st| {
+            st.selection.objects.iter().all(|id| st.doc.node(*id).is_some_and(|n| n.extras().component.is_some() && n.extras().variant.is_none()))
+        });
+    if all_mains {
+        actions.push((tl!("Combine as Variants"), "component.combineVariants"));
     }
     if multi_color(app, ui.ctx()) {
         actions.push((tl!("Recolor"), "ui.recolorDialog"));

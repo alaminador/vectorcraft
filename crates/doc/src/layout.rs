@@ -111,6 +111,9 @@ pub struct AutoLayout {
     pub cross_gap: f64,
     /// The frame's bounds (document space).
     pub frame: Rect,
+    /// Clip content: children are cut off at the frame's bounds (its background clips them).
+    #[serde(default, skip_serializing_if = "crate::skip::is_default")]
+    pub clip: bool,
 }
 
 impl AutoLayout {
@@ -128,6 +131,7 @@ impl AutoLayout {
             wrap: false,
             cross_gap: 0.0,
             frame,
+            clip: false,
         }
     }
     /// Move the bounds with the frame.
@@ -150,8 +154,45 @@ impl AutoLayout {
     }
 }
 
+/// Minimum and maximum width and height, pt (Figma's min/max: a hugging or filling size stays
+/// within them).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Limits {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_width: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_width: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_height: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_height: Option<f64>,
+}
+
+impl Limits {
+    /// `v` within `min..max` (a max below the min gives way to the min).
+    fn clamp(v: f64, min: Option<f64>, max: Option<f64>) -> f64 {
+        let v = match max.filter(|m| m.is_finite()) {
+            Some(m) => v.min(m),
+            None => v,
+        };
+        match min.filter(|m| m.is_finite()) {
+            Some(m) => v.max(m),
+            None => v,
+        }
+    }
+    pub fn width(&self, v: f64) -> f64 {
+        Self::clamp(v, self.min_width, self.max_width)
+    }
+    pub fn height(&self, v: f64) -> f64 {
+        Self::clamp(v, self.min_height, self.max_height)
+    }
+    pub fn is_empty(&self) -> bool {
+        *self == Limits::default()
+    }
+}
+
 /// A frame child's auto layout settings.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct LayoutItem {
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     pub width: ItemSizing,
@@ -163,6 +204,9 @@ pub struct LayoutItem {
     /// The frame's background (its fill, stroke and corners), kept to its bounds.
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     pub background: bool,
+    /// Min and max width and height (of a frame's own size too).
+    #[serde(default, flatten)]
+    pub limits: Limits,
 }
 
 impl LayoutItem {
@@ -179,6 +223,8 @@ pub struct Slot {
     pub h: f64,
     pub fill_w: bool,
     pub fill_h: bool,
+    /// Its min and max sizes (what Fill container gives it stays within them).
+    pub limits: Limits,
 }
 
 /// [`arrange`]'s result: the frame's bounds and each child's.
@@ -188,14 +234,16 @@ pub struct Arranged {
     pub items: Vec<Rect>,
 }
 
-/// Lay `slots` out in frame `l`: the frame's new bounds (its top-left corner stays) and each
-/// child's bounds, in order.
-pub fn arrange(l: &AutoLayout, slots: &[Slot]) -> Arranged {
+/// Lay `slots` out in frame `l` (whose own size stays within `own`): the frame's new bounds (its
+/// top-left corner stays) and each child's bounds, in order.
+pub fn arrange(l: &AutoLayout, own: &Limits, slots: &[Slot]) -> Arranged {
     let horizontal = l.direction == Direction::Horizontal;
     let [pt, pr, pb, pl] = l.padding.map(|p| if p.is_finite() { p } else { 0.0 });
     let (pm0, pm1, pc0, pc1) = if horizontal { (pl, pr, pt, pb) } else { (pt, pb, pl, pr) };
     let (main_sizing, cross_sizing) = l.sizings();
     let size = |s: &Slot| if horizontal { (s.w, s.h, s.fill_w, s.fill_h) } else { (s.h, s.w, s.fill_h, s.fill_w) };
+    let clamp_main = |lim: &Limits, v: f64| if horizontal { lim.width(v) } else { lim.height(v) };
+    let clamp_cross = |lim: &Limits, v: f64| if horizontal { lim.height(v) } else { lim.width(v) };
     let finite = |v: f64| if v.is_finite() { v.max(0.0) } else { 0.0 };
     let (fw, fh) = (l.frame.width(), l.frame.height());
     let (frame_main, frame_cross) = if horizontal { (fw, fh) } else { (fh, fw) };
@@ -244,10 +292,36 @@ pub fn arrange(l: &AutoLayout, slots: &[Slot]) -> Arranged {
                 let fills: Vec<usize> = line.iter().copied().filter(|i| slots.get(*i).is_some_and(|s| size(s).2)).collect();
                 if !fills.is_empty() {
                     let fixed: f64 = line.iter().filter(|i| !fills.contains(i)).filter_map(|i| mains.get(*i)).sum();
-                    let each = ((inner - fixed - gap * n.saturating_sub(1) as f64) / fills.len() as f64).max(1.0);
-                    for i in fills {
-                        if let Some(m) = mains.get_mut(i) {
-                            *m = each;
+                    let room = inner - fixed - gap * n.saturating_sub(1) as f64;
+                    // Share the room; a child held by its min or max keeps that, and the others
+                    // share what is left (a few rounds settle it).
+                    let mut open: Vec<usize> = fills.clone();
+                    let mut left = room;
+                    for _ in 0..fills.len() + 1 {
+                        if open.is_empty() {
+                            break;
+                        }
+                        let each = (left / open.len() as f64).max(1.0);
+                        let held: Vec<usize> = open
+                            .iter()
+                            .copied()
+                            .filter(|i| slots.get(*i).is_some_and(|s| (clamp_main(&s.limits, each) - each).abs() > 1e-9))
+                            .collect();
+                        if held.is_empty() {
+                            for i in &open {
+                                if let Some(m) = mains.get_mut(*i) {
+                                    *m = each;
+                                }
+                            }
+                            break;
+                        }
+                        for i in held {
+                            let v = slots.get(i).map_or(each, |s| clamp_main(&s.limits, each));
+                            if let Some(m) = mains.get_mut(i) {
+                                *m = v;
+                            }
+                            left -= v;
+                            open.retain(|o| *o != i);
                         }
                     }
                 }
@@ -260,9 +334,9 @@ pub fn arrange(l: &AutoLayout, slots: &[Slot]) -> Arranged {
         thick[li] = if line.iter().any(|i| slots.get(*i).is_some_and(|s| !size(s).3)) { own(false) } else { own(true) };
     }
 
-    let total_main = main_fixed.unwrap_or_else(|| lengths.iter().copied().fold(0.0, f64::max) + pm0 + pm1);
+    let total_main = clamp_main(own, main_fixed.unwrap_or_else(|| lengths.iter().copied().fold(0.0, f64::max) + pm0 + pm1));
     let content_cross = thick.iter().sum::<f64>() + cross_gap * lines.len().saturating_sub(1) as f64;
-    let total_cross = cross_fixed.unwrap_or(content_cross + pc0 + pc1);
+    let total_cross = clamp_cross(own, cross_fixed.unwrap_or(content_cross + pc0 + pc1));
     let inner_main = (total_main - pm0 - pm1).max(0.0);
     let inner_cross = (total_cross - pc0 - pc1).max(0.0);
     // One row spans the whole inner cross size (children fill or align in it); wrapped rows keep
@@ -280,7 +354,7 @@ pub fn arrange(l: &AutoLayout, slots: &[Slot]) -> Arranged {
         for i in line {
             let (Some(s), Some(m)) = (slots.get(*i), mains.get(*i)) else { continue };
             let (_, c, _, fill_c) = size(s);
-            let c = if fill_c { thick[li] } else { finite(c) };
+            let c = if fill_c { clamp_cross(&s.limits, thick[li]) } else { finite(c) };
             let off = cross_at + (thick[li] - c).max(0.0) * if fill_c { 0.0 } else { l.align_cross.factor() };
             let (x, y, w, h) = if horizontal { (main_at, off, *m, c) } else { (off, main_at, c, *m) };
             if let Some(r) = items.get_mut(*i) {
@@ -299,7 +373,7 @@ mod tests {
     use super::*;
 
     fn slot(w: f64, h: f64) -> Slot {
-        Slot { w, h, fill_w: false, fill_h: false }
+        Slot { w, h, fill_w: false, fill_h: false, limits: Limits::default() }
     }
 
     fn row(gap: f64) -> AutoLayout {
@@ -310,19 +384,19 @@ mod tests {
     fn a_hugging_row_puts_children_side_by_side_inside_the_padding() {
         let mut l = row(10.0);
         l.padding = [5.0, 8.0, 5.0, 8.0];
-        let a = arrange(&l, &[slot(40.0, 20.0), slot(30.0, 10.0)]);
+        let a = arrange(&l, &Limits::default(), &[slot(40.0, 20.0), slot(30.0, 10.0)]);
         assert_eq!(a.frame, Rect::new(10.0, 20.0, 10.0 + 8.0 + 40.0 + 10.0 + 30.0 + 8.0, 20.0 + 5.0 + 20.0 + 5.0));
         assert_eq!(a.items[0], Rect::new(18.0, 25.0, 58.0, 45.0));
         assert_eq!(a.items[1], Rect::new(68.0, 25.0, 98.0, 35.0), "top aligned");
         l.align_cross = Align::Center;
-        assert_eq!(arrange(&l, &[slot(40.0, 20.0), slot(30.0, 10.0)]).items[1].y0, 30.0);
+        assert_eq!(arrange(&l, &Limits::default(), &[slot(40.0, 20.0), slot(30.0, 10.0)]).items[1].y0, 30.0);
     }
 
     #[test]
     fn a_column_stacks_and_aligns_across() {
         let mut l = AutoLayout::new(Direction::Vertical, 4.0, Rect::new(0.0, 0.0, 0.0, 0.0));
         l.align_cross = Align::End;
-        let a = arrange(&l, &[slot(40.0, 20.0), slot(30.0, 10.0)]);
+        let a = arrange(&l, &Limits::default(), &[slot(40.0, 20.0), slot(30.0, 10.0)]);
         assert_eq!(a.frame, Rect::new(0.0, 0.0, 40.0, 34.0));
         assert_eq!(a.items[1], Rect::new(10.0, 24.0, 40.0, 34.0));
     }
@@ -334,16 +408,16 @@ mod tests {
         l.height = Sizing::Fixed;
         l.frame = Rect::new(0.0, 0.0, 200.0, 50.0);
         l.align_main = Align::Center;
-        let a = arrange(&l, &[slot(40.0, 20.0), slot(40.0, 20.0)]);
+        let a = arrange(&l, &Limits::default(), &[slot(40.0, 20.0), slot(40.0, 20.0)]);
         assert_eq!(a.frame, l.frame, "a fixed frame keeps its size");
         assert_eq!(a.items[0].x0, 55.0, "centred: (200 - 90) / 2");
         // Fill container takes what the others leave, across too.
-        let fill = Slot { w: 1.0, h: 1.0, fill_w: true, fill_h: true };
-        let a = arrange(&l, &[slot(40.0, 20.0), fill]);
+        let fill = Slot { w: 1.0, h: 1.0, fill_w: true, fill_h: true, limits: Limits::default() };
+        let a = arrange(&l, &Limits::default(), &[slot(40.0, 20.0), fill]);
         assert_eq!(a.items[1], Rect::new(50.0, 0.0, 200.0, 50.0));
         // Gap Auto spreads them edge to edge.
         l.gap_auto = true;
-        let a = arrange(&l, &[slot(40.0, 20.0), slot(40.0, 20.0), slot(40.0, 20.0)]);
+        let a = arrange(&l, &Limits::default(), &[slot(40.0, 20.0), slot(40.0, 20.0), slot(40.0, 20.0)]);
         assert_eq!((a.items[0].x0, a.items[1].x0, a.items[2].x1), (0.0, 80.0, 200.0));
     }
 
@@ -354,18 +428,34 @@ mod tests {
         l.frame = Rect::new(0.0, 0.0, 100.0, 0.0);
         l.wrap = true;
         l.cross_gap = 6.0;
-        let a = arrange(&l, &[slot(40.0, 20.0), slot(40.0, 20.0), slot(40.0, 30.0)]);
+        let a = arrange(&l, &Limits::default(), &[slot(40.0, 20.0), slot(40.0, 20.0), slot(40.0, 30.0)]);
         assert_eq!(a.items[1].x0, 50.0);
         assert_eq!(a.items[2], Rect::new(0.0, 26.0, 40.0, 56.0), "third child on the second row");
         assert_eq!(a.frame.height(), 56.0, "hugs both rows");
     }
 
     #[test]
+    fn min_and_max_hold_sizes() {
+        let mut l = row(0.0);
+        l.width = Sizing::Fixed;
+        l.frame = Rect::new(0.0, 0.0, 300.0, 20.0);
+        let capped = Slot { w: 1.0, h: 10.0, fill_w: true, fill_h: false, limits: Limits { max_width: Some(50.0), ..Default::default() } };
+        let free = Slot { w: 1.0, h: 10.0, fill_w: true, fill_h: false, limits: Limits::default() };
+        let a = arrange(&l, &Limits::default(), &[capped, free]);
+        assert_eq!(a.items[0].width(), 50.0, "held by its max");
+        assert_eq!(a.items[1].width(), 250.0, "the other takes the rest");
+        // A hugging frame stays within its own min.
+        let hug = row(0.0);
+        let a = arrange(&hug, &Limits { min_width: Some(120.0), ..Default::default() }, &[slot(40.0, 10.0)]);
+        assert_eq!(a.frame.width(), 120.0);
+    }
+
+    #[test]
     fn bad_numbers_do_not_spread() {
         let mut l = row(f64::NAN);
         l.padding = [f64::INFINITY, 0.0, 0.0, 0.0];
-        let a = arrange(&l, &[slot(f64::NAN, 10.0), slot(10.0, -5.0)]);
+        let a = arrange(&l, &Limits::default(), &[slot(f64::NAN, 10.0), slot(10.0, -5.0)]);
         assert!(a.items.iter().all(|r| r.x0.is_finite() && r.y1.is_finite()));
-        assert!(arrange(&row(0.0), &[]).frame.is_zero_area());
+        assert!(arrange(&row(0.0), &Limits::default(), &[]).frame.is_zero_area());
     }
 }

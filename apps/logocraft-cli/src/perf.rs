@@ -72,6 +72,44 @@ fn load_average() -> Option<f64> {
 
 /// Milliseconds per pointer move of a Direct Selection drag of a handle, then of a segment, of a
 /// 5,000-anchor wave of smooth anchors added on top of the synthetic `n`-path document.
+/// Edits in a document with auto layout frames (each edit runs the frames' post-edit pass): a
+/// move of a path beside 50 frames among the synthetic paths, and of a child inside one.
+fn layout_edits(n: usize) -> Result<(f64, f64), String> {
+    let mut doc = synthetic(n)?;
+    let l = doc.layers.first().map(|l| l.id);
+    let mut s = logocraft_engine::Session::new();
+    // 50 frames of 3 rectangles each, along the top of the page.
+    let mut groups = vec![];
+    for f in 0..50 {
+        let mut ids = vec![];
+        for k in 0..3 {
+            let id = doc.alloc_id();
+            let x = f as f64 * 30.0 + k as f64 * 8.0;
+            doc.insert(l, usize::MAX, Node::path(id, shapes::rectangle(Rect::new(x, -40.0, x + 6.0, -34.0)), Appearance::default_art()))
+                .map_err(|e| e.to_string())?;
+            ids.push(id.0);
+        }
+        groups.push(ids);
+    }
+    let lone = doc.layers.first().and_then(|l| l.children()).and_then(|c| c.get(10)).map(|c| c.id.0).ok_or("no path to move")?;
+    s.add_document(doc, None);
+    let err = |e: logocraft_engine::EngineError| e.to_string();
+    for ids in &groups {
+        s.execute("select.set", &json!({ "ids": ids })).map_err(err)?;
+        s.execute("layout.add", &json!({})).map_err(err)?;
+    }
+    s.execute("select.set", &json!({ "ids": [lone] })).map_err(err)?;
+    let beside = median_ms(9, || drop(s.execute("object.move", &json!({"dx": 1, "dy": 0}))));
+    let child = groups.first().and_then(|g| g.first()).copied().ok_or("no frame")?;
+    s.execute("select.set", &json!({ "ids": [child] })).map_err(err)?;
+    let mut w = 6.0;
+    let inside = median_ms(9, || {
+        w = if w == 6.0 { 7.0 } else { 6.0 };
+        drop(s.execute("object.setBounds", &json!({ "width": w })));
+    });
+    Ok((beside, inside))
+}
+
 fn edit_drags(n: usize) -> Result<(f64, f64), String> {
     use logocraft_engine::tools::{Mods, PointerEvent, PointerKind};
     use logocraft_geom::{Anchor, PathData, SubPath, Vec2};
@@ -335,6 +373,13 @@ pub fn run(args: &[String]) -> Result<(), String> {
     });
     rows.push(("handle drag, 5,000-anchor path (per move)", handle, 8.0));
     rows.push(("segment drag, 5,000-anchor path (per move)", segment, 8.0));
+    // Every edit runs the auto layout pass: away from the frames it should cost next to nothing.
+    let (beside, inside) = layout_edits(n).unwrap_or_else(|e| {
+        failed = Some(e);
+        (0.0, 0.0)
+    });
+    rows.push(("move a path beside 50 auto layout frames", beside, 16.0));
+    rows.push(("resize a child in an auto layout frame", inside, 16.0));
     if let Some(e) = failed {
         return Err(e);
     }

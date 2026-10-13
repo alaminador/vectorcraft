@@ -46,7 +46,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Auto Layout Settings",
             [],
             None,
-            "{ids? (default: the selected frames, or the frames of the selected children), direction?: horizontal|vertical, wrap?: bool, gap?: pt | \"auto\" (space between), crossGap?: pt (between wrapped rows), padding?: pt | [top, right, bottom, left], paddingH?, paddingV?, paddingTop?, paddingRight?, paddingBottom?, paddingLeft?, align?: top-left|top|top-right|left|center|right|bottom-left|bottom|bottom-right, alignMain?, alignCross?: start|center|end, width?, height?: hug | fixed | pt (fixed at that size), fill?: \"#hex\" | null (none), stroke?: \"#hex\" | null, strokeWidth?: pt, radius?: pt} change auto layout frames → {ids}",
+            "{ids? (default: the selected frames, or the frames of the selected children), direction?: horizontal|vertical, wrap?: bool, gap?: pt | \"auto\" (space between), crossGap?: pt (between wrapped rows), padding?: pt | [top, right, bottom, left], paddingH?, paddingV?, paddingTop?, paddingRight?, paddingBottom?, paddingLeft?, align?: top-left|top|top-right|left|center|right|bottom-left|bottom|bottom-right, alignMain?, alignCross?: start|center|end, width?, height?: hug | fixed | pt (fixed at that size), fill?: \"#hex\" | null (none), stroke?: \"#hex\" | null, strokeWidth?: pt, radius?: pt, clip?: bool (clip content)} change auto layout frames → {ids}",
             has_selection,
             set
         ),
@@ -55,7 +55,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Auto Layout Child",
             [],
             None,
-            "{ids? (default: the selection), width?, height?: fixed | hug | fill (hug and fixed set a child frame's own sizing), absolute?: bool} how children of auto layout frames size and whether they flow → {ids}",
+            "{ids? (default: the selection), width?, height?: fixed | hug | fill (hug and fixed set a child frame's own sizing), absolute?: bool, minWidth?, maxWidth?, minHeight?, maxHeight?: pt | null} how children of auto layout frames size, their min and max sizes (a frame's own too) and whether they flow; point type set to fill becomes auto-height area type → {ids}",
             has_selection,
             set_item
         ),
@@ -68,6 +68,12 @@ pub fn specs() -> Vec<CommandSpec> {
 /// The auto layout of `n`, if it is a frame.
 fn layout_of(n: &Node) -> Option<&AutoLayout> {
     n.extras().layout.as_deref()
+}
+
+/// A frame's background child (its fill, stroke and corners), if `n` is a frame that has one.
+pub fn background_of(n: &Node) -> Option<&Node> {
+    layout_of(n)?;
+    n.children()?.iter().map(|c| &**c).find(|c| item_of(c).background)
 }
 
 /// A child's settings (defaults when it has none).
@@ -110,7 +116,10 @@ fn resize(n: &mut Node, w: Option<f64>, h: Option<f64>) {
         return;
     }
     if layout_of(n).is_some() {
-        layout_node(n, (w, h));
+        // A child that changed size can change how tall a filled frame's type is: settle it.
+        if layout_node(n, (w, h)) {
+            layout_node(n, (w, h));
+        }
         return;
     }
     let Some(b) = n.geometric_bounds() else { return };
@@ -129,6 +138,8 @@ fn resize(n: &mut Node, w: Option<f64>, h: Option<f64>) {
                 frame.transform(inv * a * t.xf);
             }
         }
+        // Auto-height type takes the height its text needs at the new width.
+        super::typecmd::refresh_bounds(t);
         return;
     }
     n.transform(a, Scaling { keep_corners: true, ..Default::default() });
@@ -156,8 +167,8 @@ fn fit_background(n: &mut Node, r: Rect) {
 
 /// Lay out frame `n` (its children, its bounds and its background); `forced` sizes it along
 /// either axis (a parent's Fill container), whatever its own sizing.
-fn layout_node(n: &mut Node, forced: (Option<f64>, Option<f64>)) {
-    let Some(stored) = layout_of(n).cloned() else { return };
+fn layout_node(n: &mut Node, forced: (Option<f64>, Option<f64>)) -> bool {
+    let Some(stored) = layout_of(n).cloned() else { return false };
     let mut l = stored.clone();
     if let Some(w) = forced.0.filter(|w| w.is_finite() && *w >= 0.0) {
         l.width = Sizing::Fixed;
@@ -167,7 +178,22 @@ fn layout_node(n: &mut Node, forced: (Option<f64>, Option<f64>)) {
         l.height = Sizing::Fixed;
         l.frame.y1 = l.frame.y0 + h;
     }
-    let Some(children) = n.children_mut() else { return };
+    let own = item_of(n).limits;
+    // Clip content: the background (the bottom-most child) clips the rest.
+    if let NodeKind::Group { clip, .. } = &mut n.kind
+        && *clip != stored.clip
+    {
+        *clip = stored.clip;
+    }
+    let Some(children) = n.children_mut() else { return false };
+    if let Some(bg) = children.first_mut()
+        && item_of(bg).background
+        && matches!(&bg.kind, NodeKind::Path { clipping, .. } if *clipping != stored.clip)
+        && let NodeKind::Path { clipping, .. } = &mut Arc::make_mut(bg).kind
+    {
+        *clipping = stored.clip;
+    }
+    let mut resized_any = false;
     // The children in the flow, with their bounds.
     let flow: Vec<(usize, Rect)> =
         children.iter().enumerate().filter(|(_, c)| flows(c)).filter_map(|(i, c)| item_bounds(c).map(|b| (i, b))).collect();
@@ -177,10 +203,16 @@ fn layout_node(n: &mut Node, forced: (Option<f64>, Option<f64>)) {
             let c = children.get(*i)?;
             let it = item_of(c);
             let fill = can_fill(c);
-            Some(Slot { w: b.width(), h: b.height(), fill_w: fill && it.width == ItemSizing::Fill, fill_h: fill && it.height == ItemSizing::Fill })
+            Some(Slot {
+                w: b.width(),
+                h: b.height(),
+                fill_w: fill && it.width == ItemSizing::Fill,
+                fill_h: fill && it.height == ItemSizing::Fill,
+                limits: it.limits,
+            })
         })
         .collect();
-    let Arranged { frame, items } = arrange(&l, &slots);
+    let Arranged { frame, items } = arrange(&l, &own, &slots);
     for ((i, b), (target, slot)) in flow.iter().zip(items.iter().zip(&slots)) {
         let Some(c) = children.get_mut(*i) else { continue };
         let want_w = (slot.fill_w && (target.width() - b.width()).abs() > 1e-6).then_some(target.width());
@@ -190,6 +222,9 @@ fn layout_node(n: &mut Node, forced: (Option<f64>, Option<f64>)) {
             continue;
         }
         let c = Arc::make_mut(c);
+        if want_w.is_some() || want_h.is_some() {
+            resized_any = true;
+        }
         resize(c, want_w, want_h);
         if let Some(now) = item_bounds(c) {
             translate(c, target.x0 - now.x0, target.y0 - now.y0);
@@ -206,14 +241,29 @@ fn layout_node(n: &mut Node, forced: (Option<f64>, Option<f64>)) {
     {
         l.frame = frame;
     }
+    resized_any
 }
 
-/// The frames in `d`, innermost first.
-fn frames(d: &Document) -> Vec<NodeId> {
-    fn visit(n: &Node, out: &mut Vec<NodeId>) {
+/// The frames of `d` whose contents changed since `before`, innermost first. An edit copies only
+/// the nodes on the way to what it changed (the rest stay shared), so a subtree that is the same
+/// node in both documents is skipped whole: an edit away from every frame costs a walk down the
+/// changed path only.
+fn changed_frames(before: &Document, d: &Document) -> Vec<NodeId> {
+    /// `old`: the node `n` was before the edit, when known.
+    fn visit(n: &Node, old: Option<&Node>, before: &Document, out: &mut Vec<NodeId>) {
+        if old.is_some_and(|b| std::ptr::eq(b, n)) {
+            return;
+        }
         if let Some(ch) = n.children() {
-            for c in ch {
-                visit(c, out);
+            let old_ch = old.and_then(|o| o.children());
+            for (i, c) in ch.iter().enumerate() {
+                // Leaves hold no frames: only containers are looked into.
+                if c.children().is_none() {
+                    continue;
+                }
+                // The child at the same place, else (moved, inserted) found by id.
+                let o = old_ch.and_then(|oc| oc.get(i)).filter(|o| o.id == c.id).map(|o| &**o).or_else(|| before.node(c.id));
+                visit(c, o, before, out);
             }
         }
         if layout_of(n).is_some() {
@@ -221,46 +271,76 @@ fn frames(d: &Document) -> Vec<NodeId> {
         }
     }
     let mut out = vec![];
-    for l in &d.layers {
-        visit(l, &mut out);
+    for (i, l) in d.layers.iter().enumerate() {
+        let old = before.layers.get(i).filter(|b| b.id == l.id).map(|b| &**b).or_else(|| before.node(l.id));
+        visit(l, old, before, &mut out);
     }
     out
 }
 
-/// Lay out every frame of `d`, innermost first.
-pub(crate) fn reflow(d: &mut Document) {
-    for id in frames(d) {
-        if let Some(n) = d.node_mut(id) {
+/// Lay out frames `ids` (innermost first) of `d`; a frame whose children changed size (type
+/// filling it rewrapped) is laid out once more.
+fn layout_frames(d: &mut Document, ids: &[NodeId]) {
+    for id in ids {
+        if let Some(n) = d.node_mut(*id)
+            && layout_node(n, (None, None))
+        {
             layout_node(n, (None, None));
         }
     }
 }
 
-/// Keep auto layout frames laid out after an edit (`before`: the document before it).
-pub(crate) fn sync(before: &Document, d: &mut Document) {
-    let ids = frames(d);
+/// Keep auto layout frames laid out after an edit (`before`: the document before it). `live`:
+/// during a drag preview a child dragged within its frame stays under the pointer (its frame is
+/// left as it is); the commit places it.
+pub(crate) fn sync(before: &Document, d: &mut Document, live: bool) {
+    let ids = changed_frames(before, d);
     if ids.is_empty() {
         return;
     }
+    let mut skip = vec![];
     for id in &ids {
-        follow_edit(before, d, *id);
+        if follow_edit(before, d, *id, live) {
+            skip.push(*id);
+        }
     }
-    reflow(d);
+    let ids: Vec<NodeId> = changed_frames(before, d).into_iter().filter(|id| !skip.contains(id)).collect();
+    layout_frames(d, &ids);
 }
 
-/// Read what the user did to frame `id`: resized it as a whole, or dragged a child.
-fn follow_edit(before: &Document, d: &mut Document, id: NodeId) {
-    let (Some(old), Some(new)) = (before.node(id), d.node(id)) else { return };
-    let (Some(lo), Some(ln)) = (layout_of(old), layout_of(new)) else { return };
+/// Read what the user did to frame `id`: resized it as a whole, or dragged a child. → whether
+/// the frame is to be left as it is (`live`: a child is being dragged in it).
+fn follow_edit(before: &Document, d: &mut Document, id: NodeId, live: bool) -> bool {
+    let (Some(old), Some(new)) = (before.node(id), d.node(id)) else { return false };
+    let (Some(lo), Some(ln)) = (layout_of(old), layout_of(new)) else { return false };
     if !ln.same_settings(lo) {
-        return;
+        return false;
     }
     let (ow, oh, nw, nh) = (lo.frame.width(), lo.frame.height(), ln.frame.width(), ln.frame.height());
     if (ow - nw).abs() > 1e-6 || (oh - nh).abs() > 1e-6 {
         resized(old, d, id, (nw - ow).abs() > 1e-6, (nh - oh).abs() > 1e-6);
-        return;
+        return false;
+    }
+    if live {
+        return !moved_children(old, d.node(id)).is_empty();
     }
     dragged(old, d, id);
+    false
+}
+
+/// The flow children of frame `new` that moved without changing size since `old` (dragged).
+fn moved_children(old: &Node, new: Option<&Node>) -> Vec<NodeId> {
+    let (Some(children), Some(old_children)) = (new.and_then(|n| n.children()), old.children()) else { return vec![] };
+    let mut moved = vec![];
+    for c in children.iter().filter(|c| flows(c)) {
+        let Some(o) = old_children.iter().find(|o| o.id == c.id) else { continue };
+        let (Some(a), Some(b)) = (item_bounds(o), item_bounds(c)) else { continue };
+        let same_size = (a.width() - b.width()).abs() < 1e-6 && (a.height() - b.height()).abs() < 1e-6;
+        if same_size && (a.origin() - b.origin()).hypot() > 1e-6 {
+            moved.push(c.id);
+        }
+    }
+    moved
 }
 
 /// Frame `id` was resized as a whole (its children scaled with it): its children get back their
@@ -293,18 +373,10 @@ fn resized(old: &Node, d: &mut Document, id: NodeId, w: bool, h: bool) {
 /// dropped at, or leaves the frame when dropped outside it.
 fn dragged(old: &Node, d: &mut Document, id: NodeId) {
     let Some(new) = d.node(id) else { return };
-    let (Some(l), Some(children), Some(old_children)) = (layout_of(new), new.children(), old.children()) else { return };
+    let (Some(l), Some(children)) = (layout_of(new), new.children()) else { return };
     let horizontal = l.direction == Direction::Horizontal;
     let frame = l.frame;
-    let mut moved: Vec<NodeId> = vec![];
-    for c in children.iter().filter(|c| flows(c)) {
-        let Some(o) = old_children.iter().find(|o| o.id == c.id) else { continue };
-        let (Some(a), Some(b)) = (item_bounds(o), item_bounds(c)) else { continue };
-        let same_size = (a.width() - b.width()).abs() < 1e-6 && (a.height() - b.height()).abs() < 1e-6;
-        if same_size && (a.origin() - b.origin()).hypot() > 1e-6 {
-            moved.push(c.id);
-        }
-    }
+    let moved = moved_children(old, Some(new));
     if moved.is_empty() {
         return;
     }
@@ -348,6 +420,77 @@ fn dragged(old: &Node, d: &mut Document, id: NodeId) {
             *s = c;
         }
     }
+}
+
+// ---------- what the canvas shows ----------
+
+/// Where a child being dragged in its frame would drop: a line across the frame between the
+/// children it would go between (document space); None when it would leave the frame or isn't
+/// in one.
+pub fn drop_line(d: &Document, child: NodeId) -> Option<(Point, Point)> {
+    let parent = d.node(d.parent_of(child)?)?;
+    let l = layout_of(parent)?;
+    let me = item_bounds(d.node(child)?)?;
+    if !l.frame.contains(me.center()) {
+        return None;
+    }
+    let horizontal = l.direction == Direction::Horizontal;
+    let key = |r: &Rect| if horizontal { r.center().x } else { r.center().y };
+    let others: Vec<Rect> = parent.children()?.iter().filter(|c| c.id != child && flows(c)).filter_map(|c| item_bounds(c)).collect();
+    let at = others.iter().position(|r| key(r) > key(&me)).unwrap_or(others.len());
+    let [pt, pr, pb, pl] = l.padding;
+    let half = l.gap.max(0.0) / 2.0;
+    let (prev, next) = (at.checked_sub(1).and_then(|i| others.get(i)), others.get(at));
+    let pos = match (prev, next, horizontal) {
+        (Some(a), Some(b), true) => (a.x1 + b.x0) / 2.0,
+        (Some(a), Some(b), false) => (a.y1 + b.y0) / 2.0,
+        (Some(a), None, true) => a.x1 + half,
+        (Some(a), None, false) => a.y1 + half,
+        (None, Some(b), true) => b.x0 - half,
+        (None, Some(b), false) => b.y0 - half,
+        (None, None, true) => l.frame.x0 + pl,
+        (None, None, false) => l.frame.y0 + pt,
+    };
+    Some(if horizontal {
+        (Point::new(pos, l.frame.y0 + pt), Point::new(pos, l.frame.y1 - pb))
+    } else {
+        (Point::new(l.frame.x0 + pl, pos), Point::new(l.frame.x1 - pr, pos))
+    })
+}
+
+/// A frame's padding bands and the gaps between its flow children (document space), for the
+/// canvas's padding and gap guides.
+pub fn guides(n: &Node) -> Option<(Vec<Rect>, Vec<Rect>)> {
+    let l = layout_of(n)?;
+    let f = l.frame;
+    let [pt, pr, pb, pl] = l.padding;
+    let mut padding = vec![];
+    for r in [
+        Rect::new(f.x0, f.y0, f.x1, f.y0 + pt),
+        Rect::new(f.x1 - pr, f.y0 + pt, f.x1, f.y1 - pb),
+        Rect::new(f.x0, f.y1 - pb, f.x1, f.y1),
+        Rect::new(f.x0, f.y0 + pt, f.x0 + pl, f.y1 - pb),
+    ] {
+        if r.width() > 1e-6 && r.height() > 1e-6 {
+            padding.push(r);
+        }
+    }
+    let horizontal = l.direction == Direction::Horizontal;
+    let items: Vec<Rect> = n.children()?.iter().filter(|c| flows(c)).filter_map(|c| item_bounds(c)).collect();
+    let mut gaps = vec![];
+    for w in items.windows(2) {
+        let [a, b] = w else { continue };
+        // Wrapped rows: a gap only between neighbours on the same row.
+        let (same_row, r) = if horizontal {
+            (b.x0 >= a.x1 - 1e-6, Rect::new(a.x1, f.y0 + pt, b.x0, f.y1 - pb))
+        } else {
+            (b.y0 >= a.y1 - 1e-6, Rect::new(f.x0 + pl, a.y1, f.x1 - pr, b.y0))
+        };
+        if same_row && r.width() > 1e-6 && r.height() > 1e-6 {
+            gaps.push(r);
+        }
+    }
+    Some((padding, gaps))
 }
 
 // ---------- commands ----------
@@ -463,24 +606,30 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
             }
             None => {
                 let top = *ids.last().ok_or_else(|| EngineError::Other("nothing selected".into()))?;
-                let (par, idx, _) = d.position(top).ok_or(EngineError::NoNode(top))?;
-                let mut children: Vec<Arc<Node>> = vec![Arc::new(background(d, union))];
-                children.extend(order.iter().filter_map(|(id, _)| d.node(*id).cloned().map(Arc::new)));
-                let gid = d.alloc_id();
-                let mut group = Node::group(gid, children);
-                group.name = Some(name.clone());
-                group.extras_mut().layout = Some(Box::new(layout));
-                d.insert(par, idx + 1, group)?;
-                for (r, _) in &order {
-                    d.remove(*r)?;
-                }
-                gid
+                let ordered: Vec<NodeId> = order.iter().map(|(id, _)| *id).collect();
+                wrap_in_frame(d, &ordered, top, layout, &name)?
             }
         };
         sel.set([id]);
         Ok(id)
     })?;
     Ok(json!({ "id": id.0 }))
+}
+
+/// Wrap `ids` (in that order) in a new frame with `layout`, named `name`, placed above `top`.
+pub(crate) fn wrap_in_frame(d: &mut Document, ids: &[NodeId], top: NodeId, layout: AutoLayout, name: &str) -> Result<NodeId> {
+    let (par, idx, _) = d.position(top).ok_or(EngineError::NoNode(top))?;
+    let mut children: Vec<Arc<Node>> = vec![Arc::new(background(d, layout.frame))];
+    children.extend(ids.iter().filter_map(|id| d.node(*id).cloned().map(Arc::new)));
+    let gid = d.alloc_id();
+    let mut group = Node::group(gid, children);
+    group.name = Some(name.to_string());
+    group.extras_mut().layout = Some(Box::new(layout));
+    d.insert(par, idx + 1, group)?;
+    for r in ids {
+        d.remove(*r)?;
+    }
+    Ok(gid)
 }
 
 /// The frames a command acts on: the given or selected frames, or the frames of the given or
@@ -627,6 +776,7 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     let stroke = paint_param(p, "stroke", C)?;
     let stroke_width = finite_param(p, "strokeWidth", C)?.map(|w| w.max(0.0));
     let radius = finite_param(p, "radius", C)?.map(|r| r.max(0.0));
+    let clip = p.get("clip").and_then(Value::as_bool);
     s.edit("Auto Layout", |d, _| {
         for id in &ids {
             let bg_rect;
@@ -638,6 +788,9 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 if let Some(v) = wrap {
                     l.wrap = v;
+                }
+                if let Some(v) = clip {
+                    l.clip = v;
                 }
                 if let Some(v) = gap {
                     l.gap = v;
@@ -731,8 +884,28 @@ fn set_item(s: &mut Session, p: &Value) -> Result<Value> {
     let width = item_sizing(p, "width", C)?;
     let height = item_sizing(p, "height", C)?;
     let absolute = p.get("absolute").and_then(Value::as_bool);
+    // Min/max: a size, or null to clear it.
+    let mut limits: Vec<(&str, Option<f64>)> = vec![];
+    for k in ["minWidth", "maxWidth", "minHeight", "maxHeight"] {
+        match p.get(k) {
+            None => {}
+            Some(Value::Null) => limits.push((k, None)),
+            Some(v) => limits.push((
+                k,
+                Some(
+                    v.as_f64()
+                        .filter(|v| v.is_finite() && *v >= 0.0 && *v <= 1e7)
+                        .ok_or_else(|| bad(C, format!("{k} must be a size in pt or null")))?,
+                ),
+            )),
+        }
+    }
     let d = &s.doc()?.doc;
-    let children: Vec<NodeId> = ids.into_iter().filter(|id| d.parent_of(*id).and_then(|p| d.node(p)).and_then(layout_of).is_some()).collect();
+    // Children of frames; frames themselves too (for their own min and max).
+    let children: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|id| d.parent_of(*id).and_then(|p| d.node(p)).and_then(layout_of).is_some() || d.node(*id).and_then(layout_of).is_some())
+        .collect();
     if children.is_empty() {
         return Err(EngineError::Other("select objects inside an auto layout frame".into()));
     }
@@ -754,6 +927,24 @@ fn set_item(s: &mut Session, p: &Value) -> Result<Value> {
             }
             if let Some(a) = absolute {
                 it.absolute = a;
+            }
+            for (k, v) in &limits {
+                match *k {
+                    "minWidth" => it.limits.min_width = *v,
+                    "maxWidth" => it.limits.max_width = *v,
+                    "minHeight" => it.limits.min_height = *v,
+                    _ => it.limits.max_height = *v,
+                }
+            }
+            // Point type set to fill across becomes auto-height area type (Figma's text that
+            // keeps a width and grows downwards).
+            if it.width == ItemSizing::Fill
+                && let NodeKind::Text(t) = &mut n.kind
+                && matches!(t.kind, TextKind::Point)
+            {
+                super::typemenu::point_to_area(t);
+                t.area.fit = logocraft_doc::AreaFit::AutoHeight;
+                super::typecmd::refresh_bounds(t);
             }
             n.extras_mut().layout_item = (it != LayoutItem::default()).then_some(it);
         }
@@ -798,6 +989,8 @@ fn get(s: &mut Session, p: &Value) -> Result<Value> {
         "height": sizing(l.height),
         "wrap": l.wrap,
         "crossGap": l.cross_gap,
+        "clip": l.clip,
+        "limits": serde_json::to_value(item_of(n).limits).unwrap_or(Value::Null),
         "frame": [l.frame.x0, l.frame.y0, l.frame.width(), l.frame.height()],
         "children": children,
     }))

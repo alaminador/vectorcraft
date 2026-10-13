@@ -272,26 +272,34 @@ fn to_area(s: &mut Session, p: &Value) -> Result<Value> {
             if !matches!(t.kind, TextKind::Point) {
                 continue;
             }
-            let lay = logocraft_text::layout(logocraft_text::FontDb::global(), t);
-            let b = if lay.bounds.area() > 0.0 { lay.bounds } else { t.estimate_bounds() };
-            let size = t.first_style().size;
-            // A little slack on the right so the text doesn't rewrap.
-            let top = lay.lines.first().map(|l| l.baseline - l.ascent).unwrap_or(b.y0).min(b.y0);
-            let slack = size * 0.5;
-            // Slack goes where the alignment leaves room, so the text doesn't move or rewrap.
-            let (sl, sr) = match t.para_at(0).justify {
-                Justify::Center | Justify::JustifyCenter => (slack * 0.5, slack * 0.5),
-                Justify::Right | Justify::JustifyRight => (slack, 0.0),
-                Justify::Auto if lay.lines.first().is_some_and(|l| l.rtl) => (slack, 0.0),
-                _ => (0.0, slack),
-            };
-            let frame = Rect::new(b.x0 - sl, top, b.x1 + sr, b.y1.max(top + 1.0));
-            t.kind = TextKind::Area { frame: shapes::rectangle(frame) };
-            refresh_bounds(t);
+            point_to_area(t);
         }
         Ok(())
     })?;
     Ok(ids_json(&ids))
+}
+
+/// Point type `t` as area type, its frame around the text as it stands (it doesn't move or
+/// rewrap).
+pub(crate) fn point_to_area(t: &mut logocraft_doc::TextObject) {
+    {
+        let lay = logocraft_text::layout(logocraft_text::FontDb::global(), t);
+        let b = if lay.bounds.area() > 0.0 { lay.bounds } else { t.estimate_bounds() };
+        let size = t.first_style().size;
+        // A little slack on the right so the text doesn't rewrap.
+        let top = lay.lines.first().map(|l| l.baseline - l.ascent).unwrap_or(b.y0).min(b.y0);
+        let slack = size * 0.5;
+        // Slack goes where the alignment leaves room, so the text doesn't move or rewrap.
+        let (sl, sr) = match t.para_at(0).justify {
+            Justify::Center | Justify::JustifyCenter => (slack * 0.5, slack * 0.5),
+            Justify::Right | Justify::JustifyRight => (slack, 0.0),
+            Justify::Auto if lay.lines.first().is_some_and(|l| l.rtl) => (slack, 0.0),
+            _ => (0.0, slack),
+        };
+        let frame = Rect::new(b.x0 - sl, top, b.x1 + sr, b.y1.max(top + 1.0));
+        t.kind = TextKind::Area { frame: shapes::rectangle(frame) };
+        refresh_bounds(t);
+    }
 }
 
 /// (run, byte within the run) for a byte offset into the plain text.

@@ -12,8 +12,8 @@
 //! along the objects' axes. A handle drag resizes area type's frame (the type area) instead of
 //! scaling its type: the text reflows at its size.
 
-use logocraft_doc::hit::{hit_test, marquee, objects_at};
-use logocraft_doc::{NodeId, OrientedBox};
+use logocraft_doc::hit::{Hit, hit_test, marquee, objects_at};
+use logocraft_doc::{Document, NodeId, OrientedBox, Selection};
 use logocraft_geom::{Affine, Point, Rect, Vec2};
 use serde_json::{Value, json};
 
@@ -40,6 +40,9 @@ enum State {
         /// drag, it becomes the key object that Align aligns to if `can_be_key` allows it (the key
         /// again: no key).
         key: Option<NodeId>,
+        /// Pressed on a child inside the selected auto layout frame: released without a drag,
+        /// it is selected (a drag moves the frame), as in Figma.
+        drill: Option<NodeId>,
     },
     Scaling {
         handle: Handle,
@@ -264,6 +267,17 @@ impl Tool for SelectionTool {
                 }
                 if let Some(h) = hit_test(cx.doc, p, cx.hit_options()) {
                     let top = h.top_object(cx.isolation);
+                    // Auto layout frames: a double-click goes one level in (Figma's way), to the
+                    // child under the pointer; on type, it edits the type.
+                    let into = click_target(cx.doc, cx.selection, &h, cx.isolation);
+                    let into = if is_frame(cx.doc, into) { next_in(&h, into).unwrap_or(into) } else { into };
+                    if into != top {
+                        let mut out = vec![Action::Exec("select.set".into(), json!({ "ids": [into.0] }))];
+                        if cx.doc.node(into).is_some_and(|n| matches!(n.kind, logocraft_doc::NodeKind::Text(_))) {
+                            out.push(Action::SwitchTool("type".into()));
+                        }
+                        return out;
+                    }
                     if cx.doc.node(top).is_some_and(|n| matches!(n.kind, logocraft_doc::NodeKind::Text(_))) {
                         return vec![Action::SwitchTool("type".into())];
                     }
@@ -329,12 +343,20 @@ impl Tool for SelectionTool {
                     && cx.select_behind
                     && let Some(behind) = object_behind(cx, p)
                 {
-                    self.state = State::Moving { start: p, began: false, deselect: None, key: None };
+                    self.state = State::Moving { start: p, began: false, deselect: None, key: None, drill: None };
                     return vec![Action::Exec("select.set".into(), json!({ "ids": [behind.0] }))];
                 }
                 match hit_test(cx.doc, p, cx.hit_options()) {
                     Some(h) => {
-                        let top = h.top_object(cx.isolation);
+                        let target = click_target(cx.doc, cx.selection, &h, cx.isolation);
+                        // Into the selected frame: chosen on release, so a drag still moves the
+                        // frame.
+                        let drill = (!m.shift && !cx.selection.contains(target))
+                            .then(|| h.ancestry.iter().any(|a| cx.selection.contains(*a) && is_frame(cx.doc, *a)))
+                            .filter(|inside| *inside)
+                            .map(|_| target);
+                        let top =
+                            if drill.is_some() { h.ancestry.iter().copied().find(|a| cx.selection.contains(*a)).unwrap_or(target) } else { target };
                         let mut out = vec![];
                         let (mut deselect, mut key) = (None, None);
                         if m.shift {
@@ -350,7 +372,7 @@ impl Tool for SelectionTool {
                         } else if cx.selection.objects.len() > 1 && !m.cmd && !m.alt {
                             key = Some(top);
                         }
-                        self.state = State::Moving { start: grab, began: false, deselect, key };
+                        self.state = State::Moving { start: grab, began: false, deselect, key, drill };
                         out
                     }
                     None => {
@@ -372,7 +394,7 @@ impl Tool for SelectionTool {
                 if let Some(snap) = &self.moving {
                     (d, self.guides) = snap.snap(cx, start, d, m.alt);
                 }
-                self.state = State::Moving { start, began: true, deselect: None, key: None };
+                self.state = State::Moving { start, began: true, deselect: None, key: None, drill: None };
                 self.measure = cx.measurement_labels.then(|| (p, cx.offset_label(d.x, d.y)));
                 out.push(Action::Preview("object.transform".into(), json!({ "matrix": matrix_json(Affine::translate(d)), "copy": m.alt })));
                 out
@@ -419,11 +441,14 @@ impl Tool for SelectionTool {
                 self.state = State::Idle;
                 b.finish()
             }
-            (PointerKind::Up, State::Moving { began, deselect, key, .. }) => {
+            (PointerKind::Up, State::Moving { began, deselect, key, drill, .. }) => {
                 self.state = State::Idle;
                 self.measure = None;
                 self.guides.clear();
                 self.moving = None;
+                if let (false, Some(id)) = (began, drill) {
+                    return vec![Action::Exec("select.set".into(), json!({ "ids": [id.0] }))];
+                }
                 match (began, deselect, key) {
                     (true, ..) => vec![Action::Commit],
                     (false, Some(id), _) => vec![Action::Exec("select.toggle".into(), json!({ "id": id.0 }))],
@@ -565,6 +590,41 @@ fn handle_cursor(h: Handle, angle: f64) -> Cursor {
         Handle::TopLeft | Handle::BottomRight => Cursor::ResizeNwSe,
         Handle::TopRight | Handle::BottomLeft => Cursor::ResizeNeSw,
     }
+}
+
+/// Is `id` an auto layout frame?
+fn is_frame(doc: &Document, id: NodeId) -> bool {
+    doc.node(id).is_some_and(|n| n.extras().layout.is_some())
+}
+
+/// The object hit `h` passes through right below `id` (`id`'s child on the way to the leaf).
+fn next_in(h: &Hit, id: NodeId) -> Option<NodeId> {
+    let chain: Vec<NodeId> = h.ancestry.iter().copied().chain(std::iter::once(h.leaf)).collect();
+    let i = chain.iter().position(|x| *x == id)?;
+    chain.get(i + 1).copied()
+}
+
+/// The object a Selection-tool click on hit `h` selects. As [`Hit::top_object`], except inside
+/// auto layout frames, the Figma way: once a frame or one of its children is selected, a click on
+/// something in that frame selects the frame's child under the pointer (so clicking into a frame
+/// and then among its children works without isolating it).
+pub fn click_target(doc: &Document, selection: &Selection, h: &Hit, isolation: Option<NodeId>) -> NodeId {
+    let top = h.top_object(isolation);
+    let chain: Vec<NodeId> = h.ancestry.iter().copied().chain(std::iter::once(h.leaf)).collect();
+    // The innermost frame on the way that is selected, or holds a selected child.
+    for (i, id) in chain.iter().enumerate().rev() {
+        if !is_frame(doc, *id) {
+            continue;
+        }
+        let anchored = selection.contains(*id) || selection.objects.iter().any(|s| doc.parent_of(*s) == Some(*id));
+        if anchored
+            && let Some(next) = chain.get(i + 1)
+            && chain.iter().position(|x| *x == top).is_none_or(|t| t <= i + 1)
+        {
+            return *next;
+        }
+    }
+    top
 }
 
 #[cfg(test)]
