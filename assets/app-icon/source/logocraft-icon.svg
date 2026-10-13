@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000">
+  <defs>
+    <style>
+      .cls-1{fill:none;stroke:#d2d2d2;stroke-width:31;stroke-linejoin:round}
+      .cls-2{fill:none;stroke:#d2d2d2;stroke-width:31;stroke-miterlimit:10}
+      .cls-3{fill:url(#radial-gradient-1)}
+      .cls-4{fill:#ff6433}
+      .cls-5{fill:#ffa588;opacity:0.11;mix-blend-mode:lighten}
+      .cls-6{fill:none;stroke:#ffffff;stroke-width:40;stroke-linejoin:round}
+      .cls-7{fill:none;stroke:#ffffff;stroke-width:40;stroke-miterlimit:10}
+    </style>
+    <clipPath id="clip-path-1">
+      <path d="M183.788 0 L816.212 0 C917.715 0 1000 82.285 1000 183.788 L1000 816.212 C1000 917.715 917.715 1000 816.212 1000 L183.788 1000 C82.285 1000 0 917.715 0 816.212 L0 183.788 C0 82.285 82.285 0 183.788 0 Z"/>
+    </clipPath>
+    <filter id="filter-1" filterUnits="userSpaceOnUse" x="-2" y="-2" width="1004" height="1004" data-vc-blend="screen" color-interpolation-filters="sRGB"><feComponentTransfer in="SourceAlpha"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur stdDeviation="17.5" result="glow"/><feFlood flood-color="#ffffff" flood-opacity="0.75"/><feComposite in2="glow" operator="in"/><feComposite in2="SourceAlpha" operator="in" result="paint"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="paint"/></feMerge></filter>
+    <radialGradient id="radial-gradient-1" cx="500" cy="500" r="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e95c38"/>
+      <stop offset="1" stop-color="#e95238"/>
+    </radialGradient>
+    <filter id="filter-2" filterUnits="userSpaceOnUse" x="16.622" y="16.622" width="966.756" height="966.756" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="62.5"/></filter>
+    <filter id="filter-3" filterUnits="userSpaceOnUse" x="-290.569" y="-305.675" width="810.065" height="810.065" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="62.5"/></filter>
+  </defs>
+  <title>Untitled-1</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <g>
+      <path d="M1332.051 442.449 L1332.051 876.23 C1332.051 876.23 1390.271 784.936 1495.266 755.953 Z" class="cls-1"/>
+      <path d="M1332.051 442.449 L1332.051 876.23 C1332.051 876.23 1273.832 784.936 1168.837 755.953 Z" class="cls-1"/>
+    </g>
+    <path d="M1246.135 809.322 L1417.968 809.322 L1417.968 922.298 L1246.135 922.298 Z" class="cls-2"/>
+    <g clip-path="url(#clip-path-1)">
+      <g filter="url(#filter-1)">
+        <path d="M183.788 0 L816.212 0 C917.715 0 1000 82.285 1000 183.788 L1000 816.212 C1000 917.715 917.715 1000 816.212 1000 L183.788 1000 C82.285 1000 0 917.715 0 816.212 L0 183.788 C0 82.285 82.285 0 183.788 0 Z" class="cls-3"/>
+      </g>
+      <g filter="url(#filter-2)">
+        <path d="M206.122 500 C206.122 337.696 337.696 206.122 500 206.122 C662.304 206.122 793.878 337.696 793.878 500 C793.878 662.304 662.304 793.878 500 793.878 C337.696 793.878 206.122 662.304 206.122 500 Z" class="cls-4"/>
+      </g>
+      <g filter="url(#filter-3)">
+        <path d="M-101.069 99.357 C-101.069 -19.678 -4.572 -116.175 114.464 -116.175 C233.499 -116.175 329.996 -19.678 329.996 99.357 C329.996 218.393 233.499 314.89 114.464 314.89 C-4.572 314.89 -101.069 218.393 -101.069 99.357 Z" class="cls-5"/>
+      </g>
+      <g>
+        <path d="M522.445 507.012 C500.39 476.22 457.551 469.138 426.759 491.192 C395.974 513.249 388.893 556.087 410.94 586.878 L410.94 586.878 L193.789 742.413 L418.214 299.771 C464.698 337.354 516.206 358.997 561.709 371.42 L612.584 442.449" class="cls-6"/>
+        <path d="M612.584 442.449 L663.459 513.478 C660.575 560.558 664.488 616.291 685.11 672.398 L193.789 742.413 L410.94 586.878 L410.946 586.886 C433.002 617.67 475.837 624.749 506.625 602.697 C537.417 580.643 544.499 537.803 522.445 507.012" class="cls-6"/>
+        <path d="M800.305 456.383 L663.459 513.478 L561.709 371.42 L659.81 260.232 C666.157 255.686 674.987 257.146 679.533 263.492 L803.566 436.661 C808.112 443.007 806.652 451.838 800.305 456.383 Z" class="cls-7"/>
+        <path d="M506.625 602.697 C475.837 624.749 433.002 617.67 410.946 586.886 L410.94 586.878 L410.94 586.878 L410.94 586.878 C388.896 556.087 395.976 513.25 426.759 491.192 C457.551 469.138 500.39 476.22 522.445 507.012 C544.499 537.803 537.417 580.643 506.625 602.697 Z" class="cls-7"/>
+      </g>
+    </g>
+  </g>
+</svg>

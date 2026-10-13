@@ -1,9 +1,11 @@
 # LogoCraft app icon
 
-**Creature:** an engraved cat on a red field.
+**Mark:** a white pen nib on a glowing orange tile.
 
-**Source:** `source/logocraft-source.png` (1000 px), supplied by the repository owner. Licence: see
-`LICENSE.txt`. How the picture was made is not recorded yet; record it here when known.
+**Source:** `source/logocraft-icon.svg` (vector, 1000 × 1000), drawn by the repository owner in
+LogoCraft and supplied as `Icon.svg`. `source/logocraft-source.png` (2000 px) is that SVG rendered by
+LogoCraft itself: `logocraft-cli run --in source/logocraft-icon.svg --export source/logocraft-source.png
+--scale 2`. Licence: see `LICENSE.txt`.
 
 **Tile:** the picture cropped square, scaled to 1024 px and given the corners of a 512 tile with
 `rx = 112`. The macOS files add Apple's transparent margin (tile = 824/1024 of the canvas).
