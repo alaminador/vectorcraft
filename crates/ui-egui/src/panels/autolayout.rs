@@ -244,10 +244,11 @@ pub(crate) fn frame_section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) -> bo
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 4.0;
         label(ui, tl!("Fill"), 30.0);
-        if let Some(hex) = widgets::hex_field(ui, "al-fill", fill.as_deref().unwrap_or(""))
-            && let Some(c) = logocraft_color::Color::from_hex(&hex)
-        {
-            run(app, "layout.set", json!({ "fill": c.to_hex() }));
+        // The Fill chip: the colour picker for the frame's own fill (a selected frame's proxies
+        // stand for its background).
+        super::paint_chip(app, ui, false, 22.0, true);
+        if let Some(hex) = &fill {
+            ui.label(egui::RichText::new(format!("#{hex}")).size(11.5));
         }
         if fill.is_some() && widgets::icon_button(ui, "minus", tl!("No fill"), false, 20.0).clicked() {
             run(app, "layout.set", json!({ "fill": null }));

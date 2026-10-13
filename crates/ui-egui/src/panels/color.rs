@@ -468,6 +468,9 @@ fn spectrum(ui: &mut Ui, mode: Mode, size: egui::Vec2) -> Option<SpectrumHit> {
     Some(SpectrumHit::Pick(spectrum_at(mode, (p.x - r.left()) / r.width(), (p.y - r.top()) / r.height()), phase))
 }
 
+/// Panel state: the Color panel shows its sliders instead of the picker.
+pub(crate) const CLASSIC: &str = "color-sliders";
+
 pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let tgt = target(app, ui);
@@ -486,6 +489,37 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
             Some(SpectrumHit::Pick(c, phase)) => apply(app, &tgt, c, phase, alt),
             Some(SpectrumHit::Cycle) => set_mode(app, ui.ctx(), &tgt, mode.next()),
             None => {}
+        }
+        return;
+    }
+    // The app's picker (Figma-style, with CMYK), unless the sliders are asked for (Illustrator's
+    // modes: Grayscale, Lab, Web Safe RGB) or the colour is a tint of a swatch (its T slider).
+    let sliders: bool = pstate(ui.ctx(), CLASSIC);
+    let picker = !sliders && tgt.tint().is_none();
+    ui.horizontal(|ui| {
+        // (The sliders view has the proxy in its left column.)
+        if picker {
+            super::proxy(app, ui, 32.0);
+        }
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let tip = if sliders { tl!("Show the color picker") } else { tl!("Show the sliders (Grayscale, Lab, Web Safe, tints)") };
+            if widgets::icon_button(ui, if sliders { "palette" } else { "settings" }, tip, false, 22.0).clicked() {
+                set_pstate(ui.ctx(), CLASSIC, !sliders);
+            }
+        });
+    });
+    if picker {
+        let shown = color.unwrap_or(app.session.last_solid);
+        let e = super::fill_picker::color_controls(ui, "color-panel", shown, None);
+        if e.eyedropper {
+            app.select_tool("eyedropper");
+        }
+        if let Some((c, phase)) = e.color {
+            apply(app, &tgt, c, phase, alt);
+        }
+        widgets::divider(ui);
+        if let Some(c) = super::recent_colors_row(app, ui) {
+            apply(app, &tgt, c, Live::Released, alt);
         }
         return;
     }
@@ -707,6 +741,10 @@ mod tests {
         id: impl std::hash::Hash + std::fmt::Debug,
     ) -> (Option<Rect>, f32) {
         let mut out = (None, 0.0);
+        // These tests are about the sliders view (the picker has tests of its own).
+        if !ctx.data(|d| d.get_temp::<bool>(egui::Id::new("test-picker-view"))).unwrap_or(false) {
+            set_pstate(ctx, CLASSIC, true);
+        }
         let events = std::iter::once(egui::Event::ModifiersChanged(modifiers)).chain(events).collect();
         let input = egui::RawInput { events, ..Default::default() };
         let mut full = ctx.run_ui(input, |ui| {
@@ -1058,5 +1096,26 @@ mod tests {
         assert_eq!(parse_hex("#fff").unwrap().to_hex(), "#ffffff");
         assert!(parse_hex("zz").is_none());
         assert!(parse_hex("12345").is_none());
+    }
+
+    /// By default the panel shows the app's picker (with CMYK); a dragged square paints the fill.
+    #[test]
+    fn the_panel_shows_the_picker_by_default() {
+        let mut app = app();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        ctx.data_mut(|d| d.insert_temp(egui::Id::new("test-picker-view"), true));
+        let (spectrum, _) = frame(&mut app, &ctx, vec![], egui::Modifiers::NONE);
+        assert!(spectrum.is_none(), "no Illustrator spectrum in the picker view");
+        let mut texts = String::new();
+        let mut out = ctx.run_ui(Default::default(), |ui| show(&mut app, ui));
+        out.textures_delta.clear();
+        for c in &out.shapes {
+            if let egui::Shape::Text(t) = &c.shape {
+                texts.push_str(t.galley.text());
+                texts.push('\n');
+            }
+        }
+        assert!(texts.contains("Hex") && texts.contains("Recent Colors"), "{texts}");
     }
 }

@@ -16,7 +16,7 @@
 
 use egui::{Color32, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
 use logocraft_color::gradient::{MIN_STOPS, insert_stop, move_stop, remove_stop};
-use logocraft_color::{Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint};
+use logocraft_color::{Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint, cms, keep_model};
 use serde_json::{Value, json};
 
 use super::{active_paint, c32, gradient, live_run, pstate, set_pstate};
@@ -43,7 +43,11 @@ const STOP_DRAG: &str = "fill-picker-stop-drag";
 /// Panel state: the document's solid colours, per document revision.
 const PAGE_COLORS: &str = "fill-picker-page-colors";
 
-const FORMATS: [&str; 4] = ["Hex", "RGB", "HSL", "HSB"];
+const FORMATS: [&str; 5] = ["Hex", "RGB", "HSL", "HSB", "CMYK"];
+/// The CMYK entry of [`FORMATS`].
+const CMYK: usize = 4;
+/// Total ink coverage above this (%) is flagged: most presses limit it to 280–320%.
+const INK_LIMIT: f32 = 300.0;
 const IMAGE_MODES: [&str; 3] = ["Fill", "Fit", "Tile"];
 /// The grey a new paint starts from when there is no colour to start from (Figma's default fill).
 const DEFAULT_GREY: Color = Color::Rgb { r: 0xd9 as f32 / 255.0, g: 0xd9 as f32 / 255.0, b: 0xd9 as f32 / 255.0 };
@@ -169,7 +173,7 @@ fn color_mode(app: &mut LogocraftApp, ui: &mut Ui, paint: &Paint) {
     }
     if let Some((nc, phase)) = e.color {
         let cmd = paint_cmd(app);
-        live_run(app, "Color", cmd, json!({ "color": nc.to_hex(), "focus": true }), phase);
+        live_run(app, "Color", cmd, json!({ "color": super::color_json(&nc), "focus": true }), phase);
     }
     if let (Some((a, phase)), Some(index)) = (e.alpha, item_index(app)) {
         live_run(app, "Opacity", "appearance.setItem", json!({ "index": index, "opacity": (a * 100.0).round() }), phase);
@@ -182,17 +186,17 @@ fn color_mode(app: &mut LogocraftApp, ui: &mut Ui, paint: &Paint) {
         widgets::subheader(ui, tl!("On this page"));
         if let Some(pick) = color_chips(ui, &colors) {
             let cmd = paint_cmd(app);
-            app.run(cmd, json!({ "color": pick.to_hex(), "focus": true })).ok();
+            app.run(cmd, json!({ "color": super::color_json(&pick), "focus": true })).ok();
         }
     }
 }
 
 /// What the colour controls changed this frame.
 #[derive(Default)]
-struct ColorEdit {
-    color: Option<(Color, Live)>,
-    alpha: Option<(f32, Live)>,
-    eyedropper: bool,
+pub(crate) struct ColorEdit {
+    pub(crate) color: Option<(Color, Live)>,
+    pub(crate) alpha: Option<(f32, Live)>,
+    pub(crate) eyedropper: bool,
 }
 
 /// The last colour's HSB and its hex.
@@ -222,8 +226,11 @@ pub(crate) fn hsv_of(c: Color, last: Option<(String, [f32; 3])>) -> [f32; 3] {
 }
 
 /// The square, the rails and the value fields for colour `c` (with opacity `alpha`, when it
-/// applies). `id` keeps two sets apart.
-fn color_controls(ui: &mut Ui, id: &str, c: Color, alpha: Option<f32>) -> ColorEdit {
+/// applies): the picker every colour in the app is edited with. `id` keeps two sets apart. A
+/// CMYK colour stays CMYK whatever is dragged (its numbers follow); the CMYK format shows its
+/// inks, their total coverage, the gamut warning for a colour that won't print as it shows, and
+/// rich black.
+pub(crate) fn color_controls(ui: &mut Ui, id: &str, c: Color, alpha: Option<f32>) -> ColorEdit {
     let ctx = ui.ctx().clone();
     let [h, s, v] = hsv_of(c, remembered(&ctx));
     let width = ui.available_width();
@@ -256,23 +263,114 @@ fn color_controls(ui: &mut Ui, id: &str, c: Color, alpha: Option<f32>) -> ColorE
         });
     });
     ui.add_space(6.0);
+    // The format: the one picked, else CMYK for a CMYK colour, else Hex.
+    let f = pstate::<Option<usize>>(&ctx, FORMAT).unwrap_or(if c.model() == cms::Model::Cmyk { CMYK } else { 0 }).min(FORMATS.len() - 1);
+    let mut typed_cmyk = false;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 4.0;
-        let f = pstate::<usize>(&ctx, FORMAT).min(FORMATS.len() - 1);
-        if let Some(i) = widgets::dropdown(ui, ("fp-format", id), FORMATS[f], &FORMATS, 52.0) {
-            set_pstate(&ctx, FORMAT, i);
+        if let Some(i) = widgets::dropdown(ui, ("fp-format", id), FORMATS[f], &FORMATS, 56.0) {
+            set_pstate(&ctx, FORMAT, Some(i));
         }
-        if let Some(nc) = value_fields(ui, id, f, c, [h, s, v]) {
-            remember(&ctx, nc, hsv_of(nc, None));
-            e.color = Some((nc, Live::Released));
+        if f == CMYK {
+            if let Some(nc) = cmyk_fields(ui, id, c) {
+                remember(&ctx, nc, hsv_of(nc, None));
+                e.color = Some((nc, Live::Released));
+                typed_cmyk = true;
+            }
+        } else {
+            if let Some(nc) = value_fields(ui, id, f, c, [h, s, v]) {
+                remember(&ctx, nc, hsv_of(nc, None));
+                e.color = Some((nc, Live::Released));
+            }
+            if let Some(a) = alpha
+                && let Some(pct) = widgets::plain_field(ui, ("fp-alpha-field", id), f64::from(a * 100.0).round(), "%", 0, 46.0)
+            {
+                e.alpha = Some(((pct.clamp(0.0, 100.0) / 100.0) as f32, Live::Released));
+            }
         }
+    });
+    if f == CMYK
+        && let Some(nc) = cmyk_tools(ui, id, c, alpha, &mut e)
+    {
+        e.color = Some((nc, Live::Released));
+        typed_cmyk = true;
+    }
+    // A CMYK colour stays CMYK (the square and the rails work in RGB).
+    if !typed_cmyk
+        && c.model() == cms::Model::Cmyk
+        && let Some((nc, _)) = e.color.as_mut()
+    {
+        *nc = keep_model(c, *nc);
+    }
+    e
+}
+
+/// The ink of `c` (0..1 each): its own numbers when it is CMYK, else the working CMYK space's.
+pub(crate) fn inks(c: Color) -> [f32; 4] {
+    match c {
+        Color::Cmyk { c, m, y, k } => [c, m, y, k],
+        _ => c.to_cmyk_managed(cms::Intent::default()),
+    }
+}
+
+/// C, M, Y and K fields (%); returns the CMYK colour typed.
+fn cmyk_fields(ui: &mut Ui, id: &str, c: Color) -> Option<Color> {
+    let mut v = inks(c);
+    let mut changed = false;
+    for (i, k) in ["C", "M", "Y", "K"].iter().enumerate() {
+        let Some(slot) = v.get_mut(i) else { continue };
+        let resp = widgets::plain_field(ui, ("fp-cmyk", id, *k), f64::from(*slot * 100.0).round(), "", 0, 34.0);
+        if let Some(n) = resp {
+            *slot = (n.clamp(0.0, 100.0) / 100.0) as f32;
+            changed = true;
+        }
+    }
+    changed.then(|| Color::cmyk(v[0], v[1], v[2], v[3]))
+}
+
+/// Below the CMYK fields: their labels, the total ink coverage, opacity, the gamut warning (snap
+/// to CMYK) and rich black. Returns a colour a button made.
+fn cmyk_tools(ui: &mut Ui, id: &str, c: Color, alpha: Option<f32>, e: &mut ColorEdit) -> Option<Color> {
+    let t = Tokens::get(ui.ctx());
+    let mut out = None;
+    let [cc, mm, yy, kk] = inks(c);
+    let total = (cc + mm + yy + kk) * 100.0;
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 4.0;
+        ui.add_space(60.0);
+        for k in ["C", "M", "Y", "K"] {
+            ui.add_sized([34.0, 14.0], egui::Label::new(egui::RichText::new(k).size(10.5).color(t.text_dim)));
+        }
+    });
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 6.0;
+        let over = total > INK_LIMIT;
+        let color = if over { t.warning } else { t.text_dim };
+        ui.label(egui::RichText::new(format!("{} {total:.0}%", tl!("Ink"))).size(11.5).color(color))
+            .on_hover_text(tl!("Total ink coverage (C + M + Y + K). Most presses want 300% or less; above it, ink can smear or dry badly."));
         if let Some(a) = alpha
             && let Some(pct) = widgets::plain_field(ui, ("fp-alpha-field", id), f64::from(a * 100.0).round(), "%", 0, 46.0)
         {
             e.alpha = Some(((pct.clamp(0.0, 100.0) / 100.0) as f32, Live::Released));
         }
     });
-    e
+    if c.model() != cms::Model::Cmyk && c.out_of_gamut() {
+        let resp = ui.add(egui::Button::new(
+            egui::RichText::new(format!("⚠ {}", tl!("Out of CMYK gamut: use the closest printable colour"))).size(11.0).color(t.warning),
+        ));
+        if resp.on_hover_text(tl!("This colour can't be printed as it shows. Click to replace it with its CMYK equivalent.")).clicked() {
+            let [c2, m2, y2, k2] = c.to_cmyk_managed(cms::Intent::default());
+            out = Some(Color::cmyk(c2, m2, y2, k2));
+        }
+    } else if c.model() != cms::Model::Cmyk && widgets::flat_button(ui, tl!("Convert to CMYK"), ui.available_width()).clicked() {
+        let [c2, m2, y2, k2] = inks(c);
+        out = Some(Color::cmyk(c2, m2, y2, k2));
+    }
+    // Plain 100% K prints greyish in big areas: rich black adds the other inks under it.
+    if kk >= 0.99 && cc + mm + yy < 0.15 && widgets::flat_button(ui, tl!("Rich black (C60 M40 Y40 K100)"), ui.available_width()).clicked() {
+        out = Some(Color::cmyk(0.6, 0.4, 0.4, 1.0));
+    }
+    out
 }
 
 /// The value fields of format `f` (an index into [`FORMATS`]); returns the colour typed.
@@ -815,6 +913,15 @@ mod tests {
         assert_eq!(wcag_level(2.0), None);
         // #767676 is the classic lightest grey passing AA on white.
         assert_eq!(wcag_level(contrast_ratio(Color::rgb8(0x76, 0x76, 0x76), Color::WHITE)), Some("AA"));
+    }
+
+    #[test]
+    fn cmyk_colours_keep_their_inks() {
+        let c = Color::cmyk(0.1, 0.2, 0.3, 0.4);
+        assert_eq!(inks(c), [0.1, 0.2, 0.3, 0.4]);
+        let dragged = keep_model(c, Color::rgb(1.0, 0.0, 0.0));
+        assert_eq!(dragged.model(), cms::Model::Cmyk, "a CMYK colour stays CMYK");
+        assert_eq!(super::super::color_json(&dragged)["k"].as_f64().map(|k| k < 0.01), Some(true));
     }
 
     #[test]

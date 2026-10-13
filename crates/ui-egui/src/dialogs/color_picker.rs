@@ -1,15 +1,14 @@
-//! The Color Picker (double-click a Fill/Stroke proxy, or `ui.colorPicker`): a colour field with a
-//! channel slider for H, S, B, R, G or B; HSB, RGB, Lab and CMYK fields and hex; Only Web Colors;
-//! the out-of-gamut and out-of-web warnings (click to correct); New/Original chips; and a Color
-//! Swatches list. With art selected the colour shows on it live as it is picked; OK keeps it as one
+//! The Color Picker (double-click a Fill/Stroke proxy, or `ui.colorPicker`): the app's colour
+//! picker ([`crate::panels::fill_picker::color_controls`]: square, hue rail, Hex/RGB/HSL/HSB/CMYK
+//! with ink coverage and the CMYK gamut warning); Only Web Colors and the out-of-web warning
+//! (click to correct); New/Original chips; and a Color Swatches list. With art selected the colour shows on it live as it is picked; OK keeps it as one
 //! undo step through `paint.setFill` / `paint.setStroke`, Cancel puts the art back.
 //!
 //! Fields agents set with `ui.dialog.set`: `hex` (`"00FF00"`) or `color` (any colour the paint
-//! commands take), `channel` (`hue`, `saturation`, `brightness`, `red`, `green`, `blue`), `webOnly`
-//! and `swatches`. `stroke` and `original` come from the opener.
+//! commands take), `webOnly` and `swatches`. `stroke` and `original` come from the opener.
 
 use egui::{Rect, Sense, Ui, vec2};
-use logocraft_color::cms::{self, Lab};
+use logocraft_color::cms;
 use logocraft_color::{Color, Paint};
 use logocraft_doc::ColorMode;
 use logocraft_engine::cmd::color_value;
@@ -17,8 +16,8 @@ use serde_json::{Value, json};
 
 use super::DialogSpec;
 use super::form::PREVIEWED;
-use crate::panels::color::{GAMUT_WARNING, WEB_WARNING, gamut_fix, hex_digits, is_web_safe, parse_hex, warning_chip, web_safe};
-use crate::panels::{c32, color_json};
+use crate::panels::color::{WEB_WARNING, hex_digits, is_web_safe, parse_hex, warning_chip, web_safe};
+use crate::panels::color_json;
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::{LogocraftApp, widgets};
@@ -30,68 +29,13 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
     body,
     confirm,
     preview: true,
-    min_width: 600.0,
-    max_width: Some(640.0),
+    min_width: 460.0,
+    max_width: Some(560.0),
     ..DialogSpec::FORM
 };
 
-/// Side of the colour field (and height of the channel slider).
+/// Height of the swatch list.
 const FIELD: f32 = 240.0;
-/// Width of the value fields.
-const VALUE_W: f32 = 54.0;
-
-/// The component the channel slider edits; the colour field shows the other two.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Channel {
-    #[default]
-    Hue,
-    Saturation,
-    Brightness,
-    Red,
-    Green,
-    Blue,
-}
-
-impl Channel {
-    pub const ALL: [Channel; 6] = [Channel::Hue, Channel::Saturation, Channel::Brightness, Channel::Red, Channel::Green, Channel::Blue];
-
-    pub fn id(self) -> &'static str {
-        match self {
-            Channel::Hue => "hue",
-            Channel::Saturation => "saturation",
-            Channel::Brightness => "brightness",
-            Channel::Red => "red",
-            Channel::Green => "green",
-            Channel::Blue => "blue",
-        }
-    }
-    pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|c| c.id() == s)
-    }
-    fn label(self) -> &'static str {
-        match self {
-            Channel::Hue => "H",
-            Channel::Saturation => "S",
-            Channel::Brightness | Channel::Blue => "B",
-            Channel::Red => "R",
-            Channel::Green => "G",
-        }
-    }
-    fn is_hsb(self) -> bool {
-        matches!(self, Channel::Hue | Channel::Saturation | Channel::Brightness)
-    }
-    /// Indices of (slider, field x, field y) into the channel's space: [h, s, b] or [r, g, b].
-    fn axes(self) -> (usize, usize, usize) {
-        match self {
-            Channel::Hue => (0, 1, 2),
-            Channel::Saturation => (1, 0, 2),
-            Channel::Brightness => (2, 0, 1),
-            Channel::Red => (0, 2, 1),
-            Channel::Green => (1, 2, 0),
-            Channel::Blue => (2, 0, 1),
-        }
-    }
-}
 
 /// The picked colour with its HSB (hue in degrees), kept so the hue survives grey colours.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -111,30 +55,6 @@ impl Picked {
     pub fn snapped(self, web: bool) -> Self {
         if web && !is_web_safe(&self.color) { Self::of(web_safe(&self.color)) } else { self }
     }
-}
-
-/// The slider value and the field point (x right, y down; 0..1 each) of a colour.
-pub fn field_pos(ch: Channel, p: &Picked) -> (f32, f32, f32) {
-    let v = if ch.is_hsb() { [p.hsb[0] / 360.0, p.hsb[1], p.hsb[2]] } else { p.color.to_rgb() };
-    let (z, x, y) = ch.axes();
-    (v[z], v[x], 1.0 - v[y])
-}
-
-/// The colour at slider value `z` and field point (x, y): the inverse of [`field_pos`].
-pub fn field_pick(ch: Channel, z: f32, x: f32, y: f32) -> Picked {
-    let (zi, xi, yi) = ch.axes();
-    let mut v = [0.0; 3];
-    v[zi] = z;
-    v[xi] = x;
-    v[yi] = 1.0 - y;
-    let v = v.map(|c| c.clamp(0.0, 1.0));
-    if ch.is_hsb() { Picked::from_hsb([v[0] * 360.0, v[1], v[2]]) } else { Picked::of(Color::rgb(v[0], v[1], v[2])) }
-}
-
-/// The channel slider's track at `z`: the full spectrum for hue, else the colour with only the
-/// slider's component changing.
-pub fn slider_color(ch: Channel, z: f32, x: f32, y: f32) -> Color {
-    if ch == Channel::Hue { Color::from_hsb(z * 360.0, 1.0, 1.0) } else { field_pick(ch, z, x, y).color }
 }
 
 /// The colour the dialog holds: an edited `hex` wins over `color` (agents set either one).
@@ -178,74 +98,51 @@ pub fn open(app: &mut LogocraftApp, p: &Value) -> Result<Value, String> {
         Some(v) => color_value(v).ok_or_else(|| format!("bad color {v}"))?,
         None => proxy_color(app, stroke),
     };
-    let mut d = Dialog::new(
-        KIND,
-        json!({"stroke": stroke, "original": color_json(&color), "channel": Channel::default().id(), "webOnly": false, "swatches": false}),
-    );
+    let mut d = Dialog::new(KIND, json!({"stroke": stroke, "original": color_json(&color), "webOnly": false, "swatches": false}));
     store(&mut d, &Picked::of(color));
     app.ui.dialog = Some(d);
     Ok(Value::Null)
 }
 
 fn body(app: &mut LogocraftApp, ui: &mut Ui, d: &mut Dialog) -> bool {
-    let channel = Channel::parse(&d.str("channel")).unwrap_or_default();
     let web = d.bool("webOnly");
     let swatches = d.bool("swatches");
     let p = picked(d);
     let original = d.fields.get("original").and_then(color_value).unwrap_or(p.color);
-    let gamut = gamut_fix(app, ui.ctx(), "picker-gamut", &p.color);
     let mut pick: Option<Picked> = None;
-    let mut new_channel = None;
     let mut toggle_swatches = false;
     ui.horizontal_top(|ui| {
-        if swatches {
-            pick = swatch_list(app, ui, &p.color).map(Picked::of);
-        } else {
-            let (z, x, y) = field_pos(channel, &p);
-            let at = |x: f32, y: f32| c32(&field_pick(channel, z, x, y).snapped(web).color);
-            if let (Some((x, y)), _) = widgets::color_field(ui, "cp-field", vec2(FIELD, FIELD), (x, y), &at) {
-                pick = Some(field_pick(channel, z, x, y));
+        // The picker every colour in the app is edited with (CMYK included).
+        ui.vertical(|ui| {
+            ui.set_width(260.0);
+            let e = crate::panels::fill_picker::color_controls(ui, "cp", p.color, None);
+            if let Some((c, _)) = e.color {
+                pick = Some(Picked::of(c));
             }
-            ui.add_space(6.0);
-            let track = |z: f32| c32(&Picked::of(slider_color(channel, z, x, y)).snapped(web).color);
-            if let (Some(z), _) = widgets::channel_slider(ui, "cp-slider", z, vec2(22.0, FIELD), &track) {
-                pick = Some(field_pick(channel, z, x, y));
+            if e.eyedropper {
+                app.select_tool("eyedropper");
             }
-        }
+        });
         ui.add_space(14.0);
         ui.vertical(|ui| {
-            ui.horizontal_top(|ui| {
-                if new_original_chips(ui, &p.color, &original) {
-                    pick = Some(Picked::of(original));
-                }
-                ui.add_space(8.0);
-                ui.vertical(|ui| {
-                    if let Some(fix) = gamut
-                        && warning_chip(ui, GAMUT_WARNING, &fix)
-                    {
-                        pick = Some(Picked::of(fix));
-                    }
-                    let ws = web_safe(&p.color);
-                    if !web && !is_web_safe(&p.color) && warning_chip(ui, WEB_WARNING, &ws) {
-                        pick = Some(Picked::of(ws));
-                    }
-                });
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                    toggle_swatches = widgets::flat_button(ui, if swatches { tl!("Color Models") } else { tl!("Color Swatches") }, 110.0).clicked();
-                });
-            });
-            ui.add_space(10.0);
-            let (edit, ch) = value_fields(ui, &p, channel);
-            pick = pick.or(edit);
-            new_channel = ch;
+            if new_original_chips(ui, &p.color, &original) {
+                pick = Some(Picked::of(original));
+            }
+            ui.add_space(8.0);
+            let ws = web_safe(&p.color);
+            if !web && !is_web_safe(&p.color) && warning_chip(ui, WEB_WARNING, &ws) {
+                pick = Some(Picked::of(ws));
+            }
+            ui.add_space(8.0);
+            toggle_swatches = widgets::flat_button(ui, if swatches { tl!("Hide Swatches") } else { tl!("Color Swatches") }, 150.0).clicked();
+            if swatches && let Some(c) = swatch_list(app, ui, &p.color) {
+                pick = Some(Picked::of(c));
+            }
         });
     });
     ui.add_space(8.0);
     if widgets::check(ui, tl!("Only Web Colors"), web, true) {
         d.fields.insert("webOnly".into(), json!(!web));
-    }
-    if let Some(ch) = new_channel {
-        d.fields.insert("channel".into(), json!(ch.id()));
     }
     if toggle_swatches {
         d.fields.insert("swatches".into(), json!(!swatches));
@@ -297,74 +194,7 @@ fn new_original_chips(ui: &mut Ui, new: &Color, original: &Color) -> bool {
     ui.interact(bottom, ui.id().with("cp-original"), Sense::click()).on_hover_text(tl!("Original: click to restore")).clicked()
 }
 
-/// The HSB and RGB fields with the channel radios, hex, Lab and CMYK. Returns the edited colour
-/// and the newly chosen channel.
-fn value_fields(ui: &mut Ui, p: &Picked, channel: Channel) -> (Option<Picked>, Option<Channel>) {
-    let t = Tokens::get(ui.ctx());
-    let rgb = p.color.to_rgb();
-    let lab = p.color.to_lab();
-    let cms = cms::active();
-    let cmyk = p.color.to_cmyk_managed(cms.settings().intent);
-    let mut edit = None;
-    let mut chosen = None;
-    egui::Grid::new("cp-values").num_columns(4).spacing([6.0, 4.0]).show(ui, |ui| {
-        for i in 0..7 {
-            if let Some(&ch) = Channel::ALL.get(i) {
-                if widgets::radio(ui, ch.label(), ch == channel, true) {
-                    chosen = Some(ch);
-                }
-                let (v, suffix) = match i {
-                    0 => (p.hsb[0], "°"),
-                    1 | 2 => (p.hsb[i] * 100.0, "%"),
-                    _ => (rgb[i - 3] * 255.0, ""),
-                };
-                if let Some(nv) = widgets::plain_field(ui, ("cp-left", i), v as f64, suffix, 0, VALUE_W) {
-                    let nv = nv as f32;
-                    edit = Some(match i {
-                        0..3 => {
-                            let mut hsb = p.hsb;
-                            hsb[i] = if i == 0 { nv.clamp(0.0, 360.0) } else { (nv / 100.0).clamp(0.0, 1.0) };
-                            Picked::from_hsb(hsb)
-                        }
-                        _ => {
-                            let mut c = rgb;
-                            c[i - 3] = (nv / 255.0).clamp(0.0, 1.0);
-                            Picked::of(Color::rgb(c[0], c[1], c[2]))
-                        }
-                    });
-                }
-            } else if let Some(c) = widgets::hex_field(ui, "cp-hex", &hex_digits(&p.color)).as_deref().and_then(parse_hex) {
-                edit = Some(Picked::of(c));
-            }
-            let (label, v, suffix) = match i {
-                0 => ("L", lab.l, ""),
-                1 => ("a", lab.a, ""),
-                2 => ("b", lab.b, ""),
-                _ => (["C", "M", "Y", "K"][i - 3], cmyk[i - 3] * 100.0, "%"),
-            };
-            ui.horizontal(|ui| {
-                ui.add_space(12.0);
-                ui.label(egui::RichText::new(label).size(12.5).color(t.text));
-            });
-            if let Some(nv) = widgets::plain_field(ui, ("cp-right", i), v as f64, suffix, 0, VALUE_W) {
-                let nv = nv as f32;
-                edit = Some(Picked::of(if i < 3 {
-                    let mut l = [lab.l, lab.a, lab.b];
-                    l[i] = if i == 0 { nv.clamp(0.0, 100.0) } else { nv.clamp(-128.0, 127.0) };
-                    cms.from_lab(Lab::new(l[0], l[1], l[2]))
-                } else {
-                    let mut k = cmyk;
-                    k[i - 3] = (nv / 100.0).clamp(0.0, 1.0);
-                    Color::cmyk(k[0], k[1], k[2], k[3])
-                }));
-            }
-            ui.end_row();
-        }
-    });
-    (edit, chosen)
-}
-
-/// The document's colour swatches as a list; returns the clicked swatch's colour.
+/// The document's colour swatches; returns the one clicked.
 fn swatch_list(app: &LogocraftApp, ui: &mut Ui, current: &Color) -> Option<Color> {
     let t = Tokens::get(ui.ctx());
     let mut chosen = None;
@@ -413,7 +243,7 @@ mod tests {
     use logocraft_engine::Session;
 
     use super::*;
-    use crate::panels::color::in_gamut;
+    use crate::panels::color::{gamut_fix, in_gamut};
 
     fn app() -> LogocraftApp {
         let mut app = LogocraftApp::new(Session::new(), Default::default());
@@ -431,32 +261,6 @@ mod tests {
 
     fn fill_hex(app: &LogocraftApp) -> String {
         crate::panels::current_paints(app).0.color().unwrap().to_hex()
-    }
-
-    #[test]
-    fn field_and_slider_map_back_per_channel() {
-        let p = Picked::of(Color::rgb8(51, 153, 204));
-        for ch in Channel::ALL {
-            let (z, x, y) = field_pos(ch, &p);
-            assert_eq!(field_pick(ch, z, x, y).color.to_hex(), "#3399cc", "{ch:?}");
-            assert_eq!(Channel::parse(ch.id()), Some(ch));
-        }
-        // Hue: x is saturation, y brightness (white at the top left, black along the bottom).
-        assert_eq!(field_pick(Channel::Hue, 0.0, 0.0, 0.0).color.to_hex(), "#ffffff");
-        assert_eq!(field_pick(Channel::Hue, 0.0, 1.0, 0.0).color.to_hex(), "#ff0000");
-        assert_eq!(field_pick(Channel::Hue, 0.5, 1.0, 1.0).color.to_hex(), "#000000");
-        // Red: the slider is red, x blue and y green (green grows upwards).
-        assert_eq!(field_pick(Channel::Red, 1.0, 1.0, 0.0).color.to_hex(), "#ffffff");
-        assert_eq!(field_pick(Channel::Red, 0.0, 1.0, 1.0).color.to_hex(), "#0000ff");
-        assert_eq!(field_pick(Channel::Green, 1.0, 0.0, 1.0).color.to_hex(), "#00ff00");
-        assert_eq!(field_pick(Channel::Blue, 0.0, 1.0, 1.0).color.to_hex(), "#ff0000");
-        // The hue slider shows the spectrum whatever the colour; the others vary one component.
-        assert_eq!(slider_color(Channel::Hue, 1.0 / 3.0, 0.0, 1.0).to_hex(), "#00ff00");
-        assert_eq!(slider_color(Channel::Saturation, 0.0, 0.0, 0.0).to_hex(), "#ffffff");
-        // A grey keeps the hue it was picked with.
-        let grey = field_pick(Channel::Hue, 0.5, 0.0, 0.5);
-        assert_eq!(grey.hsb[0], 180.0);
-        assert_eq!(field_pos(Channel::Hue, &grey).0, 0.5);
     }
 
     #[test]
