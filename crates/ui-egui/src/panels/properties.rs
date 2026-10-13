@@ -111,6 +111,10 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         divider(ui);
         super::figma_props::paint_sections(app, ui, n);
         divider(ui);
+        // Figma's Selection colors, for a group or frame or several objects.
+        if (n_sel > 1 || matches!(n.kind, NodeKind::Group { .. })) && super::figma_props::selection_colors(app, ui, None, None) {
+            divider(ui);
+        }
         super::effects::section(app, ui);
         divider(ui);
         super::figma_props::export_section(app, ui, n);
@@ -405,6 +409,14 @@ fn artboard_sections(app: &mut LogocraftApp, ui: &mut Ui) {
         super::artboards::art_options(app, ui);
         divider(ui);
         frame_section(app, ui, i, &ab);
+        // Every colour on the artboard, its own fill first, as a Figma frame's Selection colors.
+        let art = app.session.active().map(|d| d.doc.art_in_frame(ab.rect, false)).unwrap_or_default();
+        // White paper counts as its colour, as a new Figma frame's white fill does.
+        let fill = Some((i, ab.fill.unwrap_or(logocraft_color::Color::WHITE)));
+        divider(ui);
+        if !super::figma_props::selection_colors(app, ui, Some(art), fill) {
+            dim_label(ui, tl!("No colours on this artboard yet"));
+        }
     }
     ui.add_space(4.0);
     let w = (ui.available_width() - 6.0) / 2.0;

@@ -21,8 +21,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "Artwork Colors",
             [],
             None,
-            "{} → {colors: [{key: colour identity (\"rgb 255 0 0\", \"cmyk 0 100 100 0\", \"gray 40\", \"lab 55 60 -40\"), hex, count, swatch?: the global swatch it is linked to}]} unique colours used by the selection (fills, strokes, gradient stops, text, mesh points and the tiles of pattern fills and strokes), most used first",
-            has_selection,
+            "{ids?: [id…] (default: the selection)} → {colors: [{key: colour identity (\"rgb 255 0 0\", \"cmyk 0 100 100 0\", \"gray 40\", \"lab 55 60 -40\"), hex, count, swatch?: the global swatch it is linked to}]} unique colours used by the selection or `ids` (fills, strokes, gradient stops, text, mesh points and the tiles of pattern fills and strokes), most used first",
+            has_doc,
             colors
         ),
         cmd!(
@@ -30,7 +30,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Recolor Artwork",
             ["Edit", "Edit Colors"],
             None,
-            "{map: rows [{from: [colour keys (recolor.colors) or \"#rrggbb\" (every colour shown as that hex)], to: colour (hex, key, {c,m,y,k} or {l,a,b}) | null, exclude?: false (the row's colours are kept)}] | {\"key or #rrggbb\": colour, …} (one row per colour), method?: \"exact\" (default)|\"preserveTints\"|\"scaleTints\"|\"tintsShades\"|\"hueShift\" (how a row's colours take its new colour, relative to the row's darkest, average or most saturated colour), limitTo?: swatch library id or name, or \"document\" (the document's swatches): new colours snap to its nearest colour, group?: colour group rewritten with groupColors?: [colour] (default: the rows' new colours, in order, excluded rows left out), rename?: the group's new name, includeImages?: true, includePatterns?: true} recolour the selection (gradients, text, meshes, image pixels and pattern tiles included; each new colour keeps the model of the one it replaces) and the group, as one undo step → {changed}",
+            "{map: rows [{from: [colour keys (recolor.colors) or \"#rrggbb\" (every colour shown as that hex)], to: colour (hex, key, {c,m,y,k} or {l,a,b}) | null, exclude?: false (the row's colours are kept)}] | {\"key or #rrggbb\": colour, …} (one row per colour), method?: \"exact\" (default)|\"preserveTints\"|\"scaleTints\"|\"tintsShades\"|\"hueShift\" (how a row's colours take its new colour, relative to the row's darkest, average or most saturated colour), limitTo?: swatch library id or name, or \"document\" (the document's swatches): new colours snap to its nearest colour, group?: colour group rewritten with groupColors?: [colour] (default: the rows' new colours, in order, excluded rows left out), rename?: the group's new name, includeImages?: true, includePatterns?: true, ids?: [id…] (default: the selection)} recolour the selection or `ids` (gradients, text, meshes, image pixels and pattern tiles included; each new colour keeps the model of the one it replaces) and the group, as one undo step → {changed}",
             has_doc,
             apply
         ),
@@ -108,9 +108,19 @@ fn used_colors(d: &Document, ids: &[NodeId]) -> Vec<Used> {
     used.into_iter().map(|(_, u)| u).collect()
 }
 
-fn colors(s: &mut Session, _: &Value) -> Result<Value> {
+/// The objects a recolour command works on: `ids` (those that exist), else the selection.
+fn targets(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
     let st = s.doc()?;
-    let v: Vec<Value> = used_colors(&st.doc, &st.selection.objects)
+    Ok(match p.get("ids").and_then(Value::as_array) {
+        Some(a) => a.iter().filter_map(Value::as_u64).map(NodeId).filter(|id| st.doc.node(*id).is_some()).collect(),
+        None => st.selection.objects.clone(),
+    })
+}
+
+fn colors(s: &mut Session, p: &Value) -> Result<Value> {
+    let ids = targets(s, p)?;
+    let st = s.doc()?;
+    let v: Vec<Value> = used_colors(&st.doc, &ids)
         .iter()
         .map(|u| {
             let mut v = json!({"key": key_str(&u.color), "hex": u.color.to_hex(), "count": u.count});
@@ -293,7 +303,7 @@ fn apply(s: &mut Session, p: &Value) -> Result<Value> {
             r.to = r.to.map(|c| pl.nearest(c));
         }
     }
-    let ids = s.doc()?.selection.objects.clone();
+    let ids = targets(s, p)?;
     let group = str_param(p, "group");
     if ids.is_empty() && group.is_none() {
         return Err(bad(C, "select artwork to recolour, or give a colour `group`"));

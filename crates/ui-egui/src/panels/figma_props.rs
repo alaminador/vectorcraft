@@ -301,6 +301,88 @@ pub(crate) fn export_section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) {
     }
 }
 
+/// Figma's Selection colors: every colour used in `ids` (the selection when None), and the
+/// artboard's own fill when it is a frame's (`frame`: artboard index and fill), each a chip and
+/// its hex; a new colour (picker or eyedropper) replaces it everywhere in them
+/// (`recolor.apply`, and `artboard.setFrame` for the fill). → whether it drew.
+pub(crate) fn selection_colors(app: &mut LogocraftApp, ui: &mut Ui, ids: Option<Vec<logocraft_doc::NodeId>>, frame: Option<(usize, Color)>) -> bool {
+    let id_list = ids.as_ref().map(|v| v.iter().map(|i| i.0).collect::<Vec<_>>());
+    let q = match &id_list {
+        Some(v) => json!({ "ids": v }),
+        None => json!({}),
+    };
+    let listed = app.session.execute("recolor.colors", &q).ok();
+    let mut rows: Vec<(String, Option<String>, bool)> = vec![];
+    // (hex, recolour key, is the artboard's fill)
+    if let Some((_, c)) = frame {
+        rows.push((c.to_hex(), None, true));
+    }
+    for c in listed.as_ref().and_then(|v| v["colors"].as_array()).cloned().unwrap_or_default() {
+        let (Some(hex), Some(key)) = (c["hex"].as_str(), c["key"].as_str()) else { continue };
+        match rows.iter_mut().find(|(h, _, _)| h.eq_ignore_ascii_case(hex)) {
+            Some(r) => r.1 = Some(key.to_string()),
+            None => rows.push((hex.to_string(), Some(key.to_string()), false)),
+        }
+    }
+    if rows.is_empty() {
+        return false;
+    }
+    section_header(ui, tl!("Selection colors"));
+    const MAX: usize = 16;
+    for (n, (hex, key, is_fill)) in rows.iter().take(MAX).enumerate() {
+        let c = Color::from_hex(hex).unwrap_or(Color::BLACK);
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 6.0;
+            let (rect, resp) = ui.allocate_exact_size(vec2(20.0, 20.0), Sense::click());
+            widgets::swatch_tile(ui, rect, &Paint::solid(c), false, resp.hovered());
+            let mut new: Option<String> = None;
+            widgets::popover(&resp, resp.clicked(), |ui| {
+                ui.set_width(fill_picker::WIDTH);
+                let e = fill_picker::color_controls(ui, &format!("selcol-{n}-{hex}"), c, None);
+                if let Some((nc, phase)) = e.color
+                    && phase != widgets::Live::Dragging
+                {
+                    new = Some(nc.to_hex());
+                }
+                if e.eyedropper {
+                    match (key, frame) {
+                        (Some(k), _) => fill_picker::start_pick(app, "recolor.apply", recolor_params(k, &id_list), &["map", k]),
+                        (None, Some((i, _))) => fill_picker::start_pick(app, "artboard.setFrame", json!({ "index": i }), &["fill"]),
+                        _ => {}
+                    }
+                }
+            });
+            ui.label(egui::RichText::new(hex.trim_start_matches('#').to_ascii_uppercase()).size(11.5));
+            if *is_fill {
+                widgets::dim_label(ui, tl!("Frame"));
+            }
+            if let Some(h) = new {
+                if let Some(k) = key {
+                    let mut p = recolor_params(k, &id_list);
+                    p["map"][k.as_str()] = json!(h);
+                    run(app, "recolor.apply", p);
+                }
+                if let (true, Some((i, _))) = (*is_fill, frame) {
+                    run(app, "artboard.setFrame", json!({ "index": i, "fill": h }));
+                }
+            }
+        });
+    }
+    if rows.len() > MAX {
+        widgets::dim_label(ui, &format!("+{} {}", rows.len() - MAX, tl!("more")));
+    }
+    true
+}
+
+/// `recolor.apply`'s params for colour `key` (its new colour put in later) over `ids`.
+fn recolor_params(key: &str, ids: &Option<Vec<u64>>) -> Value {
+    let mut p = json!({ "map": { key: Value::Null } });
+    if let Some(v) = ids {
+        p["ids"] = json!(v);
+    }
+    p
+}
+
 /// Figma's selection actions in its panel: Create component, Combine as variants, Auto layout.
 pub(crate) fn actions(app: &mut LogocraftApp, ui: &mut Ui, first: Option<&Node>, n_sel: usize) {
     let mut acts: Vec<(&str, &str)> = vec![];
@@ -430,5 +512,36 @@ mod pick_tests {
         let nested =
             crate::state::ColorPick { cmd: "x".into(), params: json!({"index": 0, "params": {}}), key: vec!["params".into(), "color".into()] };
         assert_eq!(crate::panels::fill_picker::picked_params(&nested, "#123456"), json!({"index": 0, "params": {"color": "#123456"}}));
+    }
+}
+
+#[cfg(test)]
+mod selection_color_tests {
+    use logocraft_engine::Session;
+    use serde_json::json;
+
+    use crate::LogocraftApp;
+
+    /// The artboard's art can be recoloured by colour without selecting it: `recolor.colors` and
+    /// `recolor.apply` take the art's ids, as the artboard's Selection colors give them.
+    #[test]
+    fn an_artboards_colours_are_listed_and_replaced_by_ids() {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        for (x, c) in [(10, "#ff0000"), (80, "#ff0000"), (140, "#00ff00")] {
+            app.run("shape.rectangle", json!({"x": x, "y": 10, "width": 40, "height": 40})).unwrap();
+            app.run("paint.setFill", json!({"color": c})).unwrap();
+            app.run("paint.setStroke", json!({"none": true})).unwrap();
+        }
+        app.run("select.none", json!({})).unwrap();
+        let st = app.session.active().unwrap();
+        let ids: Vec<u64> = st.doc.art_in_frame(st.doc.artboards[0].rect, false).iter().map(|i| i.0).collect();
+        assert_eq!(ids.len(), 3);
+        let listed = app.run("recolor.colors", json!({"ids": ids})).unwrap();
+        let red = listed["colors"].as_array().unwrap().iter().find(|c| c["hex"] == "#ff0000").unwrap()["key"].as_str().unwrap().to_string();
+        app.run("recolor.apply", json!({"ids": ids, "map": {red: "#0000ff"}})).unwrap();
+        let after = app.run("recolor.colors", json!({"ids": ids})).unwrap();
+        let hexes: Vec<&str> = after["colors"].as_array().unwrap().iter().filter_map(|c| c["hex"].as_str()).collect();
+        assert!(hexes.contains(&"#0000ff") && hexes.contains(&"#00ff00") && !hexes.contains(&"#ff0000"), "{hexes:?}");
     }
 }
