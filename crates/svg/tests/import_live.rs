@@ -145,7 +145,7 @@ fn a_gaussian_blur_becomes_the_effect_with_its_radius() {
 fn shadow(d: &Document) -> (f64, f64, f64, Color, f32) {
     let fx = logocraft_effects::raster_effects(&effects(d));
     match fx.as_slice() {
-        [RasterFx::DropShadow { dx, dy, blur, color, opacity, mode }] => {
+        [RasterFx::DropShadow { dx, dy, blur, color, opacity, mode, .. }] => {
             assert_eq!(*mode, BlendMode::Normal, "filters composite normally");
             (*dx, *dy, *blur, *color, (opacity * 100.0).round())
         }

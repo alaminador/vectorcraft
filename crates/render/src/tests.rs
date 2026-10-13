@@ -467,3 +467,84 @@ fn supersampled_art_leaves_no_seam_between_shapes_that_meet() {
     assert_eq!(supersample_factor(5000, 5000), None);
     assert_eq!(supersample_factor(40_000, 10), None);
 }
+
+/// Figma's effects (spread, inner shadow, background blur, noise, texture), by their pixels.
+mod figma_effects {
+    use super::*;
+
+    fn with(d: &mut Document, r: Rect, fill: Paint, id: &str, params: serde_json::Value) -> logocraft_doc::NodeId {
+        let mut n = rect_node(d, r, fill, Paint::None, 0.0);
+        n.appearance.effects.push(logocraft_doc::Effect { id: id.into(), params, visible: true });
+        let id = n.id;
+        let l = d.layers[0].id;
+        d.insert(Some(l), usize::MAX, n).unwrap();
+        id
+    }
+
+    fn white() -> RenderOptions {
+        RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() }
+    }
+
+    #[test]
+    fn spread_grows_the_shadow() {
+        let shadow = |spread: f64| {
+            let mut d = Document::new(100.0, 100.0);
+            let p = serde_json::json!({"mode": "normal", "opacity": 100.0, "x": 0.0, "y": 0.0, "blur": 0.0, "spread": spread, "color": "#000000"});
+            with(&mut d, Rect::new(30.0, 30.0, 70.0, 70.0), Paint::solid(Color::WHITE), "stylize.dropShadow", p);
+            Renderer::new().render(&d, 100, 100, Affine::IDENTITY, &white())
+        };
+        assert_eq!(shadow(0.0).pixel(25, 50)[0], 255, "no spread: nothing 5 pt out");
+        assert!(shadow(8.0).pixel(25, 50)[0] < 60, "spread 8: dark 5 pt out");
+    }
+
+    #[test]
+    fn inner_shadow_darkens_inside_the_top_edge() {
+        let mut d = Document::new(100.0, 100.0);
+        let p = serde_json::json!({"mode": "normal", "opacity": 100.0, "x": 0.0, "y": 6.0, "blur": 0.0, "spread": 0.0, "color": "#000000"});
+        with(&mut d, Rect::new(20.0, 20.0, 80.0, 80.0), Paint::solid(Color::WHITE), "stylize.innerShadow", p);
+        let img = Renderer::new().render(&d, 100, 100, Affine::IDENTITY, &white());
+        assert!(img.pixel(50, 23)[0] < 60, "shadow inside, under the top edge: {:?}", img.pixel(50, 23));
+        assert_eq!(img.pixel(50, 50)[0], 255, "the middle untouched");
+        assert_eq!(img.pixel(50, 15)[0], 255, "nothing outside");
+    }
+
+    #[test]
+    fn background_blur_softens_what_is_behind() {
+        let mut d = Document::new(100.0, 100.0);
+        // A hard black/white edge at x = 50 behind, a clear pane with a background blur on top.
+        let back = rect_node(&mut d, Rect::new(0.0, 0.0, 50.0, 100.0), Paint::solid(Color::BLACK), Paint::None, 0.0);
+        let l = d.layers[0].id;
+        d.insert(Some(l), 0, back).unwrap();
+        let pane = with(&mut d, Rect::new(20.0, 20.0, 80.0, 80.0), Paint::None, "blur.background", serde_json::json!({"radius": 10.0}));
+        let img = Renderer::new().render(&d, 100, 100, Affine::IDENTITY, &white());
+        let mid = img.pixel(50, 50)[0];
+        assert!(mid > 40 && mid < 215, "the edge is blurred inside the pane: {mid}");
+        assert_eq!(img.pixel(49, 10)[0], 0, "outside the pane the edge stays hard (black side)");
+        assert_eq!(img.pixel(51, 10)[0], 255);
+        // Hidden: no blur.
+        d.node_mut(pane).unwrap().appearance.effects[0].visible = false;
+        let img = Renderer::new().render(&d, 100, 100, Affine::IDENTITY, &white());
+        assert_eq!(img.pixel(48, 50)[0], 0);
+    }
+
+    #[test]
+    fn noise_and_texture_change_pixels() {
+        let base = |id: Option<(&str, serde_json::Value)>| {
+            let mut d = Document::new(60.0, 60.0);
+            let mut n = rect_node(&mut d, Rect::new(10.0, 10.0, 50.0, 50.0), Paint::solid(Color::rgb(0.2, 0.4, 0.8)), Paint::None, 0.0);
+            if let Some((id, p)) = id {
+                n.appearance.effects.push(logocraft_doc::Effect { id: id.into(), params: p, visible: true });
+            }
+            let l = d.layers[0].id;
+            d.insert(Some(l), 0, n).unwrap();
+            Renderer::new().render(&d, 60, 60, Affine::IDENTITY, &white())
+        };
+        let plain = base(None);
+        let noisy = base(Some(("stylize.noise", serde_json::json!({"size": 1.0, "density": 50.0, "opacity": 80.0, "color": "#000000"}))));
+        let changed = (12..48).flat_map(|y| (12..48).map(move |x| (x, y))).filter(|(x, y)| plain.pixel(*x, *y) != noisy.pixel(*x, *y)).count();
+        assert!(changed > 200, "grains: {changed}");
+        let rough = base(Some(("stylize.texture", serde_json::json!({"size": 2.0, "radius": 3.0, "clip": false}))));
+        let edge = (0..60).filter(|y| plain.pixel(9, *y) != rough.pixel(9, *y) || plain.pixel(50, *y) != rough.pixel(50, *y)).count();
+        assert!(edge > 5, "roughened edges: {edge}");
+    }
+}

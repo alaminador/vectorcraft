@@ -420,7 +420,9 @@ impl Renderer {
         paint: &mut dyn FnMut(&mut Self, &mut RenderContext, &Frame),
     ) -> bool {
         let (mode, opacity, dx, dy, blur, color) = match fx {
-            RasterFx::DropShadow { mode, opacity, dx, dy, blur, color } => (*mode, *opacity, *dx, *dy, *blur, *color),
+            // A spread shadow takes the filter-layer path (its outline is thickened there).
+            RasterFx::DropShadow { spread, .. } if *spread > 0.0 => return false,
+            RasterFx::DropShadow { mode, opacity, dx, dy, blur, color, .. } => (*mode, *opacity, *dx, *dy, *blur, *color),
             RasterFx::OuterGlow { mode, opacity, blur, color } => (*mode, *opacity, 0.0, 0.0, *blur, *color),
             _ => return false,
         };
@@ -710,6 +712,12 @@ impl Renderer {
         let reach = content.reach;
         // The `Arc` drawn: the caller's, or the node `draw_arc` is drawing.
         let owner = content.owner.cloned().or_else(|| self.fx_owner.clone().filter(|o| std::ptr::eq(&**o, content.node)));
+        // Below everything: a background blur (what lies behind, frosted inside the shape).
+        for fx in rfx {
+            if let RasterFx::BackgroundBlur { radius } = fx {
+                self.background_blur(ctx, f, content, *radius);
+            }
+        }
         // Below the content: shadows and outer glows.
         for (i, fx) in rfx.iter().enumerate().filter(|(_, x)| x.is_below()) {
             if let Some(slot) = content.cache
@@ -717,19 +725,29 @@ impl Renderer {
             {
                 continue;
             }
-            let (mode, opacity, dx, dy, blur, color) = match fx {
-                RasterFx::DropShadow { mode, opacity, dx, dy, blur, color } => (*mode, *opacity, *dx, *dy, *blur, *color),
-                RasterFx::OuterGlow { mode, opacity, blur, color } => (*mode, *opacity, 0.0, 0.0, *blur, *color),
+            let (mode, opacity, dx, dy, blur, color, spread) = match fx {
+                RasterFx::DropShadow { mode, opacity, dx, dy, blur, color, spread } => (*mode, *opacity, *dx, *dy, *blur, *color, *spread),
+                RasterFx::OuterGlow { mode, opacity, blur, color } => (*mode, *opacity, 0.0, 0.0, *blur, *color, 0.0),
                 _ => continue,
             };
+            let outline = content.outline;
             let filter = shadow_filter(0.0, 0.0, blur, pcolor(f.ink, &color));
             // The offset moves the content rather than the filter: vello_cpu drops layer content
             // that lies entirely outside the viewport before filtering.
-            let reach = reach + Vec2::new(dx, dy);
+            let reach = (reach + Vec2::new(dx, dy)).inflate(spread, spread);
             self.with_filters(ctx, f, reach, blur, Some((mode, opacity)), |r, c, fr, comp| {
                 c.set_transform(fr.view);
                 c.push_layer(None, comp.map(|m| blend_mode(m.0)), comp.map(|m| m.1), None, Some(filter));
                 paint(r, c, &shifted(fr, dx, dy));
+                // Spread: the silhouette grown by stroking its outline (only its alpha counts).
+                if spread > 0.0
+                    && let Some((g, _)) = outline
+                {
+                    c.set_transform(shifted(fr, dx, dy).view);
+                    c.set_paint(peniko::Color::BLACK);
+                    c.set_stroke(vello_cpu::kurbo::Stroke::new(2.0 * spread).with_join(vello_cpu::kurbo::Join::Round));
+                    c.stroke_path(g);
+                }
                 c.pop_layer();
             });
         }
@@ -742,8 +760,41 @@ impl Renderer {
         } else {
             paint(self, ctx, f);
         }
-        // Above the content: inner glows, clipped to its outline.
+        // Above the content: inner shadows and glows, clipped to its outline.
         let Some((g, rule)) = content.outline else { return };
+        for fx in rfx {
+            let RasterFx::InnerShadow { mode, opacity, dx, dy, blur, color, spread } = fx else { continue };
+            let filter = shadow_filter(0.0, 0.0, *blur, pcolor(f.ink, color));
+            let (dx, dy, spread) = (*dx, *dy, *spread);
+            self.with_filters(ctx, f, g.bounding_box(), *blur, Some((*mode, *opacity)), |_, c, fr, comp| {
+                if let Some((m, o)) = comp {
+                    c.set_transform(Affine::IDENTITY);
+                    c.push_layer(None, Some(blend_mode(m)), Some(o), None, None);
+                }
+                c.set_transform(fr.view);
+                c.set_fill_rule(fill_rule(rule));
+                c.push_clip_layer(g);
+                c.push_layer(None, None, None, None, Some(filter));
+                // Everything outside the shape, moved by the offset, casts the shadow inside;
+                // spread thickens it by stroking the moved outline.
+                c.set_transform(fr.view * Affine::translate((dx, dy)));
+                c.set_paint(peniko::Color::BLACK);
+                let pad = blur * 2.0 + dx.abs().max(dy.abs()) + spread + 4.0 * fr.px;
+                let mut inv = g.bounding_box().inflate(pad, pad).to_path(0.1);
+                inv.extend(g.iter());
+                c.set_fill_rule(peniko::Fill::EvenOdd);
+                c.fill_path(&inv);
+                if spread > 0.0 {
+                    c.set_stroke(vello_cpu::kurbo::Stroke::new(2.0 * spread).with_join(vello_cpu::kurbo::Join::Round));
+                    c.stroke_path(g);
+                }
+                c.pop_layer();
+                c.pop_layer();
+                if comp.is_some() {
+                    c.pop_layer();
+                }
+            });
+        }
         for fx in rfx {
             let RasterFx::InnerGlow { mode, opacity, blur, color, center } = fx else { continue };
             let filter = shadow_filter(0.0, 0.0, *blur, pcolor(f.ink, color));
@@ -777,6 +828,62 @@ impl Renderer {
                 }
             });
         }
+    }
+
+    /// Figma's background blur: the document drawn up to (not including) `content`'s object,
+    /// offscreen over the object's reach, blurred (σ = `radius` / 2) and clipped to its outline
+    /// (else its bounds), then drawn below it. Not cached: what lies behind can change anywhere.
+    /// Backdrops don't nest (a blur inside a backdrop is skipped).
+    fn background_blur(&mut self, ctx: &mut RenderContext, f: &Frame, content: &Content, radius: f64) {
+        if self.backdrop_stop.is_some() || !(radius.is_finite() && radius > 0.0) || f.opts.outline {
+            return;
+        }
+        let screen = Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64);
+        let shape = f.view.transform_rect_bbox(content.reach).intersect(screen);
+        if !(shape.width() > 0.0 && shape.height() > 0.0) {
+            return;
+        }
+        // The blur gathers from around the shape: draw that margin too.
+        let margin = 1.5 * radius / f.px.max(1e-9) + 2.0;
+        let region = shape.inflate(margin, margin).intersect(screen.inflate(margin, margin));
+        let (x0, y0) = (region.x0.floor(), region.y0.floor());
+        let (rw, rh) = ((region.x1 - x0).max(1.0), (region.y1 - y0).max(1.0));
+        let side = u16::MAX as f64;
+        let k = (PIXEL_BUDGET / (rw * rh)).sqrt().min(side / rw).min(side / rh).min(1.0);
+        let (w, h) = ((rw * k).ceil().clamp(1.0, side), (rh * k).ceil().clamp(1.0, side));
+        let (wu, hu) = (w as u16, h as u16);
+        let view = Affine::scale(k) * Affine::translate((-x0, -y0)) * f.view;
+        let to_doc = view.inverse();
+        let frame = Frame { mt: false, view, visible: to_doc.transform_rect_bbox(Rect::new(0.0, 0.0, w, h)), px: f.px / k, ..*f };
+        let mut off = f.offscreen_context(wu, hu);
+        if f.opts.artboards {
+            off.set_transform(frame.view);
+            off.set_paint(peniko::Color::WHITE);
+            for ab in &f.doc.artboards {
+                off.fill_rect(&ab.rect);
+            }
+        }
+        // The backdrop is a picture of its own, drawn up to the object.
+        let outer =
+            (std::mem::take(&mut self.knockout), std::mem::take(&mut self.nested), self.backdrop.take(), std::mem::take(&mut self.clip_paths));
+        (self.backdrop_stop, self.backdrop_reached) = (Some(content.node.id), false);
+        self.draw_page(&mut off, &frame);
+        (self.backdrop_stop, self.backdrop_reached) = (None, false);
+        (self.knockout, self.nested, self.backdrop, self.clip_paths) = outer;
+        off.flush();
+        let mut pm = vello_cpu::Pixmap::new(wu, hu);
+        off.render(&mut pm, &mut self.resources);
+        effects::pixel::gaussian_rgba(pm.data_as_u8_slice_mut(), wu as usize, hu as usize, radius / 2.0 / frame.px);
+        let bounds_path;
+        let (g, rule) = match content.outline {
+            Some(o) => o,
+            None => {
+                bounds_path = content.reach.to_path(0.1);
+                (&bounds_path, FillRule::NonZero)
+            }
+        };
+        self.clip_pixels(&mut pm, &frame, g, rule);
+        draw_scaled(ctx, std::sync::Arc::new(pm), (x0, y0), k);
     }
 
     /// Paint `content` through the content-changing effects of `rfx` (Gaussian Blur, Feather and the

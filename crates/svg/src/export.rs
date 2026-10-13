@@ -1600,6 +1600,24 @@ impl Writer<'_> {
             let flood =
                 |c: &logocraft_color::Color, o: f32| format!("<feFlood flood-color=\"{}\" flood-opacity=\"{}\"/>", c.to_hex(), fmt_num(o as f64, 3));
             let body = match f {
+                RasterFx::DropShadow { opacity, dx, dy, blur, color, spread, .. } if *spread > 0.0 => format!(
+                    "<feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"{}\"/><feGaussianBlur stdDeviation=\"{}\"/><feOffset dx=\"{}\" dy=\"{}\" result=\"shadow\"/>{}<feComposite in2=\"shadow\" operator=\"in\" result=\"paint\"/><feMerge><feMergeNode in=\"paint\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>",
+                    self.num(*spread),
+                    sd(*blur),
+                    self.num(*dx),
+                    self.num(*dy),
+                    flood(color, *opacity)
+                ),
+                RasterFx::InnerShadow { opacity, dx, dy, blur, color, spread, .. } => format!(
+                    "<feComponentTransfer in=\"SourceAlpha\"><feFuncA type=\"table\" tableValues=\"1 0\"/></feComponentTransfer><feMorphology operator=\"dilate\" radius=\"{}\"/><feGaussianBlur stdDeviation=\"{}\"/><feOffset dx=\"{}\" dy=\"{}\" result=\"shadow\"/>{}<feComposite in2=\"shadow\" operator=\"in\"/><feComposite in2=\"SourceAlpha\" operator=\"in\" result=\"paint\"/><feMerge><feMergeNode in=\"SourceGraphic\"/><feMergeNode in=\"paint\"/></feMerge>",
+                    self.num(*spread),
+                    sd(*blur),
+                    self.num(*dx),
+                    self.num(*dy),
+                    flood(color, *opacity)
+                ),
+                // SVG filters can't see what lies behind an object.
+                RasterFx::BackgroundBlur { .. } => continue,
                 RasterFx::DropShadow { opacity, dx, dy, blur, color, .. } => format!(
                     "<feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"{}\"/><feOffset dx=\"{}\" dy=\"{}\" result=\"shadow\"/>{}<feComposite in2=\"shadow\" operator=\"in\" result=\"paint\"/><feMerge><feMergeNode in=\"paint\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>",
                     sd(*blur),
@@ -1636,7 +1654,10 @@ impl Writer<'_> {
             };
             // Filters composite normally: a shadow's or glow's other blend mode is recorded for import.
             let mode = match f {
-                RasterFx::DropShadow { mode, .. } | RasterFx::OuterGlow { mode, .. } | RasterFx::InnerGlow { mode, .. }
+                RasterFx::DropShadow { mode, .. }
+                | RasterFx::OuterGlow { mode, .. }
+                | RasterFx::InnerGlow { mode, .. }
+                | RasterFx::InnerShadow { mode, .. }
                     if *mode != BlendMode::Normal =>
                 {
                     format!(" {}=\"{}\"", crate::import::BLEND, blend_css(*mode))

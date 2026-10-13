@@ -333,7 +333,7 @@ fn raster_effects_parse_and_outset() {
     let r = raster_effects(&list);
     assert_eq!(r.len(), 5);
     match &r[0] {
-        RasterFx::DropShadow { mode, opacity, dx, dy, blur, color } => {
+        RasterFx::DropShadow { mode, opacity, dx, dy, blur, color, .. } => {
             assert_eq!(*mode, logocraft_doc::color::BlendMode::Multiply);
             assert!(close(*opacity as f64, 0.5, 1e-6));
             assert_eq!((*dx, *dy, *blur), (10.0, -4.0, 6.0));

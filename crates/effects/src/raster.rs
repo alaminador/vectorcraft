@@ -21,6 +21,24 @@ pub enum RasterFx {
         dy: f64,
         blur: f64,
         color: Color,
+        /// Figma's spread: the silhouette grown by this much before it is blurred (pt, ≥ 0).
+        spread: f64,
+    },
+    /// Figma's inner shadow: the shadow of the space around the object cast inside it, offset
+    /// by (`dx`, `dy`), blurred, and thickened by `spread`; painted above the object, clipped to it.
+    InnerShadow {
+        mode: BlendMode,
+        opacity: f32,
+        dx: f64,
+        dy: f64,
+        blur: f64,
+        color: Color,
+        spread: f64,
+    },
+    /// Figma's background blur: whatever lies behind the object, blurred (σ = radius / 2) inside
+    /// its shape (a frosted glass), painted below the object.
+    BackgroundBlur {
+        radius: f64,
     },
     OuterGlow {
         mode: BlendMode,
@@ -55,7 +73,10 @@ impl RasterFx {
     /// The blend mode it paints with (shadows and glows).
     pub fn mode(&self) -> Option<BlendMode> {
         match self {
-            RasterFx::DropShadow { mode, .. } | RasterFx::OuterGlow { mode, .. } | RasterFx::InnerGlow { mode, .. } => Some(*mode),
+            RasterFx::DropShadow { mode, .. }
+            | RasterFx::OuterGlow { mode, .. }
+            | RasterFx::InnerGlow { mode, .. }
+            | RasterFx::InnerShadow { mode, .. } => Some(*mode),
             _ => None,
         }
     }
@@ -63,7 +84,8 @@ impl RasterFx {
     /// further around larger objects).
     pub fn outset(&self, bounds: Rect) -> f64 {
         match self {
-            RasterFx::DropShadow { dx, dy, blur, .. } => dx.abs().max(dy.abs()) + 1.5 * blur,
+            RasterFx::DropShadow { dx, dy, blur, spread, .. } => dx.abs().max(dy.abs()) + 1.5 * blur + spread.max(0.0),
+            RasterFx::InnerShadow { .. } | RasterFx::BackgroundBlur { .. } => 0.0,
             RasterFx::OuterGlow { blur, .. } => 1.5 * blur,
             RasterFx::InnerGlow { .. } | RasterFx::Feather { .. } => 0.0,
             RasterFx::GaussianBlur { radius } => 1.5 * radius,
@@ -85,6 +107,15 @@ pub(crate) fn color_param(p: &Value, default: Color) -> Color {
         Some(Value::Array(a)) if a.len() >= 3 => {
             let f = |i: usize| a[i].as_f64().unwrap_or(0.0) as f32;
             Color::rgb(f(0), f(1), f(2))
+        }
+        // `{c, m, y, k}` (0..1, or percent when any is above 1) keeps a colour's CMYK, as the
+        // paint commands take it.
+        Some(Value::Object(o)) if ["c", "m", "y", "k"].iter().all(|k| o.contains_key(*k)) && !o.contains_key("model") => {
+            let v: Vec<f64> =
+                ["c", "m", "y", "k"].iter().map(|k| o.get(*k).and_then(Value::as_f64).filter(|v| v.is_finite()).unwrap_or(0.0)).collect();
+            let scale = if v.iter().any(|x| *x > 1.0) { 100.0 } else { 1.0 };
+            let f = |i: usize| (v.get(i).copied().unwrap_or(0.0) / scale).clamp(0.0, 1.0) as f32;
+            Color::cmyk(f(0), f(1), f(2), f(3))
         }
         Some(v @ Value::Object(_)) => serde_json::from_value(v.clone()).unwrap_or(default),
         _ => default,
@@ -111,7 +142,18 @@ pub fn raster_effects(effects: &[Effect]) -> Vec<RasterFx> {
                     dy: num(&p, "y", 7.0).clamp(-1e4, 1e4),
                     blur,
                     color: color_param(&p, Color::BLACK),
+                    spread: num(&p, "spread", 0.0).clamp(0.0, 1e4),
                 },
+                "stylize.innerShadow" => RasterFx::InnerShadow {
+                    mode: blend_mode(text(&p, "mode", "normal")),
+                    opacity: opacity(&p),
+                    dx: num(&p, "x", 0.0).clamp(-1e4, 1e4),
+                    dy: num(&p, "y", 4.0).clamp(-1e4, 1e4),
+                    blur: num(&p, "blur", 4.0).clamp(0.0, 1000.0),
+                    color: color_param(&p, Color::BLACK),
+                    spread: num(&p, "spread", 0.0).clamp(0.0, 1e4),
+                },
+                "blur.background" => RasterFx::BackgroundBlur { radius: num(&p, "radius", 4.0).clamp(0.0, 1000.0) },
                 "stylize.outerGlow" => RasterFx::OuterGlow {
                     mode: blend_mode(text(&p, "mode", "screen")),
                     opacity: opacity(&p),

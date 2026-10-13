@@ -17,6 +17,7 @@ mod blur;
 mod brushstrokes;
 mod distort;
 mod edges;
+mod figma;
 mod pixelate;
 mod sharpen;
 mod texture;
@@ -33,7 +34,7 @@ pub use pixelate::{MEZZOTINT_TYPES, Mezzotint};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 28] = [
+pub const PIXEL_EFFECTS: [&str; 30] = [
     "artistic.filmGrain",
     "blur.radial",
     "blur.smart",
@@ -54,6 +55,8 @@ pub const PIXEL_EFFECTS: [&str; 28] = [
     "pixelate.pointillize",
     "sharpen.unsharpMask",
     "stylize.glowingEdges",
+    "stylize.noise",
+    "stylize.texture",
     "texture.craquelure",
     "texture.grain",
     "texture.mosaicTiles",
@@ -152,6 +155,13 @@ pub enum PixelFx {
     DeInterlace { even: bool, interpolate: bool },
     /// Video › NTSC Colors: colours a television signal can't carry made less saturated.
     NtscColors,
+    /// Figma's noise: grains `size` across (document units), `density` of them (0..1) painted
+    /// over the object at `opacity` (0..1), in `color` (premultiplied-free RGB 0..255) or, with
+    /// `multi`, in random colours.
+    Noise { size: f64, density: f64, opacity: f64, color: [u8; 3], multi: bool },
+    /// Figma's texture: the object's pixels jittered by up to `radius` in grains `size` across,
+    /// roughening its edges; with `clip`, kept inside its shape.
+    Texture { size: f64, radius: f64, clip: bool },
 }
 
 /// What a raster's colour channels hold, for the filters that treat them apart (Color Halftone
@@ -318,6 +328,22 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             interpolate: text(p, "create", "duplication").eq_ignore_ascii_case("interpolation"),
         },
         "video.ntscColors" => PixelFx::NtscColors,
+        "stylize.noise" => {
+            let hex = text(p, "color", "#000000");
+            let c = logocraft_doc::color::Color::from_hex(hex).unwrap_or(logocraft_doc::color::Color::BLACK).to_rgba8(1.0);
+            PixelFx::Noise {
+                size: num(p, "size", 0.5).clamp(0.05, 100.0),
+                density: (num(p, "density", 50.0) / 100.0).clamp(0.0, 1.0),
+                opacity: (num(p, "opacity", 25.0) / 100.0).clamp(0.0, 1.0),
+                color: [c[0], c[1], c[2]],
+                multi: text(p, "type", "mono").eq_ignore_ascii_case("multi"),
+            }
+        }
+        "stylize.texture" => PixelFx::Texture {
+            size: num(p, "size", 2.0).clamp(0.05, 100.0),
+            radius: num(p, "radius", 2.0).clamp(0.0, 100.0),
+            clip: flag(p, "clip", true),
+        },
         _ => return None,
     })
 }
@@ -356,7 +382,15 @@ impl PixelFx {
             | PixelFx::MosaicTiles { .. }
             | PixelFx::Texturizer { .. }
             | PixelFx::DeInterlace { .. }
-            | PixelFx::NtscColors => 0.0,
+            | PixelFx::NtscColors
+            | PixelFx::Noise { .. } => 0.0,
+            PixelFx::Texture { radius, clip, .. } => {
+                if clip {
+                    0.0
+                } else {
+                    radius
+                }
+            }
             // A crystal's, dot's or pane's point inside the object reaches out by up to its cell.
             PixelFx::Crystallize { cell } | PixelFx::Pointillize { cell } | PixelFx::StainedGlass { cell, .. } => 1.5 * cell,
             // A square whose centre is on the object is drawn whole.
@@ -400,7 +434,8 @@ impl PixelFx {
             PixelFx::StainedGlass { cell, .. } => Some(2.5 * cell),
             // The lines above and below.
             PixelFx::DeInterlace { .. } => Some(video::MAX_LINE),
-            PixelFx::NtscColors => Some(0.0),
+            PixelFx::NtscColors | PixelFx::Noise { .. } => Some(0.0),
+            PixelFx::Texture { radius, .. } => Some(radius),
         }
     }
 
@@ -442,6 +477,8 @@ impl PixelFx {
             }
             PixelFx::DeInterlace { even, interpolate } => video::deinterlace(px, w, h, space, even, interpolate),
             PixelFx::NtscColors => video::ntsc(px),
+            PixelFx::Noise { size, density, opacity, color, multi } => figma::noise(px, w, h, space, size, density, opacity, color, multi),
+            PixelFx::Texture { size, radius, clip } => figma::texture(px, w, h, space, size, radius, clip),
         }
     }
 }

@@ -580,9 +580,22 @@ impl Rules<'_> {
         let mut filter = None;
         for f in logocraft_effects::raster_effects(fx) {
             match f {
+                RasterFx::DropShadow { opacity, dx, dy, blur, color, spread, .. } if spread > 0.0 && !text => {
+                    shadows.push(format!("{} {} {} {} {}", self.len(dx), self.len(dy), self.len(blur), self.len(spread), color_css(&color, opacity)))
+                }
                 RasterFx::DropShadow { opacity, dx, dy, blur, color, .. } => {
                     shadows.push(format!("{} {} {} {}", self.len(dx), self.len(dy), self.len(blur), color_css(&color, opacity)))
                 }
+                RasterFx::InnerShadow { opacity, dx, dy, blur, color, spread, .. } if !text => shadows.push(format!(
+                    "inset {} {} {} {} {}",
+                    self.len(dx),
+                    self.len(dy),
+                    self.len(blur),
+                    self.len(spread),
+                    color_css(&color, opacity)
+                )),
+                RasterFx::InnerShadow { .. } => art.unsupported("inner shadows on type"),
+                RasterFx::BackgroundBlur { radius } => art.props.push(("backdrop-filter", format!("blur({})", self.len(radius / 2.0)))),
                 RasterFx::OuterGlow { opacity, blur, color, .. } => shadows.push(format!("0 0 {} {}", self.len(blur), color_css(&color, opacity))),
                 RasterFx::InnerGlow { opacity, blur, color, center: false, .. } if !text => {
                     shadows.push(format!("inset 0 0 {} {}", self.len(blur), color_css(&color, opacity)))

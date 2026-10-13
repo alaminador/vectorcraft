@@ -122,7 +122,10 @@ fn lengths_of(id: &str) -> Lengths {
         "path.outlineStroke" => always(&["width"]),
         "stylize.roundCorners" | "stylize.feather" | "blur.gaussian" | "blur.smart" | "sharpen.unsharpMask" => always(&["radius"]),
         "stylize.scribble" => always(&["overlap", "strokeWidth", "spacing", "variation"]),
-        "stylize.dropShadow" => always(&["x", "y", "blur"]),
+        "stylize.dropShadow" | "stylize.innerShadow" => always(&["x", "y", "blur", "spread"]),
+        "blur.background" => always(&["radius"]),
+        "stylize.noise" => always(&["size"]),
+        "stylize.texture" => always(&["size", "radius"]),
         "stylize.innerGlow" | "stylize.outerGlow" => always(&["blur"]),
         "stylize.glowingEdges" => always(&["edgeWidth", "smoothness"]),
         "brushStrokes.accentedEdges" => always(&["edgeWidth"]),
@@ -266,8 +269,36 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "stylize.dropShadow",
             "Drop Shadow…",
             STYLIZE,
-            "{mode: blend mode (\"multiply\"), opacity: % (75), x: pt (7), y: pt (7), blur: pt (5), color: \"#rrggbb\" (\"#000000\")}",
-            json!({"mode": "multiply", "opacity": 75.0, "x": 7.0, "y": 7.0, "blur": 5.0, "color": "#000000"}),
+            "{mode: blend mode (\"multiply\"), opacity: % (75), x: pt (7), y: pt (7), blur: pt (5), spread: pt (0; the silhouette grown before blurring, as in Figma), color: \"#rrggbb\" | {c,m,y,k} (\"#000000\")}",
+            json!({"mode": "multiply", "opacity": 75.0, "x": 7.0, "y": 7.0, "blur": 5.0, "spread": 0.0, "color": "#000000"}),
+        ),
+        r(
+            "stylize.innerShadow",
+            "Inner Shadow…",
+            STYLIZE,
+            "{mode: blend mode (\"normal\"), opacity: % (25), x: pt (0), y: pt (4), blur: pt (4), spread: pt (0), color: \"#rrggbb\" | {c,m,y,k} (\"#000000\")} Figma's inner shadow: cast inside the object from its edges, clipped to it",
+            json!({"mode": "normal", "opacity": 25.0, "x": 0.0, "y": 4.0, "blur": 4.0, "spread": 0.0, "color": "#000000"}),
+        ),
+        r(
+            "blur.background",
+            "Background Blur…",
+            BLUR,
+            "{radius: pt (4)} Figma's background blur: what lies behind the object, blurred inside its shape (frosted glass); give the object a translucent fill to see it",
+            json!({"radius": 4.0}),
+        ),
+        r(
+            "stylize.noise",
+            "Noise…",
+            STYLIZE,
+            "{type: \"mono\"|\"multi\" (\"mono\"), size: pt (0.5; the grain), density: % (50), opacity: % (25), color: \"#rrggbb\" (\"#000000\"; mono)} Figma's noise: grain over the object, fixed to the page",
+            json!({"type": "mono", "size": 0.5, "density": 50.0, "opacity": 25.0, "color": "#000000"}),
+        ),
+        r(
+            "stylize.texture",
+            "Texture…",
+            STYLIZE,
+            "{size: pt (2; the grain), radius: pt (2; how far edges are roughened), clip: bool (true; keep inside the shape)} Figma's texture: grainy, roughened edges",
+            json!({"size": 2.0, "radius": 2.0, "clip": true}),
         ),
         r(
             "stylize.innerGlow",
@@ -618,8 +649,16 @@ pub fn scale_effect(e: &mut Effect, s: f64) {
 
 /// Is `id` a raster (painted) effect?
 pub fn is_raster(id: &str) -> bool {
-    matches!(id, "stylize.dropShadow" | "stylize.innerGlow" | "stylize.outerGlow" | "stylize.feather" | "blur.gaussian")
-        || PIXEL_EFFECTS.contains(&id)
+    matches!(
+        id,
+        "stylize.dropShadow"
+            | "stylize.innerShadow"
+            | "stylize.innerGlow"
+            | "stylize.outerGlow"
+            | "stylize.feather"
+            | "blur.gaussian"
+            | "blur.background"
+    ) || PIXEL_EFFECTS.contains(&id)
 }
 
 /// Does `id` change geometry? (Crop Marks adds art of its own instead, [`crop_marks_art`]; colour

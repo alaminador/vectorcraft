@@ -89,6 +89,9 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     }
     appearance_section(app, ui);
     divider(ui);
+    // Figma's Effects: shadows, blurs, noise and texture.
+    super::effects::section(app, ui);
+    divider(ui);
     section_header(ui, tl!("Align"));
     ui.horizontal(|ui| {
         super::align::align_buttons(app, ui, 26.0);

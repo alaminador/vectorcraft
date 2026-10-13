@@ -55,6 +55,15 @@ pub fn specs() -> Vec<CommandSpec> {
             set_params
         ),
         cmd!(
+            "effect.setType",
+            "Effect Type",
+            [],
+            None,
+            "{index: int, effect: id (e.g. \"stylize.innerShadow\"), params?: {…} (missing keys take the effect's defaults), item?: appearance item index|null (as effect.remove), ids?: [..]} turn the effect at `index` into another one in its place (the Effects section's type menu), keeping whether it shows → {ids}",
+            has_doc,
+            set_type
+        ),
+        cmd!(
             "effect.expandAppearance",
             "Expand Appearance",
             ["Object"],
@@ -272,6 +281,27 @@ fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(v) = visible {
             e.visible = v;
         }
+        true
+    })?;
+    Ok(json!({ "ids": ids_json(&ids) }))
+}
+
+fn set_type(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "effect.setType";
+    let index = index_param(p, "index", C)?;
+    let id = str_param(p, "effect").ok_or_else(|| bad(C, "give `effect`"))?.to_string();
+    if effects::effect_info(&id).is_none() {
+        return Err(bad(C, format!("unknown effect `{id}` (see effect.list)")));
+    }
+    let params = p.get("params").cloned().unwrap_or(Value::Null);
+    if !params.is_null() && !params.is_object() {
+        return Err(bad(C, "`params` must be an object"));
+    }
+    let item = item_target(s, p, C)?;
+    let ids = edit_effects(s, p, item, C, "Effect Type", &format!("{C}: no effect at index {index}"), |fx| {
+        let Some(e) = fx.get_mut(index) else { return false };
+        e.id = id.clone();
+        e.params = effects::merged_params(&id, &params);
         true
     })?;
     Ok(json!({ "ids": ids_json(&ids) }))

@@ -11,6 +11,7 @@ pub mod autolayout;
 pub mod brushes;
 pub mod character;
 pub mod color;
+pub mod effects;
 pub mod fill_picker;
 pub mod glyphs;
 pub mod gradient;

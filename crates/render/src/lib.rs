@@ -456,6 +456,11 @@ pub struct Renderer {
     isolation: Option<(u64, usize, NodeId, Vec<NodeId>)>,
     /// Drawing inside the isolated container or a dimmed object: nothing further dims.
     isolation_settled: bool,
+    /// Background blur: drawing what lies behind this object, so drawing stops at it
+    /// ([`Self::skipped`]).
+    backdrop_stop: Option<NodeId>,
+    /// The object `backdrop_stop` names has been reached: nothing more is drawn.
+    backdrop_reached: bool,
 }
 
 /// How deep inline graphics nest (text in a symbol shown inline in text…) before they draw nothing.
@@ -548,6 +553,8 @@ impl Renderer {
             raster: vello_cpu::RasterizerSettings::default(),
             isolation: None,
             isolation_settled: false,
+            backdrop_stop: None,
+            backdrop_reached: false,
         }
     }
 
@@ -886,6 +893,14 @@ impl Renderer {
 
     /// Whether `a` is left out of this frame: hidden, a skipped template or guide, or culled.
     fn skipped(&mut self, f: &Frame, a: &Arc<Node>) -> bool {
+        // Drawing a background blur's backdrop: everything from its object on is in front of it.
+        if self.backdrop_reached {
+            return true;
+        }
+        if self.backdrop_stop == Some(a.id) {
+            self.backdrop_reached = true;
+            return true;
+        }
         let skipped_template = f.opts.skip_templates && matches!(a.kind, NodeKind::Layer { template: true, .. } | NodeKind::Path { guide: true, .. });
         if !a.visible || skipped_template || f.opts.hidden.contains(&a.id) {
             return true;
