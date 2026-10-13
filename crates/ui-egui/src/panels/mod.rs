@@ -7,6 +7,7 @@ pub mod align;
 pub mod appearance;
 pub mod artboards;
 pub mod asset_export;
+pub mod autolayout;
 pub mod brushes;
 pub mod character;
 pub mod color;

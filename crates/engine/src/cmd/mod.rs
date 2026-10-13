@@ -3,6 +3,7 @@
 pub(crate) mod appearance;
 mod assets;
 mod attributes;
+pub(crate) mod autolayout;
 mod brushsym;
 mod buildcmds;
 pub mod clipboard;
@@ -246,6 +247,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(assets::specs());
         v.extend(webexport::specs());
         v.extend(components::specs());
+        v.extend(autolayout::specs());
         v.extend(imagefill::specs());
         v
     })

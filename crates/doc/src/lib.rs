@@ -16,6 +16,7 @@ pub mod hit;
 mod id_index;
 pub mod inks;
 mod inline;
+pub mod layout;
 pub mod shared;
 pub use inline::{SYMBOL_HALF, SYMBOL_SIZES};
 pub use shared::Shared;

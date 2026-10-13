@@ -27,6 +27,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         (_, n) if n > 1 => crate::i18n::tn(n as u64, "{n} Object", "{n} Objects"),
         (Some(n), _) if crate::panels::image_trace::is_trace(n) => tl!("Image Tracing").to_string(),
         (Some(n), _) if n.extras().component.is_some() => tl!("Main Component").to_string(),
+        (Some(n), _) if n.extras().layout.is_some() => tl!("Frame").to_string(),
         (Some(n), _) if matches!(n.kind, NodeKind::SymbolInstance { .. }) => tl!("Instance").to_string(),
         (Some(n), _) => tl!(n.kind_label()).to_string(),
     };
@@ -47,6 +48,17 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         && component_section(app, ui, n)
     {
         divider(ui);
+    }
+    // Auto layout: a frame's settings, and a frame child's sizing (a nested frame shows both).
+    if n_sel == 1
+        && let Some(n) = &first
+    {
+        if super::autolayout::frame_section(app, ui, n) {
+            divider(ui);
+        }
+        if super::autolayout::in_frame(app, n) && super::autolayout::child_section(app, ui, n) {
+            divider(ui);
+        }
     }
     // The Gradient tool: the gradient's type and, for a freeform one, how clicks add points (#921).
     if app.session.tool_id() == "gradient" {
@@ -121,6 +133,9 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     let is_component = first.as_ref().is_some_and(|n| n.extras().component.is_some() || matches!(n.kind, NodeKind::SymbolInstance { .. }));
     if !is_component {
         actions.push((tl!("Create Component"), "component.create"));
+    }
+    if !first.as_ref().is_some_and(|n| n.extras().layout.is_some()) {
+        actions.push((tl!("Add Auto Layout"), "layout.add"));
     }
     if multi_color(app, ui.ctx()) {
         actions.push((tl!("Recolor"), "ui.recolorDialog"));

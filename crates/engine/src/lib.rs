@@ -1364,6 +1364,8 @@ impl Session {
                 Ok(()) => {
                     // Main components: copies become instances, instances follow their main.
                     cmd::components::sync(&before, Arc::make_mut(&mut st.doc));
+                    // Auto layout: frames lay their children out again.
+                    cmd::autolayout::sync(&before, Arc::make_mut(&mut st.doc));
                     // Inline graphics in text follow their symbols.
                     cmd::inline::refresh(&before, Arc::make_mut(&mut st.doc));
                     // Text Wrap: area type follows its wrap objects; then threads re-flow.
@@ -1588,6 +1590,8 @@ mod tests_areafit;
 mod tests_assets;
 #[cfg(test)]
 mod tests_attributes;
+#[cfg(test)]
+mod tests_autolayout;
 #[cfg(test)]
 mod tests_bboxrotate;
 #[cfg(test)]

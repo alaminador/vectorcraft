@@ -558,6 +558,10 @@ pub struct NodeExtras {
     /// (`Document::symbols`). It stays on the canvas, editable; the symbol's art follows it and
     /// every instance with it.
     pub component: Option<String>,
+    /// Auto layout: this group is a frame that lays its children out ([`crate::layout`]).
+    pub layout: Option<Box<crate::layout::AutoLayout>>,
+    /// How this child of an auto layout frame sizes and whether it flows ([`crate::layout`]).
+    pub layout_item: Option<crate::layout::LayoutItem>,
 }
 
 /// No extras: what [`Node::extras`] gives for a node without any.
@@ -573,6 +577,8 @@ static NO_EXTRAS: NodeExtras = NodeExtras {
     slice: None,
     perspective: None,
     component: None,
+    layout: None,
+    layout_item: None,
 };
 
 /// A node's [`NodeExtras`], if it has any ([`Node::extras`]). Extras that are all unset equal
@@ -704,6 +710,8 @@ impl Serialize for Node {
             is_default(&self.bbox_angle),
             e.perspective.is_none(),
             e.component.is_none(),
+            e.layout.is_none(),
+            e.layout_item.is_none(),
         ];
         let mut st = s.serialize_struct("Node", skips.iter().filter(|s| !**s).count())?;
         let mut skip = skips.into_iter();
@@ -739,6 +747,8 @@ impl Serialize for Node {
         field!("bbox_angle", &self.bbox_angle);
         field!("perspective", &e.perspective);
         field!("component", &e.component);
+        field!("layout", &e.layout);
+        field!("layout_item", &e.layout_item);
         st.end()
     }
 }
@@ -792,6 +802,10 @@ struct NodeWire {
     perspective: Option<Box<crate::PerspectiveAttachment>>,
     #[serde(default)]
     component: Option<String>,
+    #[serde(default)]
+    layout: Option<Box<crate::layout::AutoLayout>>,
+    #[serde(default)]
+    layout_item: Option<crate::layout::LayoutItem>,
 }
 
 impl From<NodeWire> for Node {
@@ -808,6 +822,8 @@ impl From<NodeWire> for Node {
             slice: w.slice,
             perspective: w.perspective,
             component: w.component,
+            layout: w.layout,
+            layout_item: w.layout_item,
         };
         Node {
             id: w.id,
@@ -1190,6 +1206,10 @@ impl Node {
             && m.linked
         {
             Arc::make_mut(&mut m.art).transform_scaled(a, sc);
+        }
+        // An auto layout frame's bounds move with it.
+        if let Some(l) = self.extras_if_any().and_then(|e| e.layout.as_mut()) {
+            l.transform(a);
         }
     }
     /// Visit this node and all descendants depth first (paint order).
@@ -1868,6 +1888,8 @@ mod tests {
             e.slice = Some(Box::default());
             e.perspective = Some(Box::new(crate::PerspectiveAttachment::new("left", 1.0)));
             e.component = Some("Logo".into());
+            e.layout = Some(Box::new(crate::layout::AutoLayout::new(Default::default(), 8.0, Default::default())));
+            e.layout_item = Some(crate::layout::LayoutItem { absolute: true, ..Default::default() });
         }
         /// The top-level keys of a JSON object, in the order written.
         struct Keys(Vec<String>);
@@ -1909,6 +1931,8 @@ mod tests {
             "bbox_angle",
             "perspective",
             "component",
+            "layout",
+            "layout_item",
         ];
         assert_eq!(keys, order);
         assert_eq!(serde_json::from_value::<Node>(v).unwrap(), n);
