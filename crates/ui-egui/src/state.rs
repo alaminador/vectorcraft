@@ -230,6 +230,15 @@ impl Dialog {
     }
 }
 
+/// Where the eyedropper's colour goes: command `cmd` run with `params`, the colour (`#rrggbb`)
+/// put at `key` (a path into the params: `["params", "color"]`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ColorPick {
+    pub cmd: String,
+    pub params: serde_json::Value,
+    pub key: Vec<String>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UiState {
@@ -302,6 +311,9 @@ pub struct UiState {
     pub palette_open: bool,
     /// The Local variables window is open.
     pub variables_open: bool,
+    /// The colour picker's eyedropper is waiting for a click on the canvas (not saved).
+    #[serde(skip)]
+    pub color_pick: Option<ColorPick>,
     pub palette_query: String,
     /// Screen mode: 0 normal, 1 full screen with menu, 2 full screen, 3 presentation. Not saved:
     /// the app always starts in Normal Screen Mode, with its menus and panels (#472: a saved
@@ -587,6 +599,7 @@ impl Default for UiState {
             status: String::new(),
             palette_open: false,
             variables_open: false,
+            color_pick: None,
             palette_query: String::new(),
             screen_mode: 0,
             draw_mode: 0,

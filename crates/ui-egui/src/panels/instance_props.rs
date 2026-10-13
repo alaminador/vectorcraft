@@ -269,6 +269,9 @@ fn layer_row(app: &mut LogocraftApp, ui: &mut Ui, l: &Value) {
             crate::widgets::popover(&resp, resp.clicked(), |ui| {
                 ui.set_width(super::fill_picker::WIDTH);
                 let e = super::fill_picker::color_controls(ui, &format!("ov-{layer}"), c, None);
+                if e.eyedropper {
+                    super::fill_picker::start_pick(app, "instance.setOverride", json!({ "layer": layer }), &["fill"]);
+                }
                 if let Some((nc, phase)) = e.color
                     && phase != widgets::Live::Dragging
                 {

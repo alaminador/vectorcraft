@@ -169,7 +169,8 @@ fn color_mode(app: &mut LogocraftApp, ui: &mut Ui, paint: &Paint) {
     let alpha = item_opacity(app);
     let e = color_controls(ui, "fill", c, alpha);
     if e.eyedropper {
-        app.select_tool("eyedropper");
+        let stroke = paint_cmd(app) == "paint.setStroke";
+        start_pick(app, "paint.sampleColor", json!({ "stroke": stroke }), &["color"]);
     }
     if let Some((nc, phase)) = e.color {
         let cmd = paint_cmd(app);
@@ -210,6 +211,32 @@ fn remember(ctx: &egui::Context, c: Color, hsv: [f32; 3]) {
 
 /// `c` as hue, saturation and brightness, keeping the remembered hue (and saturation) where `c`
 /// has none: a grey or black dragged from a colour keeps that colour's hue on the rail.
+/// The eyedropper: the next click on the canvas samples the colour there (what shows, art and
+/// artboard fill alike) and runs `cmd` with `params`, the colour at `key`, as Figma's eyedropper
+/// does; Escape cancels.
+pub(crate) fn start_pick(app: &mut LogocraftApp, cmd: &str, params: Value, key: &[&str]) {
+    app.ui.color_pick = Some(crate::state::ColorPick { cmd: cmd.into(), params, key: key.iter().map(|k| k.to_string()).collect() });
+    app.status(tl!("Click the canvas to pick a colour (Esc cancels)"));
+}
+
+/// `pick`'s params with colour `hex` at its key.
+pub(crate) fn picked_params(pick: &crate::state::ColorPick, hex: &str) -> Value {
+    let mut p = pick.params.clone();
+    if !p.is_object() {
+        p = json!({});
+    }
+    let mut at = &mut p;
+    for (n, k) in pick.key.iter().enumerate() {
+        let Some(o) = at.as_object_mut() else { break };
+        if n + 1 == pick.key.len() {
+            o.insert(k.clone(), json!(hex));
+            break;
+        }
+        at = o.entry(k.clone()).or_insert_with(|| json!({}));
+    }
+    p
+}
+
 pub(crate) fn hsv_of(c: Color, last: Option<(String, [f32; 3])>) -> [f32; 3] {
     let hex = c.to_hex();
     if let Some((h, hsv)) = &last
@@ -631,7 +658,8 @@ fn gradient_mode(app: &mut LogocraftApp, ui: &mut Ui, gp: &GradientPaint) {
         ui.add_space(8.0);
         let e = color_controls(ui, "stop", stop.color, Some(stop.opacity));
         if e.eyedropper {
-            app.select_tool("eyedropper");
+            let stroke = paint_cmd(app) == "paint.setStroke";
+            start_pick(app, "paint.sampleColor", json!({ "stroke": stroke, "stop": selected }), &["color"]);
         }
         let mut stops = g.stops.clone();
         let mut phase = None;

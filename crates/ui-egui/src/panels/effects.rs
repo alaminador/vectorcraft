@@ -301,6 +301,9 @@ fn color_row(app: &mut LogocraftApp, ui: &mut Ui, i: usize, p: &Value) {
         crate::widgets::popover(&resp, resp.clicked(), |ui| {
             ui.set_width(super::fill_picker::WIDTH);
             let e = super::fill_picker::color_controls(ui, &format!("fx-color-{i}"), c, Some(opacity));
+            if e.eyedropper {
+                super::fill_picker::start_pick(app, "effect.setParams", json!({ "index": i, "item": null, "params": {} }), &["params", "color"]);
+            }
             if let Some((nc, phase)) = e.color {
                 set(app, i, json!({ "color": effect_color_json(&nc) }), phase);
             }

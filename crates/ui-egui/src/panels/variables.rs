@@ -189,6 +189,9 @@ fn cell(app: &mut LogocraftApp, ui: &mut Ui, id: &str, mode: &str, kind: &str, v
             crate::widgets::popover(&resp, resp.clicked(), |ui| {
                 ui.set_width(super::fill_picker::WIDTH);
                 let e = super::fill_picker::color_controls(ui, &format!("var-{id}-{mode}"), c, None);
+                if e.eyedropper {
+                    super::fill_picker::start_pick(app, "variable.set", json!({ "variable": id, "mode": mode }), &["value"]);
+                }
                 if let Some((nc, phase)) = e.color
                     && phase != widgets::Live::Dragging
                 {

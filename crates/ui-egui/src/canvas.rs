@@ -177,7 +177,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     // alone would leave open); the tool doesn't get it.
     if resp.context_menu_opened() && resp.hovered() && ui.input(|i| i.pointer.any_pressed()) {
         egui::Popup::close_all(ui.ctx());
-    } else if !frame_label_input(app, ui, &resp, rect) {
+    } else if !color_pick_input(app, ui, &resp, rect) && !frame_label_input(app, ui, &resp, rect) {
         handle_input(app, ui, &resp, rect);
     }
     let v = *app.view().unwrap_or(&View::default());
@@ -1916,6 +1916,51 @@ fn frame_quad(xf: &Xf, ab: &logocraft_doc::Artboard) -> Vec<Pos2> {
         pts.pop();
     }
     pts
+}
+
+/// The colour that shows at document point `p` (art over the artboard's fill or white paper),
+/// one screen pixel's worth at `zoom`.
+pub(crate) fn color_at(doc: &logocraft_doc::Document, p: Point, zoom: f64) -> Option<logocraft_color::Color> {
+    if !(p.x.is_finite() && p.y.is_finite() && zoom.is_finite() && zoom > 0.0) {
+        return None;
+    }
+    let side = 1.0 / zoom;
+    let region = Rect::new(p.x - side / 2.0, p.y - side / 2.0, p.x + side / 2.0, p.y + side / 2.0);
+    let px = logocraft_render::Renderer::new().render_region(doc, region, zoom, true).to_straight();
+    let [r, g, b, _] = [*px.first()?, *px.get(1)?, *px.get(2)?, *px.get(3)?];
+    Some(logocraft_color::Color::rgb8(r, g, b))
+}
+
+/// The eyedropper's pick ([`crate::state::ColorPick`]): a crosshair over the canvas; a click
+/// samples the colour there into where the picker was editing; Escape cancels. → whether the
+/// pointer went to it (the tool then gets nothing).
+fn color_pick_input(app: &mut LogocraftApp, ui: &Ui, resp: &egui::Response, rect: egui::Rect) -> bool {
+    let Some(pick) = app.ui.color_pick.clone() else { return false };
+    if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        app.ui.color_pick = None;
+        app.status(String::new());
+        return true;
+    }
+    let Some(v) = app.view().copied() else { return false };
+    let xf = Xf::new(rect, &v);
+    let Some(p) = ui.ctx().pointer_latest_pos().filter(|p| rect.contains(*p)) else { return true };
+    ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
+    if resp.clicked() || (resp.is_pointer_button_down_on() && ui.input(|i| i.pointer.primary_pressed())) {
+        let doc = app.session.active().map(|st| st.doc.clone());
+        let picked = doc.and_then(|d| color_at(&d, xf.to_doc(p), v.zoom));
+        app.ui.color_pick = None;
+        match picked {
+            Some(c) => {
+                if let Err(e) = app.run(&pick.cmd, crate::panels::fill_picker::picked_params(&pick, &c.to_hex())) {
+                    app.status(e);
+                } else {
+                    app.status(String::new());
+                }
+            }
+            None => app.status(tl!("No colour there").to_string()),
+        }
+    }
+    true
 }
 
 /// The artboard whose name label is under the pointer or being dragged.

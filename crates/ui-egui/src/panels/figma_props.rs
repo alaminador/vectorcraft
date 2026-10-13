@@ -193,6 +193,9 @@ fn row(app: &mut LogocraftApp, ui: &mut Ui, n: &Node, r: &Row, stroke: bool, onl
             widgets::popover(&resp, resp.clicked(), |ui| {
                 ui.set_width(fill_picker::WIDTH);
                 let e = fill_picker::color_controls(ui, &format!("{}-{}", key.0, key.1), c, None);
+                if e.eyedropper {
+                    fill_picker::start_pick(app, "appearance.setItem", json!({ "index": r.index }), &["color"]);
+                }
                 if let Some((c, phase)) = e.color {
                     live_run(app, "Appearance", "appearance.setItem", json!({ "index": r.index, "color": c.to_hex() }), phase);
                 }
@@ -395,5 +398,37 @@ mod tests {
     fn paint_text_names_colours_and_kinds() {
         assert_eq!(paint_text(&Paint::solid(Color::rgb8(0xd9, 0xd9, 0xd9))), "D9D9D9");
         assert_eq!(paint_text(&Paint::None), "None");
+    }
+}
+
+#[cfg(test)]
+mod pick_tests {
+    use logocraft_engine::Session;
+    use serde_json::json;
+
+    use crate::LogocraftApp;
+
+    /// The eyedropper samples what shows (art over the artboard's fill) and sends it where the
+    /// picker was: here the artboard's fill, from a red square, and a nested effect param.
+    #[test]
+    fn the_eyedropper_samples_the_canvas_into_its_target() {
+        let mut app = LogocraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("artboard.setFrame", json!({"fill": "#0000ff"})).unwrap();
+        app.run("shape.rectangle", json!({"x": 20, "y": 20, "width": 50, "height": 50})).unwrap();
+        app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
+        app.run("paint.setStroke", json!({"none": true})).unwrap();
+        let doc = app.session.active().unwrap().doc.clone();
+        let at = |x, y| crate::canvas::color_at(&doc, logocraft_geom::Point::new(x, y), 1.0).unwrap().to_hex();
+        assert_eq!((at(45.0, 45.0), at(150.0, 150.0)), ("#ff0000".to_string(), "#0000ff".to_string()));
+        // Sampled into the artboard's fill.
+        crate::panels::fill_picker::start_pick(&mut app, "artboard.setFrame", json!({"index": 0}), &["fill"]);
+        let pick = app.ui.color_pick.clone().unwrap();
+        app.run(&pick.cmd, crate::panels::fill_picker::picked_params(&pick, &at(45.0, 45.0))).unwrap();
+        let fill = app.session.active().unwrap().doc.artboards[0].fill.unwrap().to_hex();
+        assert_eq!(fill, "#ff0000");
+        let nested =
+            crate::state::ColorPick { cmd: "x".into(), params: json!({"index": 0, "params": {}}), key: vec!["params".into(), "color".into()] };
+        assert_eq!(crate::panels::fill_picker::picked_params(&nested, "#123456"), json!({"index": 0, "params": {"color": "#123456"}}));
     }
 }

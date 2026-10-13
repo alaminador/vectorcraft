@@ -437,6 +437,9 @@ fn frame_section(app: &mut LogocraftApp, ui: &mut Ui, i: usize, ab: &logocraft_d
         widgets::popover(&resp, resp.clicked(), |ui| {
             ui.set_width(super::fill_picker::WIDTH);
             let e = super::fill_picker::color_controls(ui, &format!("ab-fill-{i}"), shown, None);
+            if e.eyedropper {
+                super::fill_picker::start_pick(app, "artboard.setFrame", json!({ "index": i }), &["fill"]);
+            }
             if let Some((c, phase)) = e.color {
                 super::live_run(app, "Artboard Frame", "artboard.setFrame", json!({ "index": i, "fill": c.to_hex() }), phase);
             }
