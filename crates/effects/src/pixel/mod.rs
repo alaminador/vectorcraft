@@ -659,6 +659,35 @@ pub(super) fn gaussian(px: &mut [Px16], w: usize, sigma: f64) {
 
 /// Gaussian-blur `data`, `w` × `h` premultiplied RGBA8 pixels, in place (σ = `sigma` pixels). Does
 /// nothing when the sizes don't match.
+/// A progressive blur (Figma's): σ from `s0` to `s1` across the `w`×`h` image along `angle`
+/// degrees (0: left to right, 90: top to bottom), as the image blurred at each end blended by
+/// where each pixel lies along that direction.
+pub fn progressive_rgba(data: &mut [u8], w: usize, h: usize, s0: f64, s1: f64, angle: f64) {
+    if w == 0 || h == 0 || data.len() < w * h * 4 {
+        return;
+    }
+    let mut a = data.to_vec();
+    gaussian_rgba(&mut a, w, h, s0);
+    gaussian_rgba(data, w, h, s1);
+    let rad = if angle.is_finite() { angle.to_radians() } else { std::f64::consts::FRAC_PI_2 };
+    let (c, s) = (rad.cos(), rad.sin());
+    let (cx, cy) = (w as f64 / 2.0, h as f64 / 2.0);
+    // Half the image's extent along the direction: t runs 0..1 over it.
+    let half = (w as f64 * c.abs() + h as f64 * s.abs()).max(1.0) / 2.0;
+    for y in 0..h {
+        for x in 0..w {
+            let d = (x as f64 + 0.5 - cx) * c + (y as f64 + 0.5 - cy) * s;
+            let t = (d / half * 0.5 + 0.5).clamp(0.0, 1.0);
+            let i = (y * w + x) * 4;
+            let (Some(pa), Some(pb)) = (a.get(i..i + 4), data.get_mut(i..i + 4)) else { continue };
+            for k in 0..4 {
+                let v = f64::from(pa[k]) * (1.0 - t) + f64::from(pb[k]) * t;
+                pb[k] = v.round().clamp(0.0, 255.0) as u8;
+            }
+        }
+    }
+}
+
 pub fn gaussian_rgba(data: &mut [u8], w: usize, h: usize, sigma: f64) {
     if let Some(px) = pixels(data, w, h)
         && sigma >= 0.2
@@ -673,3 +702,29 @@ pub fn gaussian_rgba(data: &mut [u8], w: usize, h: usize, sigma: f64) {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod progressive_tests {
+    use super::*;
+
+    /// A progressive blur from 0 to a wide σ, top to bottom, over vertical stripes: the top row
+    /// keeps its hard stripes, the bottom row comes out nearly flat.
+    #[test]
+    fn the_blur_grows_along_its_direction() {
+        let (w, h) = (40usize, 40usize);
+        let mut img = vec![0u8; w * h * 4];
+        for y in 0..h {
+            for x in 0..w {
+                let v = if (x / 2) % 2 == 0 { 255 } else { 0 };
+                img[(y * w + x) * 4..(y * w + x) * 4 + 4].copy_from_slice(&[v, v, v, 255]);
+            }
+        }
+        progressive_rgba(&mut img, w, h, 0.0, 6.0, 90.0);
+        let spread = |y: usize| {
+            let row: Vec<u8> = (0..w).map(|x| img[(y * w + x) * 4]).collect();
+            row.iter().max().copied().unwrap_or(0) - row.iter().min().copied().unwrap_or(0)
+        };
+        assert!(spread(0) > 200, "top stays sharp: {}", spread(0));
+        assert!(spread(h - 1) < 60, "bottom is blurred: {}", spread(h - 1));
+    }
+}

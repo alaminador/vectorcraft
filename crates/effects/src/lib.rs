@@ -315,7 +315,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"mode": "screen", "opacity": 75.0, "blur": 5.0, "color": "#ffff00"}),
         ),
         r("stylize.feather", "Feather…", STYLIZE, "{radius: pt (5)}", json!({"radius": 5.0})),
-        r("blur.gaussian", "Gaussian Blur…", BLUR, "{radius: pt (5)}", json!({"radius": 5.0})),
+        r(
+            "blur.gaussian",
+            "Gaussian Blur…",
+            BLUR,
+            "{radius: pt (5), progressive?: bool (false; true: Figma's progressive blur, from start to end), start?: pt (0), end?: pt (4), angle?: degrees (90: top to bottom; 0: left to right)}",
+            json!({"radius": 5.0}),
+        ),
         r(
             "artistic.filmGrain",
             "Film Grain…",

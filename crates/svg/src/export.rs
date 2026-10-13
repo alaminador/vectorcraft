@@ -1650,6 +1650,10 @@ impl Writer<'_> {
                     sd(*radius)
                 ),
                 RasterFx::GaussianBlur { radius } => format!("<feGaussianBlur in=\"SourceGraphic\" stdDeviation=\"{}\"/>", sd(*radius)),
+                // SVG has no progressive blur: an even blur of the mean radius stands in.
+                RasterFx::ProgressiveBlur { start, end, .. } => {
+                    format!("<feGaussianBlur in=\"SourceGraphic\" stdDeviation=\"{}\"/>", sd((start + end) / 2.0))
+                }
                 RasterFx::Pixel(_) => continue,
             };
             // Filters composite normally: a shadow's or glow's other blend mode is recorded for import.

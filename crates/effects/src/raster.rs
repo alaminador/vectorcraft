@@ -61,6 +61,13 @@ pub enum RasterFx {
     GaussianBlur {
         radius: f64,
     },
+    /// Figma's progressive layer blur: the blur grows from `start` to `end` (radii) across the
+    /// object, along `angle` degrees (90: top to bottom).
+    ProgressiveBlur {
+        start: f64,
+        end: f64,
+        angle: f64,
+    },
     /// A Photoshop-style filter over the object's pixels (Radial Blur, Unsharp Mask…).
     Pixel(PixelFx),
 }
@@ -89,6 +96,7 @@ impl RasterFx {
             RasterFx::OuterGlow { blur, .. } => 1.5 * blur,
             RasterFx::InnerGlow { .. } | RasterFx::Feather { .. } => 0.0,
             RasterFx::GaussianBlur { radius } => 1.5 * radius,
+            RasterFx::ProgressiveBlur { start, end, .. } => 1.5 * start.max(*end),
             RasterFx::Pixel(p) => p.outset(bounds),
         }
     }
@@ -168,6 +176,11 @@ pub fn raster_effects(effects: &[Effect]) -> Vec<RasterFx> {
                     center: text(&p, "source", "edge").eq_ignore_ascii_case("center"),
                 },
                 "stylize.feather" => RasterFx::Feather { radius: num(&p, "radius", 5.0).clamp(0.0, 1000.0) },
+                "blur.gaussian" if p.get("progressive").and_then(Value::as_bool) == Some(true) => RasterFx::ProgressiveBlur {
+                    start: num(&p, "start", 0.0).clamp(0.0, 1000.0),
+                    end: num(&p, "end", 4.0).clamp(0.0, 1000.0),
+                    angle: num(&p, "angle", 90.0),
+                },
                 "blur.gaussian" => RasterFx::GaussianBlur { radius: num(&p, "radius", 5.0).clamp(0.0, 1000.0) },
                 id => RasterFx::Pixel(pixel::parse(id, &p)?),
             })

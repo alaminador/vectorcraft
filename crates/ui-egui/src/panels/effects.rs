@@ -215,16 +215,62 @@ fn settings(app: &mut LogocraftApp, ui: &mut Ui, i: usize, k: usize, p: &Value) 
             });
             color_row(app, ui, i, p);
         }
-        // Layer and background blur: the radius.
-        2 | 3 => {
+        // Layer blur: Uniform (the radius) or Progressive (from Start to End, top to bottom by
+        // default), as Figma's.
+        2 => {
+            let progressive = p.get("progressive").and_then(Value::as_bool).unwrap_or(false);
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 2.0;
+                for (label, on) in [(tl!("Uniform"), false), (tl!("Progressive"), true)] {
+                    if ui.add_sized([92.0, 22.0], egui::Button::selectable(progressive == on, label)).clicked() && progressive != on {
+                        let mut q = json!({ "progressive": on });
+                        if on && p.get("end").is_none() {
+                            // Starting from the uniform blur: clear at the start, that blur at the end.
+                            q["start"] = json!(0.0);
+                            q["end"] = json!(num(p, "radius", 4.0));
+                        }
+                        set(app, i, q, Live::Released);
+                    }
+                }
+            });
+            if progressive {
+                ui.horizontal(|ui| {
+                    if let Some(v) = number(ui, ("fx-start", i), tl!("Start"), num(p, "start", 0.0), " pt") {
+                        set(app, i, json!({ "start": v.max(0.0) }), Live::Released);
+                    }
+                    if let Some(v) = number(ui, ("fx-end", i), tl!("End"), num(p, "end", 4.0), " pt") {
+                        set(app, i, json!({ "end": v.max(0.0) }), Live::Released);
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.add_sized([40.0, 22.0], egui::Label::new(egui::RichText::new(tl!("From")).size(11.5)));
+                    let dirs =
+                        [(tl!("Top to bottom"), 90.0), (tl!("Bottom to top"), 270.0), (tl!("Left to right"), 0.0), (tl!("Right to left"), 180.0)];
+                    let angle = num(p, "angle", 90.0).rem_euclid(360.0);
+                    let at = dirs.iter().position(|(_, a)| (a - angle).abs() < 1.0).unwrap_or(0);
+                    let labels: Vec<&str> = dirs.iter().map(|(l, _)| *l).collect();
+                    if let Some(n) = widgets::dropdown(ui, ("fx-prog-dir", i), labels[at], &labels, 120.0)
+                        && let Some((_, a)) = dirs.get(n)
+                    {
+                        set(app, i, json!({ "angle": a }), Live::Released);
+                    }
+                });
+            } else {
+                ui.horizontal(|ui| {
+                    if let Some(v) = number(ui, ("fx-radius", i), tl!("Blur"), num(p, "radius", 4.0), " pt") {
+                        set(app, i, json!({ "radius": v.max(0.0) }), Live::Released);
+                    }
+                });
+            }
+        }
+        // Background blur: the radius.
+        3 => {
             ui.horizontal(|ui| {
                 if let Some(v) = number(ui, ("fx-radius", i), tl!("Blur"), num(p, "radius", 4.0), " pt") {
                     set(app, i, json!({ "radius": v.max(0.0) }), Live::Released);
                 }
             });
-            if k == 3 {
-                widgets::dim_label(ui, tl!("Shows through a translucent fill (lower the fill's opacity)."));
-            }
+            widgets::dim_label(ui, tl!("Shows through a translucent fill (lower the fill's opacity)."));
         }
         // Noise: mono or multi, size, density, colour and opacity.
         4 => {

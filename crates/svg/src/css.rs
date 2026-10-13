@@ -601,6 +601,11 @@ impl Rules<'_> {
                     shadows.push(format!("inset 0 0 {} {}", self.len(blur), color_css(&color, opacity)))
                 }
                 RasterFx::GaussianBlur { radius } => filter = Some(format!("blur({})", self.len(radius / 2.0))),
+                // CSS has no progressive blur: an even blur of the mean radius stands in.
+                RasterFx::ProgressiveBlur { start, end, .. } => {
+                    art.unsupported("progressive blurs (an even blur stands in)");
+                    filter = Some(format!("blur({})", self.len((start + end) / 4.0)));
+                }
                 RasterFx::InnerGlow { .. } | RasterFx::Feather { .. } => art.unsupported("inner glows or feathering"),
                 RasterFx::Pixel(_) => art.unsupported("pixel effects"),
             }
