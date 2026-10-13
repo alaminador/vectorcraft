@@ -182,6 +182,7 @@ pub(crate) fn frame_section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) -> bo
                 } else if let Some(v) = widgets::plain_field(ui, "al-gap", l.gap, "", 1, 48.0) {
                     run(app, "layout.set", json!({ "gap": v }));
                 }
+                super::variables::bind_button(app, ui, n, "gap");
             });
             let mut auto = l.gap_auto;
             if ui.checkbox(&mut auto, tl!("Auto (space between)")).changed() {
@@ -232,6 +233,7 @@ pub(crate) fn frame_section(app: &mut LogocraftApp, ui: &mut Ui, n: &Node) -> bo
         if widgets::icon_button(ui, "maximize-2", tl!("Padding for each side"), per_side, 22.0).clicked() {
             set_pstate(&ctx, PER_SIDE, !per_side);
         }
+        super::variables::bind_button(app, ui, n, "padding");
     });
     ui.add_space(4.0);
     // The frame's own fill and corner radius (its background).

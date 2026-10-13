@@ -11,6 +11,7 @@ mod colorcmds;
 pub mod colormgmt;
 pub mod components;
 mod create;
+pub mod designvars;
 pub(crate) mod distortcmds;
 mod docinfo;
 mod docmenu;
@@ -248,6 +249,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(webexport::specs());
         v.extend(components::specs());
         v.extend(autolayout::specs());
+        v.extend(designvars::specs());
         v.extend(imagefill::specs());
         v
     })

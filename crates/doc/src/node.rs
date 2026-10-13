@@ -574,6 +574,11 @@ pub struct NodeExtras {
     pub prop_refs: Option<std::collections::BTreeMap<String, String>>,
     /// An instance's component, property values and overrides.
     pub instance: Option<Box<crate::component::InstanceData>>,
+    /// Design variable bindings: field (`fill`, `stroke`, `strokeWeight`, `opacity`,
+    /// `cornerRadius`, `gap`, `padding`, `characters`, `visible`) → variable id.
+    pub bound: Option<std::collections::BTreeMap<String, String>>,
+    /// Design variable modes this container picks (collection → mode) for what is inside it.
+    pub var_modes: Option<std::collections::BTreeMap<String, String>>,
 }
 
 /// No extras: what [`Node::extras`] gives for a node without any.
@@ -596,6 +601,8 @@ static NO_EXTRAS: NodeExtras = NodeExtras {
     component_props: None,
     prop_refs: None,
     instance: None,
+    bound: None,
+    var_modes: None,
 };
 
 /// A node's [`NodeExtras`], if it has any ([`Node::extras`]). Extras that are all unset equal
@@ -734,6 +741,8 @@ impl Serialize for Node {
             e.component_props.is_none(),
             e.prop_refs.is_none(),
             e.instance.is_none(),
+            e.bound.is_none(),
+            e.var_modes.is_none(),
         ];
         let mut st = s.serialize_struct("Node", skips.iter().filter(|s| !**s).count())?;
         let mut skip = skips.into_iter();
@@ -776,6 +785,8 @@ impl Serialize for Node {
         field!("component_props", &e.component_props);
         field!("prop_refs", &e.prop_refs);
         field!("instance", &e.instance);
+        field!("bound", &e.bound);
+        field!("var_modes", &e.var_modes);
         st.end()
     }
 }
@@ -843,6 +854,10 @@ struct NodeWire {
     prop_refs: Option<std::collections::BTreeMap<String, String>>,
     #[serde(default)]
     instance: Option<Box<crate::component::InstanceData>>,
+    #[serde(default)]
+    bound: Option<std::collections::BTreeMap<String, String>>,
+    #[serde(default)]
+    var_modes: Option<std::collections::BTreeMap<String, String>>,
 }
 
 impl From<NodeWire> for Node {
@@ -866,6 +881,8 @@ impl From<NodeWire> for Node {
             component_props: w.component_props,
             prop_refs: w.prop_refs,
             instance: w.instance,
+            bound: w.bound,
+            var_modes: w.var_modes,
         };
         Node {
             id: w.id,
@@ -1937,6 +1954,8 @@ mod tests {
             e.component_props = Some([("Label".to_string(), crate::component::PropDef::Text { default: "OK".into() })].into());
             e.prop_refs = Some([("characters".to_string(), "Label".to_string())].into());
             e.instance = Some(Box::new(crate::component::InstanceData { component: "Button".into(), ..Default::default() }));
+            e.bound = Some([("fill".to_string(), "v1".to_string())].into());
+            e.var_modes = Some([("c".to_string(), "c/dark".to_string())].into());
         }
         /// The top-level keys of a JSON object, in the order written.
         struct Keys(Vec<String>);
@@ -1985,6 +2004,8 @@ mod tests {
             "component_props",
             "prop_refs",
             "instance",
+            "bound",
+            "var_modes",
         ];
         assert_eq!(keys, order);
         assert_eq!(serde_json::from_value::<Node>(v).unwrap(), n);

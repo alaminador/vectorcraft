@@ -63,6 +63,13 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     {
         divider(ui);
     }
+    // Variable modes: which mode of each collection a frame or an instance shows.
+    if n_sel == 1
+        && let Some(n) = &first
+        && super::variables::mode_section(app, ui, n)
+    {
+        divider(ui);
+    }
     // Auto layout: a frame's settings, and a frame child's sizing (a nested frame shows both).
     if n_sel == 1
         && let Some(n) = &first
@@ -468,7 +475,7 @@ fn document_sections(app: &mut LogocraftApp, ui: &mut Ui) {
     }
     divider(ui);
     section_header(ui, tl!("Appearance"));
-    fill_stroke_rows(app, ui);
+    fill_stroke_rows(app, ui, None);
     divider(ui);
     section_header(ui, tl!("Rulers & Grids"));
     ui.horizontal(|ui| {
@@ -608,7 +615,12 @@ pub fn transform_section(app: &mut LogocraftApp, ui: &mut Ui) {
         && let NodeKind::Path { live: Some(live), .. } = &n.kind
     {
         match &**live {
-            logocraft_doc::LiveShape::Rectangle { .. } => corner_radius_row(app, ui, &n, "radius"),
+            logocraft_doc::LiveShape::Rectangle { .. } => {
+                ui.horizontal(|ui| {
+                    corner_radius_row(app, ui, &n, "radius");
+                    super::variables::bind_button(app, ui, &n, "cornerRadius");
+                });
+            }
             logocraft_doc::LiveShape::Polygon { .. } => super::transform::polygon_rows(app, ui, &n, live, "props-polygon"),
             logocraft_doc::LiveShape::Ellipse { pie, .. } => super::transform::pie_rows(app, ui, *pie, "props-pie"),
             _ => {}
@@ -619,7 +631,7 @@ pub fn transform_section(app: &mut LogocraftApp, ui: &mut Ui) {
 fn appearance_section(app: &mut LogocraftApp, ui: &mut Ui) {
     let Some(n) = first_selected(app) else { return };
     section_header(ui, tl!("Appearance"));
-    fill_stroke_rows(app, ui);
+    fill_stroke_rows(app, ui, Some(&n));
     let fw = super::field_width(ui);
     ui.horizontal(|ui| {
         widgets::field_label(ui, egui::RichText::new(tl!("Opacity")).size(12.0));
@@ -630,6 +642,7 @@ fn appearance_section(app: &mut LogocraftApp, ui: &mut Ui) {
         if widgets::icon_button(ui, "ellipsis", tl!("Transparency"), false, 22.0).clicked() {
             app.ui.open_panel = Some("transparency".into());
         }
+        super::variables::bind_button(app, ui, &n, "opacity");
     });
     ui.horizontal(|ui| {
         // The fx button opens the effect menu, as the Appearance panel's does.
@@ -644,19 +657,26 @@ fn appearance_section(app: &mut LogocraftApp, ui: &mut Ui) {
 /// The Fill and Stroke rows, with the Control bar's widgets: the chips (a click opens the
 /// swatches, Shift-click the mixer), the Stroke link that opens the Stroke panel as a popover
 /// and the weight spinner with its presets. With nothing selected they set up the next object.
-fn fill_stroke_rows(app: &mut LogocraftApp, ui: &mut Ui) {
+fn fill_stroke_rows(app: &mut LogocraftApp, ui: &mut Ui, n: Option<&logocraft_doc::Node>) {
     let t = Tokens::get(ui.ctx());
     let weight = super::stroke::shown_weight(app, super::current_stroke(app).as_ref(), &super::stroke_mixed(app, ui.ctx()));
     let fw = super::field_width(ui);
     ui.horizontal(|ui| {
         super::paint_chip(app, ui, false, 22.0, true);
         ui.label(egui::RichText::new(tl!("Fill")).size(12.0).color(t.text));
+        if let Some(n) = n {
+            super::variables::bind_button(app, ui, n, "fill");
+        }
     });
     ui.horizontal(|ui| {
         super::paint_chip(app, ui, true, 22.0, true);
         super::stroke::link(app, ui, tl!("Stroke"));
         ui.add_space(8.0);
         super::stroke::weight_field(app, ui, "ap-w", weight, fw);
+        if let Some(n) = n {
+            super::variables::bind_button(app, ui, n, "stroke");
+            super::variables::bind_button(app, ui, n, "strokeWeight");
+        }
     });
 }
 

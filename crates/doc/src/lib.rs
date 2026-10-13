@@ -12,6 +12,7 @@ pub mod clipnest;
 pub mod cmyk;
 pub mod component;
 pub mod corners;
+pub mod design_vars;
 pub mod graph;
 pub mod hit;
 mod id_index;
@@ -595,6 +596,9 @@ pub struct Document {
     /// Variables (data merge): named values bound to objects, applied per dataset.
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     pub variables: Shared<Variables>,
+    /// Design variables (Figma's): collections, modes, values ([`design_vars`]).
+    #[serde(default, skip_serializing_if = "design_vars::DesignVariables::is_empty")]
+    pub design_variables: design_vars::DesignVariables,
     #[serde(default)]
     pub grid: GridPrefs,
     #[serde(default = "ppi72")]
@@ -733,6 +737,7 @@ impl Document {
             views: vec![],
             saved_selections: Default::default(),
             variables: Default::default(),
+            design_variables: Default::default(),
             grid: GridPrefs::default(),
             raster_effects_ppi: 72.0,
             images: BTreeMap::new(),

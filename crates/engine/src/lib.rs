@@ -1363,6 +1363,8 @@ impl Session {
             Ok(v) => match Ok::<(), EngineError>(()) {
                 Err(e) => Err(e),
                 Ok(()) => {
+                    // Design variables: bound layers take their values in their modes.
+                    cmd::designvars::apply(Arc::make_mut(&mut st.doc));
                     // Main components: copies become instances, instances follow their main.
                     cmd::components::sync(&before, Arc::make_mut(&mut st.doc));
                     // Auto layout: frames lay their children out again.
@@ -1637,6 +1639,8 @@ mod tests_components;
 mod tests_containers;
 #[cfg(test)]
 mod tests_dashalign;
+#[cfg(test)]
+mod tests_designvars;
 #[cfg(test)]
 mod tests_distort;
 #[cfg(test)]

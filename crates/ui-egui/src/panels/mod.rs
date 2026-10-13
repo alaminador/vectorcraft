@@ -34,6 +34,7 @@ pub mod tabs;
 pub mod text_styles;
 pub mod transform;
 pub mod transparency;
+pub mod variables;
 pub mod variants;
 
 use egui::{Rect, Sense, Ui, vec2};

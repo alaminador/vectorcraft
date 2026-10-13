@@ -295,6 +295,8 @@ pub struct UiState {
     pub group_tool: Vec<String>,
     pub status: String,
     pub palette_open: bool,
+    /// The Local variables window is open.
+    pub variables_open: bool,
     pub palette_query: String,
     /// Screen mode: 0 normal, 1 full screen with menu, 2 full screen, 3 presentation. Not saved:
     /// the app always starts in Normal Screen Mode, with its menus and panels (#472: a saved
@@ -597,6 +599,7 @@ impl Default for UiState {
             group_tool: logocraft_tools::TOOL_GROUPS.iter().map(|g| g[0].id.to_string()).collect(),
             status: String::new(),
             palette_open: false,
+            variables_open: false,
             palette_query: String::new(),
             screen_mode: 0,
             draw_mode: 0,

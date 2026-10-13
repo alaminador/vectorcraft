@@ -751,10 +751,17 @@ fn set_paint(n: &mut Node, paint: &logocraft_color::Paint, stroke: bool) {
 
 /// The main component's art with instance data `data` applied: property values through the
 /// layers' bindings, then per-layer overrides.
-fn apply_instance(d: &Document, main: &Node, data: &logocraft_doc::component::InstanceData) -> Node {
+fn apply_instance(
+    d: &Document,
+    main: &Node,
+    data: &logocraft_doc::component::InstanceData,
+    modes: &std::collections::BTreeMap<String, String>,
+) -> Node {
     let defs = main.extras().component_props.clone().unwrap_or_default();
     let value = |prop: &str| data.props.get(prop).cloned().or_else(|| defs.get(prop).map(|p| p.default_value()));
     let mut art = main.clone();
+    // Bound layers in the instance's modes first: an override wins over a variable.
+    super::designvars::apply_tree(&d.design_variables, &mut art, modes);
     each_mut(&mut art, &mut |n| {
         if let Some(refs) = n.extras().prop_refs.clone() {
             for (field, prop) in refs {
@@ -823,8 +830,21 @@ fn refresh_instances(before: &Document, d: &mut Document) {
         let Some(n) = d.node(id) else { continue };
         let NodeKind::SymbolInstance { symbol, .. } = &n.kind else { continue };
         let symbol = symbol.clone();
-        let Some(mut data) = n.extras().instance.as_deref().cloned() else {
-            continue;
+        let mut data = match n.extras().instance.as_deref().cloned() {
+            Some(data) => data,
+            // A plain instance matters only when its modes differ from its main's.
+            None => {
+                let Some(main) = main_of(d, &symbol).and_then(|m| d.node(m)) else { continue };
+                if !super::designvars::binds_any(main) || super::designvars::modes_for(d, id) == super::designvars::modes_for(d, main.id) {
+                    continue;
+                }
+                // Linked from now on: it shows a symbol of its own.
+                let data = logocraft_doc::component::InstanceData { component: symbol.clone(), ..Default::default() };
+                if let Some(n) = d.node_mut(id) {
+                    n.extras_mut().instance = Some(Box::new(data.clone()));
+                }
+                data
+            }
         };
         // Swapped (Swap Instance, a variant switch): an instance of what it shows now, its
         // property values kept by name, its layer overrides (another component's layers) gone.
@@ -841,7 +861,10 @@ fn refresh_instances(before: &Document, d: &mut Document) {
             continue;
         };
         let derived = derived_name(&base, id);
-        if !changes_anything(&main, &data) {
+        // An instance whose modes differ from its main's shows its bound layers in its own.
+        let modes = super::designvars::modes_for(d, id);
+        let mode_dependent = super::designvars::binds_any(&main) && modes != super::designvars::modes_for(d, main.id);
+        if !changes_anything(&main, &data) && !mode_dependent {
             if symbol != base
                 && let Some(NodeKind::SymbolInstance { symbol: s, .. }) = d.node_mut(id).map(|n| &mut n.kind)
             {
@@ -853,9 +876,10 @@ fn refresh_instances(before: &Document, d: &mut Document) {
         let main_changed = before.node(main.id) != Some(&main);
         let data_changed = before.node(id).and_then(|b| b.extras().instance.as_deref().cloned()) != Some(data.clone());
         let missing = !d.symbols.iter().any(|x| x.name == derived);
-        if main_changed || data_changed || missing {
+        let vars_changed = before.design_variables != d.design_variables || super::designvars::modes_for(before, id) != modes;
+        if main_changed || data_changed || missing || vars_changed {
             let Some(b) = main.geometric_bounds() else { continue };
-            let mut art = symbol_art(&apply_instance(d, &main, &data));
+            let mut art = symbol_art(&apply_instance(d, &main, &data, &modes));
             each_mut(&mut art, &mut |n| {
                 n.extras_mut().component = None;
                 n.extras_mut().prop_refs = None;
