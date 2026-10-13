@@ -1,11 +1,9 @@
 # LogoCraft app icon
 
-**Mark:** a white pen nib on a glowing orange tile.
+**Mark:** a white pen nib outline, fading from the tip, on a dark plum tile.
 
-**Source:** `source/logocraft-icon.svg` (vector, 1000 × 1000), drawn by the repository owner in
-LogoCraft and supplied as `Icon.svg`. `source/logocraft-source.png` (2000 px) is that SVG rendered by
-LogoCraft itself: `logocraft-cli run --in source/logocraft-icon.svg --export source/logocraft-source.png
---scale 2`. Licence: see `LICENSE.txt`.
+**Source:** `source/logocraft-source.png` (1000 × 1000), the icon picture made by the repository owner
+and supplied as a PNG. Licence: see `LICENSE.txt`.
 
 **Tile:** the picture cropped square, scaled to 1024 px and given the corners of a 512 tile with
 `rx = 112`. The macOS files add Apple's transparent margin (tile = 824/1024 of the canvas).

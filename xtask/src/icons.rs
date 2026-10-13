@@ -1,6 +1,6 @@
 //! `cargo xtask icons`: render every app icon from the source picture
-//! `assets/app-icon/source/logocraft-source.png`, itself rendered by LogoCraft from the vector
-//! master `source/logocraft-icon.svg` (see `assets/app-icon/README.md`).
+//! `assets/app-icon/source/logocraft-source.png`, the owner's icon picture (see
+//! `assets/app-icon/README.md`).
 //!
 //! The picture is cropped to a square, scaled to a 1024 px tile and given the rounded corners of a
 //! 512 tile with `rx = 112`. macOS icons sit on Apple's grid: the tile is 824/1024 of the canvas,
