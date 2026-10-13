@@ -60,6 +60,8 @@ pub(crate) fn section(app: &mut LogocraftApp, ui: &mut Ui) {
     ui.horizontal(|ui| {
         section_header(ui, tl!("Effects"));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            // Clear of the panel's scroll bar.
+            ui.add_space(10.0);
             if widgets::icon_button(ui, "plus", tl!("Add effect"), false, 22.0).clicked() {
                 // Figma adds a drop shadow first.
                 let (_, id, defaults) = kinds()[0].clone();

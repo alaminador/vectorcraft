@@ -34,7 +34,7 @@ impl View {
     pub fn of(st: &logocraft_engine::DocState) -> Self {
         match &st.view {
             Some(v) if v.zoom.is_finite() && v.zoom > 0.0 && v.center.x.is_finite() && v.center.y.is_finite() => Self {
-                zoom: v.zoom.clamp(0.0313, 640.0),
+                zoom: v.zoom.clamp(MIN_ZOOM, 640.0),
                 center: v.center,
                 fitted: true,
                 rotation: if v.rotation.is_finite() { v.rotation } else { 0.0 },
@@ -45,10 +45,14 @@ impl View {
     }
 }
 
-/// Illustrator's preset zoom stops, in percent.
-pub const ZOOM_STOPS: [f64; 26] = [
-    3.13, 4.17, 6.25, 8.33, 12.5, 16.67, 25.0, 33.33, 50.0, 66.67, 100.0, 150.0, 200.0, 300.0, 400.0, 600.0, 800.0, 1200.0, 1600.0, 2400.0, 3200.0,
-    4800.0, 6400.0, 12800.0, 25600.0, 64000.0,
+/// The furthest the view zooms out: far below Illustrator's 3.13%, so the canvas works as an
+/// infinite one (Figma's): art any distance apart still fits in one view.
+pub const MIN_ZOOM: f64 = 0.001;
+
+/// Illustrator's preset zoom stops, in percent, below them the infinite canvas's.
+pub const ZOOM_STOPS: [f64; 31] = [
+    0.1, 0.2, 0.5, 1.0, 2.0, 3.13, 4.17, 6.25, 8.33, 12.5, 16.67, 25.0, 33.33, 50.0, 66.67, 100.0, 150.0, 200.0, 300.0, 400.0, 600.0, 800.0, 1200.0,
+    1600.0, 2400.0, 3200.0, 4800.0, 6400.0, 12800.0, 25600.0, 64000.0,
 ];
 
 pub fn next_zoom(z: f64, up: bool) -> f64 {
@@ -56,7 +60,7 @@ pub fn next_zoom(z: f64, up: bool) -> f64 {
     let stop = if up {
         ZOOM_STOPS.iter().find(|s| **s > pct + 0.01).copied().unwrap_or(64000.0)
     } else {
-        ZOOM_STOPS.iter().rev().find(|s| **s < pct - 0.01).copied().unwrap_or(3.13)
+        ZOOM_STOPS.iter().rev().find(|s| **s < pct - 0.01).copied().unwrap_or(MIN_ZOOM * 100.0)
     };
     stop / 100.0
 }
@@ -249,6 +253,13 @@ pub struct UiState {
     /// Advanced toolbar (every tool group) instead of the categorized Basic toolbar.
     #[serde(default)]
     pub toolbar_advanced: bool,
+    /// The toolbar's colour block (Fill/Stroke proxy, Color/Gradient/None, drawing and screen
+    /// modes): the Classic workspace's; off in the Figma workspace and by default.
+    #[serde(default)]
+    pub color_block: bool,
+    /// The Properties panel laid out as Figma's (the Figma workspace); else Illustrator's.
+    #[serde(default)]
+    pub figma_panel: bool,
     /// Last tool shown in each toolbar slot (keyed by the slot's first tool id).
     #[serde(default)]
     pub slot_tool: std::collections::BTreeMap<String, String>,
@@ -555,6 +566,8 @@ impl Default for UiState {
             toolbar: true,
             toolbar_double: false,
             toolbar_advanced: false,
+            color_block: false,
+            figma_panel: false,
             slot_tool: Default::default(),
             floating_flyouts: vec![],
             toolbar_edits: ToolbarEdits::default(),

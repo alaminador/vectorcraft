@@ -1,4 +1,4 @@
-//! Window → Workspace: saved panel/bar layouts (Essentials, Essentials Classic, Painting, …),
+//! Window → Workspace: saved panel/bar layouts (Figma, Illustrator, Essentials, Painting, …),
 //! Reset, New Workspace…, Manage Workspaces…. A workspace is a snapshot of `UiState` layout
 //! flags; UI brightness and everything else is untouched when switching.
 
@@ -20,6 +20,10 @@ pub struct Workspace {
     pub toolbar: bool,
     pub toolbar_double: bool,
     pub toolbar_advanced: bool,
+    /// The toolbar's colour block (the Classic workspace).
+    pub color_block: bool,
+    /// Figma's Properties panel (the Figma workspace).
+    pub figma_panel: bool,
     pub dock: bool,
     pub dock_tab: DockTab,
     /// The dock's tabbed group is collapsed to icons (built-in workspaces: expanded).
@@ -50,6 +54,9 @@ impl Default for Workspace {
 }
 
 pub const ESSENTIALS: &str = "Essentials";
+/// LogoCraft's two styles: Figma's panel and toolbar, or the classic (reference app) one.
+pub const FIGMA: &str = "Figma";
+pub const CLASSIC: &str = "Classic";
 
 /// Built-in workspaces, in Illustrator's menu order (Essentials first).
 pub fn builtins() -> Vec<Workspace> {
@@ -60,6 +67,15 @@ pub fn builtins() -> Vec<Workspace> {
         x
     };
     vec![
+        w(FIGMA, &|x| {
+            x.figma_panel = true;
+            x.color_block = false;
+            x.control_bar = false;
+        }),
+        w(CLASSIC, &|x| {
+            x.figma_panel = false;
+            x.color_block = true;
+        }),
         w(ESSENTIALS, &|_| {}),
         w("Essentials Classic", &|x| {
             x.control_bar = true;
@@ -125,6 +141,8 @@ pub fn capture(ui: &UiState, name: &str) -> Workspace {
         toolbar: ui.toolbar,
         toolbar_double: ui.toolbar_double,
         toolbar_advanced: ui.toolbar_advanced,
+        color_block: ui.color_block,
+        figma_panel: ui.figma_panel,
         dock: ui.dock,
         dock_tab: ui.dock_tab,
         dock_collapsed: ui.dock_collapsed,
@@ -146,6 +164,8 @@ pub fn apply(ui: &mut UiState, w: &Workspace) {
     ui.toolbar = w.toolbar;
     ui.toolbar_double = w.toolbar_double;
     ui.toolbar_advanced = w.toolbar_advanced;
+    ui.color_block = w.color_block;
+    ui.figma_panel = w.figma_panel;
     ui.dock = w.dock;
     ui.dock_tab = w.dock_tab;
     ui.dock_collapsed = w.dock_collapsed;
@@ -244,6 +264,10 @@ pub fn menu_items() -> Vec<crate::menus::Item> {
     use crate::menus::Item;
     let mut v: Vec<Item> =
         builtins().into_iter().map(|w| Item::Cmd(crate::shortcut_editor::intern(&w.name), "window.workspace", json!({"name": w.name}))).collect();
+    // Figma and Illustrator first, apart from Illustrator's task workspaces.
+    if v.len() > 2 {
+        v.insert(2, Item::Sep);
+    }
     let custom = names_store().read().map(|v| v.clone()).unwrap_or_default();
     if !custom.is_empty() {
         v.push(Item::Sep);
@@ -430,7 +454,8 @@ mod tests {
     #[test]
     fn essentials_is_the_default_layout() {
         let ui = UiState::default();
-        assert_eq!(capture(&ui, ESSENTIALS), builtins()[0]);
+        assert_eq!(Some(capture(&ui, ESSENTIALS)), builtins().into_iter().find(|w| w.name == ESSENTIALS));
+        assert_eq!(builtins().iter().take(2).map(|w| w.name.as_str()).collect::<Vec<_>>(), [FIGMA, CLASSIC]);
         assert_eq!(ui.workspace, ESSENTIALS);
     }
 

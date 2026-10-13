@@ -2,10 +2,12 @@
 //! Draw, Modify, Type, Navigate). Window → Toolbars → Advanced shows every tool group; the
 //! double arrow at the top (or Window → Toolbars → Double Column, `window.toolbarColumns`) lays the
 //! tools out in one or two columns.
-//! Bottom: Edit Toolbar (its
+//! Bottom: Edit Toolbar, and in the Classic workspace the fill/stroke proxy, colour/gradient/none,
+//! drawing modes and screen mode (its
 //! All Tools drawer and the toolbar edits it makes: `edit_toolbar`).
 
 use egui::{Color32, CornerRadius, Sense, Stroke, Ui, pos2, vec2};
+use logocraft_color::Paint;
 use logocraft_tools::{Mods, TOOL_GROUPS, ToolInfo, ToolKey, tool_info};
 use serde_json::{Value, json};
 
@@ -238,6 +240,24 @@ fn body(app: &mut LogocraftApp, ui: &mut Ui, cols: usize, floating: Option<egui:
                     } else if resp.clicked() {
                         app.select_tool(shown.id);
                     }
+                    // A single tool's right-click menu (a group's right-click opens its flyout,
+                    // which has the same rows).
+                    if slot.len() == 1 && !editing {
+                        resp.context_menu(|ui| {
+                            if ui.button(tl!("Remove from Toolbar")).clicked() {
+                                if let Err(e) = app.run("toolbar.removeTool", json!({ "tool": shown.id })) {
+                                    app.status(e);
+                                }
+                                ui.close();
+                            }
+                            if ui.button(tl!("Add Tool…")).clicked() {
+                                if !app.ui.tools_drawer {
+                                    app.run("window.editToolbar", json!({})).ok();
+                                }
+                                ui.close();
+                            }
+                        });
+                    }
                     resp.on_hover_text(tip(shown));
                 }
             });
@@ -409,18 +429,80 @@ fn crop_options(app: &mut LogocraftApp, ui: &mut Ui) {
     ui.separator();
 }
 
-/// Edit Toolbar's button at the bottom. LogoCraft's toolbar has no colour block (Fill/Stroke
-/// proxy, Color/Gradient/None, drawing and screen modes): colour lives in the Properties panel's
-/// Figma picker; the tools and modes keep their keys (G, I, Shift+D, F).
-fn bottom_controls(app: &mut LogocraftApp, ui: &mut Ui, _t: &Tokens, _cols: usize) {
-    ui.vertical_centered(|ui| {
-        // Edit Toolbar: the All Tools drawer opens beside the toolbar, by this button.
-        let edit = widgets::icon_button(ui, "ellipsis", "Edit Toolbar", app.ui.tools_drawer, 26.0);
-        ui.data_mut(|d| d.insert_temp(crate::edit_toolbar::button_id(), edit.rect));
-        if edit.clicked() {
-            app.run("window.editToolbar", json!({})).ok();
+/// The Fill/Stroke proxy, Color/Gradient/None, the drawing modes, screen mode and Edit Toolbar, as
+/// large as the toolbar's `cols` (one or two) leave room for (#1129): in two columns the proxy and
+/// buttons grow and the three drawing modes show side by side.
+fn bottom_controls(app: &mut LogocraftApp, ui: &mut Ui, t: &Tokens, cols: usize) {
+    // The Figma workspace (and LogoCraft's default) leaves the colour block out: colour lives in
+    // the Properties panel's picker. The Classic workspace shows it.
+    if !app.ui.color_block {
+        ui.vertical_centered(|ui| edit_toolbar_button(app, ui));
+        return;
+    }
+    let two = cols == 2;
+    ui.vertical_centered(|ui| crate::panels::proxy(app, ui, if two { 54.0 } else { 36.0 }));
+    ui.add_space(5.0);
+    // Color (the last solid colour), Gradient (the last gradient) and None, as commands.
+    let (chip, gap) = if two { (17.0, 4.0) } else { (11.0, 2.0) };
+    ui.horizontal(|ui| {
+        ui.add_space((ui.available_width() - 3.0 * chip - 2.0 * gap) / 2.0);
+        ui.spacing_mut().item_spacing.x = gap;
+        let mut clicked = None;
+        for (tip, cmd) in [("Color (,)", "paint.lastColor"), ("Gradient (.)", "paint.lastGradient"), ("None (/)", "paint.none")] {
+            let (r, resp) = ui.allocate_exact_size(vec2(chip, chip), Sense::click());
+            match cmd {
+                "paint.lastColor" => widgets::paint_chip(ui, r, &Paint::solid(app.session.last_solid)),
+                "paint.lastGradient" => widgets::gradient_chip(ui, r, &app.session.last_gradient.gradient),
+                _ => widgets::paint_chip(ui, r, &Paint::None),
+            }
+            if resp.on_hover_text(tl!(tip)).clicked() {
+                clicked = Some(cmd);
+            }
+        }
+        if let Some(cmd) = clicked {
+            app.run(cmd, json!({})).ok();
         }
     });
+    ui.add_space(6.0);
+    let modes = [
+        (logocraft_engine::DrawMode::Normal, "dc-draw-normal", "Draw Normal", "normal"),
+        (logocraft_engine::DrawMode::Behind, "dc-draw-behind", "Draw Behind", "behind"),
+        (logocraft_engine::DrawMode::Inside, "dc-draw-inside", "Draw Inside", "inside"),
+    ];
+    if two {
+        // Side by side, each one a click away.
+        ui.horizontal(|ui| {
+            ui.add_space((ui.available_width() - 3.0 * 22.0) / 2.0);
+            for (mode, icon, name, id) in modes {
+                if widgets::icon_button(ui, icon, &format!("{} (Shift+D)", tl!(name)), app.session.draw_mode == mode, 22.0).clicked() {
+                    app.run("view.drawMode", json!({ "mode": id })).ok();
+                }
+            }
+        });
+    }
+    ui.vertical_centered(|ui| {
+        // One column: the current mode's button, which cycles them.
+        if !two
+            && let Some((mode, icon, name, _)) = modes.into_iter().find(|m| m.0 == app.session.draw_mode)
+            && widgets::icon_button(ui, icon, &format!("{} (Shift+D)", tl!(name)), mode != logocraft_engine::DrawMode::Normal, 26.0).clicked()
+        {
+            app.run("view.drawMode", json!({})).ok();
+        }
+        if widgets::icon_button(ui, "dc-screen-mode", "Change Screen Mode (F)", false, 26.0).clicked() {
+            app.run("view.screenMode", json!({})).ok();
+        }
+        edit_toolbar_button(app, ui);
+    });
+    let _ = t;
+}
+
+/// Edit Toolbar: the All Tools drawer opens beside the toolbar, by this button.
+fn edit_toolbar_button(app: &mut LogocraftApp, ui: &mut Ui) {
+    let edit = widgets::icon_button(ui, "ellipsis", "Edit Toolbar", app.ui.tools_drawer, 26.0);
+    ui.data_mut(|d| d.insert_temp(crate::edit_toolbar::button_id(), edit.rect));
+    if edit.clicked() {
+        app.run("window.editToolbar", json!({})).ok();
+    }
 }
 
 /// Where `window.floatTools` puts a strip (the next one a row lower), right of the toolbar; it's
@@ -483,6 +565,9 @@ struct FlyoutInput {
     bar: Option<egui::Response>,
     /// A floating flyout's × was clicked.
     close: bool,
+    /// Remove from Toolbar (the group) or Add Tool… was clicked (a toolbar flyout's last rows).
+    remove: bool,
+    add: bool,
 }
 
 /// A flyout's tool rows (a floating flyout's strip of tool buttons) with the grab bar down their
@@ -493,7 +578,20 @@ fn flyout_body(ui: &mut Ui, t: &Tokens, active: &str, tools: &[String], floating
     let key = tools.first().map_or("", String::as_str);
     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
     ui.horizontal(|ui| {
-        let rows = if floating { ui.horizontal(|ui| tool_strip(ui, t, active, tools)) } else { ui.vertical(|ui| tool_rows(ui, t, active, tools)) };
+        let rows = if floating {
+            ui.horizontal(|ui| tool_strip(ui, t, active, tools))
+        } else {
+            ui.vertical(|ui| {
+                let chosen = tool_rows(ui, t, active, tools);
+                // Customizing from the flyout: Remove from Toolbar (the group), Add Tool… (the drawer),
+                // under a rule as wide as the rows (a separator would stretch the flyout).
+                let (rule, _) = ui.allocate_exact_size(vec2(250.0, 7.0), Sense::hover());
+                ui.painter().hline(rule.x_range(), rule.center().y, Stroke::new(1.0, t.divider));
+                out.remove = edit_row(ui, t, tl!("Remove from Toolbar"));
+                out.add = edit_row(ui, t, tl!("Add Tool…"));
+                chosen
+            })
+        };
         out.chosen = rows.inner;
         let (bar, _) = ui.allocate_exact_size(vec2(BAR, rows.response.rect.height()), Sense::hover());
         ui.painter().rect_filled(bar, 0.0, t.tab_strip);
@@ -522,6 +620,16 @@ fn flyout_body(ui: &mut Ui, t: &Tokens, active: &str, tools: &[String], floating
         out.bar = Some(resp);
     });
     out
+}
+
+/// A flyout's text row (Remove from Toolbar, Add Tool…) → whether it was clicked.
+fn edit_row(ui: &mut Ui, t: &Tokens, label: &str) -> bool {
+    let (r, resp) = ui.allocate_exact_size(vec2(250.0, 26.0), Sense::click());
+    if resp.hovered() {
+        ui.painter().rect_filled(r, 0.0, t.hover);
+    }
+    ui.painter().text(r.left_center() + vec2(52.0, 0.0), egui::Align2::LEFT_CENTER, label, egui::FontId::proportional(12.5), t.text);
+    resp.clicked()
 }
 
 /// One row per tool: icon, name and shortcut, with a dot by the active tool. Returns the tool clicked.
@@ -636,6 +744,22 @@ fn flyout(app: &mut LogocraftApp, ctx: &egui::Context) {
         }
         app.ui.floating_flyouts.push(crate::state::FloatingFlyout { tools, pos: [p.x, p.y] });
         app.ui.flyout = None;
+        return;
+    }
+    if input.remove {
+        app.ui.flyout = None;
+        if let Some(first) = tools.first()
+            && let Err(e) = app.run("toolbar.removeTool", json!({ "tool": first, "group": true }))
+        {
+            app.status(e);
+        }
+        return;
+    }
+    if input.add {
+        app.ui.flyout = None;
+        if !app.ui.tools_drawer {
+            app.run("window.editToolbar", json!({})).ok();
+        }
         return;
     }
     if let Some(id) = input.chosen {

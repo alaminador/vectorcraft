@@ -820,7 +820,7 @@ pub fn run_ui_command(app: &mut LogocraftApp, id: &str, p: &Value) -> Option<Res
                 p.get("center").and_then(Value::as_array).and_then(|a| Some(logocraft_geom::Point::new(a.first()?.as_f64()?, a.get(1)?.as_f64()?)));
             match app.view_mut() {
                 Some(v) => {
-                    v.zoom = z.clamp(0.0313, 640.0);
+                    v.zoom = z.clamp(crate::state::MIN_ZOOM, 640.0);
                     v.fitted = true;
                     if let Some(c) = center {
                         v.center = c;

@@ -42,6 +42,11 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         document_sections(app, ui);
         return;
     }
+    let figma = app.ui.figma_panel;
+    if figma {
+        super::figma_props::align_row(app, ui);
+        divider(ui);
+    }
     transform_section(app, ui);
     divider(ui);
     if n_sel == 1
@@ -101,6 +106,27 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         type_sections(app, ui);
         divider(ui);
     }
+    if figma && let Some(n) = &first {
+        super::figma_props::appearance_section(app, ui, n);
+        divider(ui);
+        super::figma_props::paint_sections(app, ui, n);
+        divider(ui);
+        super::effects::section(app, ui);
+        divider(ui);
+        super::figma_props::export_section(app, ui, n);
+        if n_sel > 1 {
+            divider(ui);
+            pathfinder_row(app, ui);
+        }
+        if anchors != crate::chrome::AnchorControls::None {
+            divider(ui);
+            section_header(ui, tl!("Anchor Point"));
+            crate::chrome::anchor_buttons(app, ui, anchors);
+        }
+        divider(ui);
+        super::figma_props::actions(app, ui, first.as_ref(), n_sel);
+        return;
+    }
     appearance_section(app, ui);
     divider(ui);
     // Figma's Effects: shadows, blurs, noise and texture.
@@ -116,22 +142,7 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
     });
     if n_sel > 1 {
         divider(ui);
-        section_header(ui, tl!("Pathfinder"));
-        ui.horizontal(|ui| {
-            for (icon, tip, op) in [
-                ("squares-unite", tl!("Unite"), "unite"),
-                ("squares-subtract", tl!("Minus Front"), "minusFront"),
-                ("squares-intersect", tl!("Intersect"), "intersect"),
-                ("squares-exclude", tl!("Exclude"), "exclude"),
-            ] {
-                if widgets::icon_button(ui, icon, tip, false, 28.0).clicked() {
-                    app.run(&format!("object.pathfinder.{op}"), json!({})).ok();
-                }
-            }
-            if widgets::icon_button(ui, "ellipsis", tl!("More Pathfinder options"), false, 28.0).clicked() {
-                app.ui.open_panel = Some("pathfinder".into());
-            }
-        });
+        pathfinder_row(app, ui);
     }
     if anchors != crate::chrome::AnchorControls::None {
         divider(ui);
@@ -191,6 +202,26 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
             }
         });
     }
+}
+
+/// Pathfinder's four shape modes, for several selected objects.
+fn pathfinder_row(app: &mut LogocraftApp, ui: &mut Ui) {
+    section_header(ui, tl!("Pathfinder"));
+    ui.horizontal(|ui| {
+        for (icon, tip, op) in [
+            ("squares-unite", tl!("Unite"), "unite"),
+            ("squares-subtract", tl!("Minus Front"), "minusFront"),
+            ("squares-intersect", tl!("Intersect"), "intersect"),
+            ("squares-exclude", tl!("Exclude"), "exclude"),
+        ] {
+            if widgets::icon_button(ui, icon, tip, false, 28.0).clicked() {
+                app.run(&format!("object.pathfinder.{op}"), json!({})).ok();
+            }
+        }
+        if widgets::icon_button(ui, "ellipsis", tl!("More Pathfinder options"), false, 28.0).clicked() {
+            app.ui.open_panel = Some("pathfinder".into());
+        }
+    });
 }
 
 /// Figma's component purple: main components and instances show in it.

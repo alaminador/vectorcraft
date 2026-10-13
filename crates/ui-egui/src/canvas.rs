@@ -142,7 +142,7 @@ pub fn fit(app: &mut LogocraftApp, how: &str) {
     } else {
         let zx = (rect.width() as f64 - 60.0) / target.width().max(1.0);
         let zy = (rect.height() as f64 - 60.0) / target.height().max(1.0);
-        zx.min(zy).clamp(0.0313, 640.0)
+        zx.min(zy).clamp(crate::state::MIN_ZOOM, 640.0)
     };
     let Some(v) = app.view_mut() else { return };
     v.center = target.center();
@@ -683,7 +683,8 @@ fn handle_input(app: &mut LogocraftApp, ui: &Ui, resp: &egui::Response, rect: eg
                             let a = xf.to_doc(r.min);
                             let b = xf.to_doc(r.max);
                             vm.center = Point::new((a.x + b.x) / 2.0, (a.y + b.y) / 2.0);
-                            vm.zoom = (rect.width() as f64 / (b.x - a.x)).min(rect.height() as f64 / (b.y - a.y)).clamp(0.0313, 640.0);
+                            vm.zoom =
+                                (rect.width() as f64 / (b.x - a.x)).min(rect.height() as f64 / (b.y - a.y)).clamp(crate::state::MIN_ZOOM, 640.0);
                         } else {
                             zoom_about(vm, rect, p, crate::state::next_zoom(vm.zoom, !m.alt));
                         }
@@ -770,7 +771,7 @@ pub(crate) fn actual_size_zoom(display_print_size: bool) -> f64 {
 /// point under screen point `p` where it is.
 fn zoom_about(vm: &mut View, rect: egui::Rect, p: Pos2, zoom: f64) {
     let before = Xf::new(rect, vm).to_doc(p);
-    vm.zoom = zoom.clamp(0.0313, 640.0);
+    vm.zoom = zoom.clamp(crate::state::MIN_ZOOM, 640.0);
     vm.center += before - Xf::new(rect, vm).to_doc(p);
 }
 
