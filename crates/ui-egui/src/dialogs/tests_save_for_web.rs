@@ -190,3 +190,16 @@ fn zoom_steps_go_through_the_list_and_stop_at_its_ends() {
     assert_eq!(zoom_field(200.0), json!("200"));
     assert_eq!(zoom_field(33.333), json!("33.33"));
 }
+
+/// It opens on the frame being worked on: the artboard under the selection, clipped to it.
+#[test]
+fn it_shows_only_the_selected_art_s_artboard() {
+    let dir = logocraft_testkit::temp_dir("sfw-frame");
+    let (mut app, _) = app(&dir, false);
+    app.run("artboard.new", json!({})).unwrap();
+    let r = app.session.active().unwrap().doc.artboards[1].rect;
+    app.run("shape.rectangle", json!({"x": r.x0 + 5.0, "y": r.y0 + 5.0, "width": 10, "height": 10})).unwrap();
+    save_for_web::open(&mut app).unwrap();
+    let d = app.ui.dialog.clone().unwrap();
+    assert_eq!((d.fields["clipToArtboard"].clone(), d.fields["artboard"].clone()), (json!(true), json!(1)));
+}

@@ -1126,6 +1126,10 @@ impl Document {
         self.layers.iter().fold(None, |acc, l| logocraft_geom::union_opt(acc, l.visual_bounds()))
     }
     /// Artboard index containing point `p` (topmost = last).
+    /// The union of the geometric bounds of `ids` (None when none has bounds).
+    pub fn selection_bounds_of(&self, ids: &[NodeId]) -> Option<Rect> {
+        ids.iter().filter_map(|id| self.node(*id)?.geometric_bounds()).reduce(|a, b| a.union(b))
+    }
     pub fn artboard_at(&self, p: Point) -> Option<usize> {
         self.artboards.iter().rposition(|a| a.rect.contains(p))
     }

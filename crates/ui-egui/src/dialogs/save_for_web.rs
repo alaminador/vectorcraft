@@ -118,11 +118,20 @@ const QUALITIES: [(&str, u8); 5] = [("Low", 10), ("Medium", 30), ("High", 60), (
 
 /// Open the dialog on the remembered settings.
 pub fn open(app: &mut LogocraftApp) -> Result<Value, String> {
-    let n = app.session.active().ok_or("no document")?.doc.artboards.len();
+    let st = app.session.active().ok_or("no document")?;
+    let n = st.doc.artboards.len();
+    // The frame being worked on: the artboard under the selection's centre, else the active one.
+    let picked = st.doc.selection_bounds_of(&st.selection.objects).and_then(|b| st.doc.artboard_at(b.center()));
+    let active = app.view().map(|v| v.artboard).filter(|a| *a < n);
     let mut s = app.session.last_web_settings();
     // A remembered artboard this document doesn't have: its first.
     if s.artboard.is_some_and(|a| a >= n) {
         s.artboard = None;
+    }
+    // Only that frame shows, as Figma exports a frame.
+    if n > 0 {
+        s.clip_to_artboard = true;
+        s.artboard = picked.or(active).or(s.artboard);
     }
     let mut fields = settings_fields(&s);
     let slices = app.session.active().is_some_and(|st| !st.doc.slice_layout().is_empty());
