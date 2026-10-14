@@ -35,91 +35,91 @@ Generated-in-code art is original and has no file to list. This covers the defau
 | `assets/fonts/OFL-JetBrainsMono.txt` | (licence text) | upstream project | — |  |
 | `assets/fonts/OFL-SourceSans3.txt` | (licence text) | upstream project | — |  |
 | `assets/fonts/OFL-SourceSerif4.txt` | (licence text) | upstream project | — |  |
-| `assets/icons/LICENSE-lucide.txt` | (licence text) | upstream project | — |  |
-| `assets/icons/align-center-horizontal.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-center-vertical.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-end-horizontal.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-end-vertical.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-horizontal-justify-center.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-horizontal-justify-end.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-horizontal-justify-start.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-start-horizontal.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-start-vertical.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-vertical-justify-center.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-vertical-justify-end.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/align-vertical-justify-start.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/arrow-left-right.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/arrow-up-down.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/blend.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/brush.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/chart-column.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/chevron-down.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/chevron-left.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/chevron-right.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/chevrons-left.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/chevrons-right.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/circle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/clipboard-paste.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/cloud.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/combine.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/copy.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/dc-actions.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-al-bottom.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-al-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-al-hcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-al-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-al-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-al-top.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-al-vcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-align.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-alignto-artboard.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-alignto-key.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-alignto-selection.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-anchor.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/LICENSE-hugeicons.txt` | (licence text) | upstream project | — |  |
+| `assets/icons/align-center-horizontal.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-horizontal-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-center-vertical.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-vertical-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-end-horizontal.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-end-horizontal`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-end-vertical.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-end-vertical`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-horizontal-justify-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-horizontal-justify-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-horizontal-justify-end.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-horizontal-justify-end`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-horizontal-justify-start.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-horizontal-justify-start`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-start-horizontal.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-start-horizontal`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-start-vertical.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-start-vertical`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-vertical-justify-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-vertical-justify-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-vertical-justify-end.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-vertical-justify-end`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/align-vertical-justify-start.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-vertical-justify-start`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/arrow-left-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `arrow-left-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/arrow-up-down.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `arrow-up-down`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/blend.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `blend`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/brush.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `brush`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/chart-column.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `chart-column`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/chevron-down.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `chevron-down`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/chevron-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `chevron-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/chevron-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `chevron-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/chevrons-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `chevrons-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/chevrons-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `chevrons-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/circle.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `circle`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/clipboard-paste.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `clipboard-paste`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/cloud.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cloud`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/combine.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `combine`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/copy.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `copy`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-actions.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `play-circle`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-al-bottom.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-bottom`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-al-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-box-middle-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-al-hcenter.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-horizontal-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-al-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-al-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-al-top.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-top`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-al-vcenter.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-vertical-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-align.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-alignto-artboard.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `artboard`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-alignto-key.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-key-object`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-alignto-selection.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-selection`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-anchor.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `anchor-point`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-anchor-smooth.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-appearance.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-appearance.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `paint-board`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-arc.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-down.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-extend.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-fill.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 | The Selection and Direct Selection arrows' fill, painted black or white under their outline |
 | `assets/icons/dc-arrow-tip.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-up.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-artboard-options.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-artboards.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-blend.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-artboard-options.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `artboard-tool`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-artboards.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `artboard`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-blend.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `blend`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-bloat.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-cap-butt.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-cap-round.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-cap-square.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-cap-butt.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cap-straight`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-cap-round.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cap-round`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-cap-square.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cap-projecting`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-center-hide.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-center-show.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-clear.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-color-guide.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-color-guide.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `palette`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-crystallize.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-cube.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-cube.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cube`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-dash-align.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-dash-exact.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-dir-off.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-dir-on.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-direct.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-bottom.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-hcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-hspace.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-top.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-vcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-vspace.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-bottom.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-vertical-bottom`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-hcenter.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-horizontal-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-hspace.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-horizontal-space-between`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-horizontal-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-horizontal-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-top.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-vertical-top`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-vcenter.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-vertical-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-vspace.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-vertical-space-between`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-draw-behind.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-draw-inside.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-draw-normal.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-ellipse.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-ellipse.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `ellipse`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-fill-none.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-flare.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-folder.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-free-transform.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-fx.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-gamut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-folder.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `folder-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-free-transform.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `bounding-box`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-fx.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `function`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-gamut.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `alert-02`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-grad-freeform.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-linear.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-radial.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
@@ -127,177 +127,177 @@ Generated-in-code art is original and has no file to list. This covers the defau
 | `assets/icons/dc-grad-stroke-along.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-stroke-within.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-gradient.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-graphic-styles.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-grid-view.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-group-select.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-graphic-styles.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `geometric-shapes-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-grid-view.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `grid-view`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-group-select.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cursor-add-selection-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-join-bevel.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-join-miter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-join-round.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-join.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-knife.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-join.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `connect`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-knife.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `knife-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-line-cut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-line.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-list-view.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-live-bucket.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-live-select.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-line.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `line`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-list-view.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `list`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-live-bucket.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `bucket`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-live-select.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cursor-magic-selection-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-mask-none.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-measure.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-mesh.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-measure.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `ruler-dimension-line`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-mesh.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `grid-table`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-mirror-cut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-new-fill.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-new-item.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-new-item.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `add-square`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-new-stroke.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-options.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-justify-all.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-justify-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-justify-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-justify-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-options.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `more-horizontal-circle-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-para-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-para-justify-all.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-justify`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-para-justify-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-justify-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-para-justify-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-justify-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-para-justify-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-justify-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-para-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-para-ltr.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-para-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-para-rtl.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-path-eraser.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pathfinder.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-perspective.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-crop.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-divide.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-exclude.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-intersect.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-merge.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-minus-back.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-minus-front.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-outline.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-trim.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-pf-unite.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-path-eraser.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `eraser-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pathfinder.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-unite`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-perspective.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `perspective`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-crop.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-crop`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-divide.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-divide`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-exclude.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-exclude`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-intersect.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-intersect`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-merge.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-merge`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-minus-back.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-minus-back`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-minus-front.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-minus-front`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-outline.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-outline`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-trim.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-trim`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-pf-unite.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-unite`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-place-symbol.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-polar-grid.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-polygon.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-polar-grid.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `chart-radar`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-polygon.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `polygon`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-pucker.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-puppet.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rearrange.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rect-cut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-rect-grid.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-rect-grid.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `grid`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-reference-point.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-remove-brush.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-reshape.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-reshape.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `node-edit`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-reverse.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-rotate-view.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-rotate-view.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `rotate-360`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-rounded-rect.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rule-evenodd.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rule-nonzero.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-scallop.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-screen-mode.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-screen-mode.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `full-screen`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-selection.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/variable.svg` | alaminador (LogoCraft repository owner) | Original icon drawn by the owner, supplied as `Asset 2.svg` (2026-10-13); recoloured to `currentColor` and framed square | MIT OR Apache-2.0, as supplied by the owner | Design variables (bind buttons, Variables window) |
-| `assets/icons/dc-shape-builder.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-shear.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-smooth.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-stroke-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-stroke-inside.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-stroke-outside.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-stroke.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-swap.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-shape-builder.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `shapes`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-shear.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `skew`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-smooth.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `line-squiggle`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-stroke-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `stroke-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-stroke-inside.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `stroke-inside`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-stroke-outside.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `stroke-outside`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-stroke.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `line-style`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-swap.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `arrow-data-transfer-diagonal`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-swatch-kinds.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-symbol-sprayer.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-symbol-sprayer.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `spray-can`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-touch-type.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-transform-panel.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-transparency.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-twirl.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-type-area.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-type-path.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-transparency.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `transparency`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-twirl.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `spirals`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-type-area.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-square`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-type-path.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-circle`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `assets/icons/dc-type-vertical.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-width-profile.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-width.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-wrinkle.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-zoom-large.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-zoom-small.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/ellipsis.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/eraser.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/eye-off.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/eye.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/file-plus.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/flip-horizontal-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/flip-vertical-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/folder-open.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/frame.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/grid-3x3.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/group.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/hand.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/hexagon.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/history.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/house.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/image.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/info.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/lasso.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/layers.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/layout-grid.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/library.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/link-2-off.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/link.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/external-link.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) | Help → app page link |
-| `assets/icons/git-branch.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Help → GitHub link |
-| `assets/icons/globe.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Help → website link |
-| `assets/icons/message-circle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Discord button and Help → Discord link |
-| `assets/icons/lock-open.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/lock.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/map.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/maximize-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/menu.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/minus.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/monitor.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/move-diagonal-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/move.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/paint-bucket.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/paintbrush.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/palette.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/pen-tool.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/pen-tool-add.svg` | Lucide Icons and Contributors; badge by LogoCraft contributors | https://lucide.dev (lucide-static v1.49.0 `pen-tool`; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Lucide's pen-tool with a plus badge |
-| `assets/icons/pen-tool-delete.svg` | Lucide Icons and Contributors; badge by LogoCraft contributors | https://lucide.dev (lucide-static v1.49.0 `pen-tool`; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Lucide's pen-tool with a minus badge |
-| `assets/icons/pencil.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/pilcrow.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/pin.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/pipette.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/plus.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/printer.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/redo-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/rotate-3d.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/rotate-ccw.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/rotate-cw.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/ruler.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/save.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/scaling.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/scissors.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/search.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/settings.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/shapes.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/share-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/slice.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/sparkles.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/spline-pointer.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/spline.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/spray-can.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/square-dashed.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/square.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/squares-exclude.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/squares-intersect.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/squares-subtract.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/squares-unite.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/squircle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/star.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/sun.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/swatch-book.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/text-cursor-input.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/tornado.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/trash-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/triangle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/type.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/undo-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/ungroup.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/wand-sparkles.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/waves.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/x.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
-| `assets/icons/zoom-in.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/ellipsis.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `ellipsis`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/eraser.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `eraser`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/eye-off.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `eye-off`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/eye.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `eye`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/file-plus.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `file-plus`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/flip-horizontal-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `flip-vertical`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/flip-vertical-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `flip-horizontal`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/folder-open.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `folder-open`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/frame.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `frame`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/grid-3x3.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `grid-3x-3`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/group.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `group`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/hand.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `hand`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/hexagon.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `hexagon`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/history.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `history`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/house.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `home-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/image.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `image-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/info.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `info`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/lasso.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `lasso`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/layers.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `layers-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/layout-grid.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `layout-grid`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/library.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `library`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/link-2-off.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `unlink-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/link.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `link`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/external-link.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `external-link`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/git-branch.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `git-branch`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/globe.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `globe`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/message-circle.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `message-circle`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/lock-open.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `lock-open`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/lock.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `lock`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/map.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `map`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/maximize-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `maximize-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/menu.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `menu`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/minus.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `minus`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/monitor.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `monitor`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/move-diagonal-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `move-diagonal`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/move.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `move`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/paint-bucket.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `paint-bucket`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/paintbrush.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `paintbrush`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/palette.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `palette`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/pen-tool.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pen-tool-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/pen-tool-add.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pen-tool-add`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/pen-tool-delete.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pen-tool-minus`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/pencil.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pencil`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/pilcrow.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pilcrow`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/pin.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pin`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/pipette.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pipette`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/plus.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `plus`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/printer.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `printer`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/redo-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `redo`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/rotate-3d.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `rotate-three-d`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/rotate-ccw.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `rotate-ccw`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/rotate-cw.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `rotate-cw`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/ruler.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `ruler`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/save.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `save`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/scaling.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `scaling`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/scissors.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `scissors`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/search.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `search-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/settings.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `settings-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/shapes.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `shapes`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/share-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `share-08`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/slice.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `slice`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/sparkles.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `sparkles`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/spline-pointer.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `spline-pointer`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/spline.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `spline`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/spray-can.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `spray-can`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/square-dashed.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `square-dashed`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/square.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `square`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/squares-exclude.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `squares-exclude`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/squares-intersect.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `squares-intersect`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/squares-subtract.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `squares-subtract`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/squares-unite.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `squares-unite`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/squircle.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `squircle`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/star.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `star`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/sun.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `sun-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/swatch-book.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `swatch-book`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/text-cursor-input.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `input-text`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/tornado.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `tornado-01`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/trash-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `delete-02`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/triangle.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `triangle`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/type.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `type`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/undo-2.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `undo`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/ungroup.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `ungroup`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/wand-sparkles.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `wand-sparkles`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/waves.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `waves`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/x.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `x`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/zoom-in.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `zoom-in`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
 | `docs/images/dusk-poster.png` | LogoCraft contributors | Rendered by LogoCraft from `examples/dusk-poster.logocraft` | MIT OR Apache-2.0 |  |
 | `examples/dusk-poster.logocraft` | LogoCraft contributors | Original artwork built through the LogoCraft command API | MIT OR Apache-2.0 |  |
 | `examples/dusk-poster.svg` | LogoCraft contributors | SVG export of the above | MIT OR Apache-2.0 |  |

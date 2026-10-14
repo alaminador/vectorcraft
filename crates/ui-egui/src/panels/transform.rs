@@ -169,8 +169,8 @@ pub fn show(app: &mut LogocraftApp, ui: &mut Ui) {
         });
     });
     ui.horizontal(|ui| {
-        // Lucide's flip icons are named for their mirror line: flip-vertical-2 draws a vertical
-        // line (the left-right flip), flip-horizontal-2 a horizontal one (top-bottom).
+        // The flip icons are named for their mirror line: flip-vertical-2 is the left-right flip,
+        // flip-horizontal-2 the top-bottom one.
         if widgets::icon_button_enabled(ui, "flip-vertical-2", tl!("Flip Horizontal"), false, has, 24.0).clicked() {
             app.run("object.reflect", json!({"axis": "vertical", "origin": origin})).ok();
         }

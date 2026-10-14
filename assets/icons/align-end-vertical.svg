@@ -1,17 +1,2 @@
-<!-- @license lucide-static v1.49.0 - ISC -->
-<svg
-  class="lucide lucide-align-end-vertical"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <rect width="16" height="6" x="2" y="4" rx="2" />
-  <rect width="9" height="6" x="9" y="14" rx="2" />
-  <path d="M22 22V2" />
-</svg>
+<!-- Hugeicons "align-end-vertical" (Stroke Rounded), @hugeicons/core-free-icons 4.3.5, MIT License, Copyright (c) 2025 Hugeicons. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 5L5 5C3.89543 5 3 5.89543 3 7V8C3 9.10457 3.89543 10 5 10H15C16.1046 10 17 9.10457 17 8V7C17 5.89543 16.1046 5 15 5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M15 14L11 14C9.89543 14 9 14.8954 9 16V17C9 18.1046 9.89543 19 11 19H15C16.1046 19 17 18.1046 17 17V16C17 14.8954 16.1046 14 15 14Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M21 3L21 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
