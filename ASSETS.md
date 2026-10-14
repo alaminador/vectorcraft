@@ -13,6 +13,7 @@ Generated-in-code art is original and has no file to list. This covers the defau
 |---|---|---|---|---|
 | `assets/app-icon/LICENSE.txt` | (licence/readme text) | LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/app-icon/README.md` | (licence/readme text) | LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons-new/README.md` | (licence/readme text) | LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/app-icon/source/logocraft-source.png` | alaminador (LogoCraft repository owner) | Original icon picture made by the owner, supplied as a 1000 px PNG (2026-10-13) | MIT OR Apache-2.0 (`assets/app-icon/LICENSE.txt`), as supplied by the owner | App icon source picture (white pen nib outline on a dark plum tile), 1000 px |
 | `assets/app-icon/logocraft-1024.png` | alaminador (LogoCraft repository owner) | Rendered from the owner's `source/logocraft-source.png` | MIT OR Apache-2.0 (`assets/app-icon/LICENSE.txt`), as supplied by the owner | App icon, full tile, rendered by `cargo xtask icons` |
 | `assets/app-icon/logocraft-macos-512.png` | alaminador (LogoCraft repository owner) | Rendered from the owner's `source/logocraft-source.png` | MIT OR Apache-2.0 (`assets/app-icon/LICENSE.txt`), as supplied by the owner | Runtime window/Dock icon on macOS, rendered by `cargo xtask icons` |
