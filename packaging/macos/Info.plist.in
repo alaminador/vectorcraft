@@ -54,12 +54,14 @@
   <array>
     <dict>
       <key>CFBundleTypeName</key><string>LogoCraft Document</string>
+      <key>CFBundleTypeIconFile</key><string>LogoCraft</string>
       <key>LSItemContentTypes</key><array><string>io.github.alaminador.logocraft.document</string></array>
       <key>CFBundleTypeRole</key><string>Editor</string>
       <key>LSHandlerRank</key><string>Owner</string>
     </dict>
     <dict>
       <key>CFBundleTypeName</key><string>LogoCraft Template</string>
+      <key>CFBundleTypeIconFile</key><string>LogoCraft</string>
       <key>CFBundleTypeExtensions</key><array><string>vctemplate</string></array>
       <key>CFBundleTypeRole</key><string>Editor</string>
       <key>LSHandlerRank</key><string>Owner</string>
@@ -126,10 +128,12 @@
       <string>io.github.alaminador.logocraft.document</string>
       <key>UTTypeDescription</key>
       <string>LogoCraft Document</string>
+      <!-- Not public.image: as an image, Finder drew each file's artwork as its icon; a LogoCraft
+           document shows LogoCraft's icon wherever it goes, as a Figma file shows Figma's. -->
       <key>UTTypeConformsTo</key>
       <array>
         <string>public.data</string>
-        <string>public.image</string>
+        <string>public.content</string>
       </array>
       <key>UTTypeIconFile</key>
       <string>LogoCraft</string>
