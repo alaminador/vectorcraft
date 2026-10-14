@@ -1,4 +1,4 @@
-//! Project links (Home screen and About): the source repository. Icons are Hugeicons' (MIT).
+//! Project links (Home screen and About): the source repository. Icons are Phosphor's and Hugeicons' (MIT).
 
 use egui::Ui;
 

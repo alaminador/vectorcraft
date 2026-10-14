@@ -64,7 +64,7 @@ fn about_tab(app: &mut LogocraftApp, ui: &mut egui::Ui) {
     ui.add_space(12.0);
     ui.label(
         egui::RichText::new(tl!(
-            "Based on LogoCraft by the ArtCraft Team and contributors. MIT OR Apache-2.0. Fonts: Source Sans 3, Inter, JetBrains Mono (OFL). Icons: Hugeicons (MIT) + LogoCraft."
+            "Based on LogoCraft by the ArtCraft Team and contributors. MIT OR Apache-2.0. Fonts: Source Sans 3, Inter, JetBrains Mono (OFL). Icons: Phosphor and Hugeicons (MIT) + LogoCraft."
         ))
         .size(11.0),
     );

@@ -1,2 +1,2 @@
-<!-- Hugeicons "chevron-right" (Stroke Rounded), @hugeicons/core-free-icons 4.3.5, MIT License, Copyright (c) 2025 Hugeicons. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
+<!-- Phosphor "caret-right" (Fill), @phosphor-icons/core 2.1.1, MIT License, Copyright (c) 2023 Phosphor Icons. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M181.66,133.66l-80,80A8,8,0,0,1,88,208V48a8,8,0,0,1,13.66-5.66l80,80A8,8,0,0,1,181.66,133.66Z"/></svg>

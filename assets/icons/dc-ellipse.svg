@@ -1,2 +1,2 @@
-<!-- Hugeicons "ellipse" (Stroke Rounded), @hugeicons/core-free-icons 4.3.5, MIT License, Copyright (c) 2025 Hugeicons. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="12" rx="10" ry="7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
+<!-- Phosphor "circle" (Fill), @phosphor-icons/core 2.1.1, MIT License, Copyright (c) 2023 Phosphor Icons. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M232,128A104,104,0,1,1,128,24,104.13,104.13,0,0,1,232,128Z"/></svg>
