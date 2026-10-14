@@ -1,2 +1,1 @@
-<!-- Phosphor "play-circle" (Fill), @phosphor-icons/core 2.1.1, MIT License, Copyright (c) 2023 Phosphor Icons. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm40.55,110.58-52,36A8,8,0,0,1,104,164V92a8,8,0,0,1,12.55-6.58l52,36a8,8,0,0,1,0,13.16Z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l12 8-12 8z" fill="currentColor" fill-opacity="0.35"/><circle cx="19" cy="5" r="2.2" fill="currentColor"/></svg>

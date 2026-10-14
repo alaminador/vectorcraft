@@ -1,2 +1,19 @@
-<!-- Phosphor "tornado" (Fill), @phosphor-icons/core 2.1.1, MIT License, Copyright (c) 2023 Phosphor Icons. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M144,228a12,12,0,0,1-12,12H116a12,12,0,0,1,0-24h16A12,12,0,0,1,144,228ZM220,32H60a12,12,0,0,0,0,24,12,12,0,0,1,0,24H44a12,12,0,0,0,0,24H76a12,12,0,0,1,0,24,12,12,0,0,0,0,24h48a12,12,0,0,1,0,24,12,12,0,0,0,0,24h48a12,12,0,0,0,0-24,12,12,0,0,1,0-24h16a12,12,0,0,0,0-24H164a12,12,0,0,1,0-24,12,12,0,0,0,0-24,12,12,0,0,1,0-24h56a12,12,0,0,0,0-24Z"/></svg>
+<!-- @license lucide-static v1.49.0 - ISC -->
+<svg
+  class="lucide lucide-tornado"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M21 4H3" />
+  <path d="M18 8H6" />
+  <path d="M19 12H9" />
+  <path d="M16 16h-6" />
+  <path d="M11 20H9" />
+</svg>

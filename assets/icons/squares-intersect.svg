@@ -1,2 +1,25 @@
-<!-- Phosphor "intersect" (Fill), @phosphor-icons/core 2.1.1, MIT License, Copyright (c) 2023 Phosphor Icons. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M174.63,81.37a80,80,0,1,0-93.26,93.26,80,80,0,1,0,93.26-93.26ZM32,96a64,64,0,0,1,126-16A80.08,80.08,0,0,0,80.05,158,64.11,64.11,0,0,1,32,96ZM160,224A64.11,64.11,0,0,1,98,176,80.08,80.08,0,0,0,176,98,64,64,0,0,1,160,224Z"/></svg>
+<!-- @license lucide-static v1.49.0 - ISC -->
+<svg
+  class="lucide lucide-squares-intersect"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M10 22a2 2 0 0 1-2-2" />
+  <path d="M14 2a2 2 0 0 1 2 2" />
+  <path d="M16 22h-2" />
+  <path d="M2 10V8" />
+  <path d="M2 4a2 2 0 0 1 2-2" />
+  <path d="M20 8a2 2 0 0 1 2 2" />
+  <path d="M22 14v2" />
+  <path d="M22 20a2 2 0 0 1-2 2" />
+  <path d="M4 16a2 2 0 0 1-2-2" />
+  <path d="M8 10a2 2 0 0 1 2-2h5a1 1 0 0 1 1 1v5a2 2 0 0 1-2 2H9a1 1 0 0 1-1-1z" />
+  <path d="M8 2h2" />
+</svg>

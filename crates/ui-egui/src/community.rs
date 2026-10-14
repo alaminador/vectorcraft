@@ -1,4 +1,4 @@
-//! Project links (Home screen and About): the source repository. Icons are Phosphor's and Hugeicons' (MIT).
+//! Project links (Home screen and About): the source repository. Icons are Lucide's (ISC).
 
 use egui::Ui;
 

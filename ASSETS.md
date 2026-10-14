@@ -36,270 +36,269 @@ Generated-in-code art is original and has no file to list. This covers the defau
 | `assets/fonts/OFL-JetBrainsMono.txt` | (licence text) | upstream project | — |  |
 | `assets/fonts/OFL-SourceSans3.txt` | (licence text) | upstream project | — |  |
 | `assets/fonts/OFL-SourceSerif4.txt` | (licence text) | upstream project | — |  |
-| `assets/icons/LICENSE-hugeicons.txt` | (licence text) | upstream project | — |  |
-| `assets/icons/LICENSE-phosphor.txt` | (licence text) | upstream project | — |  |
-| `assets/icons/align-center-horizontal.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-center-horizontal`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-center-vertical.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-center-vertical`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-end-horizontal.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-bottom`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-end-vertical.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-right`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-horizontal-justify-center.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-center-horizontal-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-horizontal-justify-end.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-right-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-horizontal-justify-start.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-left-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-start-horizontal.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-top`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-start-vertical.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-left`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-vertical-justify-center.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-center-vertical-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-vertical-justify-end.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-bottom-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/align-vertical-justify-start.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-top-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/arrow-left-right.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-left-right`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/arrow-up-down.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-down-up`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/blend.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `circle-half`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/brush.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `paint-brush`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/chart-column.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `chart-bar`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/chevron-down.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `caret-down`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/chevron-left.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `caret-left`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/chevron-right.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `caret-right`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/chevrons-left.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `caret-double-left`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/chevrons-right.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `caret-double-right`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/circle.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `circle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/clipboard-paste.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `clipboard`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/cloud.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `cloud`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/combine.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `unite`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/copy.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `copy`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-actions.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `play-circle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-al-bottom.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-bottom`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-al-center.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-center-vertical`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-al-hcenter.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-center-horizontal`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-al-left.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-left`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-al-right.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-right`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-al-top.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-top`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-al-vcenter.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-center-vertical`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-align.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `align-left`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-alignto-artboard.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `frame-corners`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-alignto-key.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `key`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-alignto-selection.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `selection`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-anchor.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `vector-two`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-anchor-smooth.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `bezier-curve`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-appearance.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `stack-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/LICENSE-lucide.txt` | (licence text) | upstream project | — |  |
+| `assets/icons/align-center-horizontal.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-center-vertical.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-end-horizontal.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-end-vertical.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-horizontal-justify-center.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-horizontal-justify-end.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-horizontal-justify-start.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-start-horizontal.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-start-vertical.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-vertical-justify-center.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-vertical-justify-end.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/align-vertical-justify-start.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/arrow-left-right.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/arrow-up-down.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/blend.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/brush.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/chart-column.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/chevron-down.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/chevron-left.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/chevron-right.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/chevrons-left.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/chevrons-right.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/circle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/clipboard-paste.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/cloud.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/combine.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/copy.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/dc-actions.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-al-bottom.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-al-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-al-hcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-al-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-al-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-al-top.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-al-vcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-align.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-alignto-artboard.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-alignto-key.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-alignto-selection.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-anchor.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-anchor-smooth.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-appearance.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arc.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-down.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-extend.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-fill.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 | The Selection and Direct Selection arrows' fill, painted black or white under their outline |
 | `assets/icons/dc-arrow-tip.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-arrow-up.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-artboard-options.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `frame-corners`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-artboards.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `frame-corners`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-blend.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `circles-three`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-artboard-options.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-artboards.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-blend.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-bloat.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-cap-butt.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cap-straight`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-cap-round.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cap-round`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-cap-square.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `cap-projecting`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-cap-butt.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-cap-round.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-cap-square.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-center-hide.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-center-show.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-clear.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-color-guide.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `palette`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-color-guide.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-crystallize.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-cube.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `cube`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-cube.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-dash-align.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-dash-exact.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-dir-off.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-dir-on.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-direct.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-dist-bottom.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-vertical-bottom`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-dist-hcenter.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-horizontal-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-dist-hspace.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-horizontal-space-between`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-dist-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-horizontal-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-dist-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-horizontal-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-dist-top.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-vertical-top`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-dist-vcenter.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `distribute-vertical-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-dist-vspace.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `align-vertical-space-between`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
+| `assets/icons/dc-dist-bottom.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-hcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-hspace.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-top.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-vcenter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-dist-vspace.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-draw-behind.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-draw-inside.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-draw-normal.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-ellipse.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `circle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-ellipse.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-fill-none.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-flare.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `sun-dim`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-folder.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `folder`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-free-transform.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `bounding-box`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-fx.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `function`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-gamut.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `warning`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-flare.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-folder.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-free-transform.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-fx.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-gamut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-freeform.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-linear.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-radial.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-stroke-across.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-stroke-along.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-grad-stroke-within.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-gradient.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `gradient`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-graphic-styles.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `squares-four`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-grid-view.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `grid-four`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-group-select.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `selection-plus`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-gradient.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-graphic-styles.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-grid-view.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-group-select.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-join-bevel.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-join-miter.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-join-round.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-join.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-merge`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-knife.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `knife`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-join.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-knife.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-line-cut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-line.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `line-segment`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-list-view.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `list`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-live-bucket.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `paint-bucket`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-live-select.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `magic-wand`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-line.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-list-view.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-live-bucket.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-live-select.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-mask-none.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-measure.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `ruler`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-mesh.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `grid-nine`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-measure.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-mesh.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-mirror-cut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-new-fill.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-new-item.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `plus-square`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-new-item.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-new-stroke.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-options.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `dots-three-circle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-para-center.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `text-align-center`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-para-justify-all.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `text-align-justify`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-para-justify-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-justify-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-para-justify-left.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-justify-left`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-para-justify-right.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `text-align-justify-right`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-para-left.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `text-align-left`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-options.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-para-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-para-justify-all.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-para-justify-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-para-justify-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-para-justify-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-para-left.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-para-ltr.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-para-right.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `text-align-right`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-para-right.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-para-rtl.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-path-eraser.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `eraser`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-pathfinder.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `unite`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-perspective.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `perspective`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-pf-crop.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-crop`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-pf-divide.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-divide`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-pf-exclude.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `exclude`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-pf-intersect.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `intersect`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-pf-merge.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-merge`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-pf-minus-back.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-minus-back`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-pf-minus-front.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `subtract`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-pf-outline.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-outline`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-pf-trim.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pathfinder-trim`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-pf-unite.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `unite`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-path-eraser.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pathfinder.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-perspective.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-crop.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-divide.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-exclude.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-intersect.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-merge.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-minus-back.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-minus-front.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-outline.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-trim.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-pf-unite.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-place-symbol.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-polar-grid.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `chart-polar`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-polygon.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `polygon`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-polar-grid.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-polygon.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-pucker.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-puppet.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rearrange.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rect-cut.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-rect-grid.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `grid-four`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-rect-grid.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-reference-point.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-remove-brush.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-reshape.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `vector-three`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-reshape.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-reverse.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-rotate-view.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-clockwise`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-rounded-rect.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `square`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-rotate-view.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-rounded-rect.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rule-evenodd.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-rule-nonzero.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-scallop.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-screen-mode.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `corners-out`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-screen-mode.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-selection.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/variable.svg` | alaminador (LogoCraft repository owner) | Original icon drawn by the owner, supplied as `Asset 2.svg` (2026-10-13); recoloured to `currentColor` and framed square | MIT OR Apache-2.0, as supplied by the owner | Design variables (bind buttons, Variables window) |
-| `assets/icons/dc-shape-builder.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `shapes`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-shear.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `parallelogram`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-smooth.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `scribble`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-stroke-center.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `stroke-center`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-stroke-inside.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `stroke-inside`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-stroke-outside.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `stroke-outside`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/dc-stroke.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `line-segments`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-swap.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `swap`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-shape-builder.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-shear.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-smooth.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-stroke-center.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-stroke-inside.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-stroke-outside.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-stroke.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-swap.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-swatch-kinds.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-symbol-sprayer.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `spray-bottle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-symbol-sprayer.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-touch-type.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/dc-transform-panel.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `bounding-box`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-transparency.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `checkerboard`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-twirl.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `spiral`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-type-area.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `textbox`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/dc-type-path.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `path`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/dc-transform-panel.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-transparency.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-twirl.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-type-area.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
+| `assets/icons/dc-type-path.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-type-vertical.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-width-profile.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-width.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-wrinkle.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-zoom-large.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
 | `assets/icons/dc-zoom-small.svg` | LogoCraft contributors | Original work, drawn for LogoCraft | MIT OR Apache-2.0 |  |
-| `assets/icons/ellipsis.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `dots-three`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/eraser.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `eraser`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/eye-off.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `eye-slash`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/eye.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `eye`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/file-plus.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `file-plus`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/flip-horizontal-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `flip-vertical`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/flip-vertical-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `flip-horizontal`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/folder-open.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `folder-open`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/frame.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `frame-corners`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/grid-3x3.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `grid-nine`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/group.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `group`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/hand.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `hand`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/hexagon.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `hexagon`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/history.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `clock-counter-clockwise`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/house.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `house`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/image.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `image`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/info.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `info`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/lasso.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `lasso`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/layers.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `stack`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/layout-grid.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `squares-four`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/library.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `books`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/link-2-off.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `link-break`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/link.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `link`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/external-link.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrow-square-out`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/git-branch.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `git-branch`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/globe.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `globe`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/message-circle.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `chat-circle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/lock-open.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `lock-open`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/lock.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `lock`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/map.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `map-trifold`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/maximize-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-out-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/menu.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `list`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/minus.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `minus`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/monitor.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `monitor`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/move-diagonal-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-out-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/move.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-out-cardinal`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/paint-bucket.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `paint-bucket`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/paintbrush.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `paint-brush-broad`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/palette.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `palette`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/pen-tool.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `pen-nib`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/pen-tool-add.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pen-tool-add`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/pen-tool-delete.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `pen-tool-minus`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/pencil.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `pencil-simple`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/pilcrow.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `paragraph`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/pin.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `push-pin`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/pipette.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `eyedropper`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/plus.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `plus`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/printer.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `printer`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/redo-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrow-clockwise`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/rotate-3d.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `cube-transparent`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/rotate-ccw.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrow-counter-clockwise`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/rotate-cw.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrow-clockwise`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/ruler.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `ruler`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/save.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `floppy-disk`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/scaling.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrows-out`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/scissors.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `scissors`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/search.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `magnifying-glass`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/settings.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `gear`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/shapes.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `shapes`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/share-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `share-network`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/slice.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `crop`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/sparkles.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `sparkle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/spline-pointer.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `bezier-curve`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/spline.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `bezier-curve`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/spray-can.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `spray-bottle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/square-dashed.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `selection`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/square.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `square`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/squares-exclude.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `exclude`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/squares-intersect.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `intersect`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/squares-subtract.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `subtract`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/squares-unite.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `unite`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/squircle.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `square`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/star.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `star`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/sun.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `sun`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/swatch-book.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `swatches`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/text-cursor-input.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `textbox`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/tornado.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `tornado`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/trash-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `trash`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/triangle.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `triangle`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/type.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `text-t`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/undo-2.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `arrow-counter-clockwise`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/ungroup.svg` | Hugeicons | https://hugeicons.com (`@hugeicons/core-free-icons` 4.3.5, `ungroup`, Stroke Rounded; header kept in file) | MIT (`assets/icons/LICENSE-hugeicons.txt`) | Converted to SVG from the package's path data |
-| `assets/icons/wand-sparkles.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `magic-wand`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/waves.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `waves`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/x.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `x`, Bold; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
-| `assets/icons/zoom-in.svg` | Phosphor Icons | https://phosphoricons.com (`@phosphor-icons/core` 2.1.1, `magnifying-glass-plus`, Fill; header kept in file) | MIT (`assets/icons/LICENSE-phosphor.txt`) |  |
+| `assets/icons/ellipsis.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/eraser.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/eye-off.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/eye.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/file-plus.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/flip-horizontal-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/flip-vertical-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/folder-open.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/frame.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/grid-3x3.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/group.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/hand.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/hexagon.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/history.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/house.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/image.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/info.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/lasso.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/layers.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/layout-grid.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/library.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/link-2-off.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/link.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/external-link.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) | Help → app page link |
+| `assets/icons/git-branch.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Help → GitHub link |
+| `assets/icons/globe.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Help → website link |
+| `assets/icons/message-circle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Discord button and Help → Discord link |
+| `assets/icons/lock-open.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/lock.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/map.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/maximize-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/menu.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/minus.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/monitor.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/move-diagonal-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/move.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/paint-bucket.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/paintbrush.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/palette.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/pen-tool.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/pen-tool-add.svg` | Lucide Icons and Contributors; badge by LogoCraft contributors | https://lucide.dev (lucide-static v1.49.0 `pen-tool`; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Lucide's pen-tool with a plus badge |
+| `assets/icons/pen-tool-delete.svg` | Lucide Icons and Contributors; badge by LogoCraft contributors | https://lucide.dev (lucide-static v1.49.0 `pen-tool`; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) | Lucide's pen-tool with a minus badge |
+| `assets/icons/pencil.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/pilcrow.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/pin.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/pipette.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/plus.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/printer.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/redo-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/rotate-3d.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/rotate-ccw.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/rotate-cw.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/ruler.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/save.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/scaling.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/scissors.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/search.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/settings.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/shapes.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/share-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/slice.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/sparkles.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/spline-pointer.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/spline.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/spray-can.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/square-dashed.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/square.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/squares-exclude.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/squares-intersect.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/squares-subtract.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/squares-unite.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/squircle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/star.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/sun.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/swatch-book.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/text-cursor-input.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/tornado.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/trash-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/triangle.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/type.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/undo-2.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/ungroup.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/wand-sparkles.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/waves.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/x.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
+| `assets/icons/zoom-in.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
 | `docs/images/dusk-poster.png` | LogoCraft contributors | Rendered by LogoCraft from `examples/dusk-poster.logocraft` | MIT OR Apache-2.0 |  |
 | `examples/dusk-poster.logocraft` | LogoCraft contributors | Original artwork built through the LogoCraft command API | MIT OR Apache-2.0 |  |
 | `examples/dusk-poster.svg` | LogoCraft contributors | SVG export of the above | MIT OR Apache-2.0 |  |
