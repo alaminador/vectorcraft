@@ -18,6 +18,10 @@ const HEADER: f32 = 14.0;
 const DOCK_WIDTH: f32 = 300.0;
 /// Top of a popped-out panel.
 const FLYOUT_TOP: f32 = 110.0;
+/// A popped-out Properties or Layers panel: from under the app bar (and document tabs) to above
+/// the status bar.
+const FULL_TOP: f32 = 40.0;
+const FULL_BOTTOM: f32 = 52.0;
 
 /// Where the icon column's left edge was drawn last (egui temp memory, one frame old).
 fn column_left_id() -> egui::Id {
@@ -329,11 +333,18 @@ pub fn floating_panel(app: &mut LogocraftApp, ctx: &egui::Context) {
     // The tabbed group's panels fill their height (Layers) or scroll (Properties): give them one
     // that keeps the flyout on screen.
     let width = panel_width(id);
-    let tall = (screen.height() - FLYOUT_TOP - 26.0 - 20.0 - 40.0).clamp(160.0, 560.0);
+    // Properties and Layers run the window's full height, top bar to status bar, as a docked
+    // sidebar does; the icon panels keep to their content below the icons' top.
+    let top = if tab.is_some() { screen.top() + FULL_TOP } else { FLYOUT_TOP };
+    let tall = if tab.is_some() {
+        (screen.height() - FULL_TOP - 26.0 - 20.0 - FULL_BOTTOM).max(160.0)
+    } else {
+        (screen.height() - FLYOUT_TOP - 26.0 - 20.0 - 40.0).clamp(160.0, 560.0)
+    };
     let mut open = true;
     let mut torn = None;
     let area = egui::Area::new(egui::Id::new("icon-panel")).order(egui::Order::Foreground).pivot(egui::Align2::RIGHT_TOP);
-    area.fixed_pos(egui::pos2(right, FLYOUT_TOP)).show(ctx, |ui| {
+    area.fixed_pos(egui::pos2(right, top)).show(ctx, |ui| {
         egui::Frame::popup(ui.style()).fill(t.panel).corner_radius(CornerRadius::same(4)).inner_margin(egui::Margin::ZERO).show(ui, |ui| {
             ui.set_width(width);
             let (strip, _) = ui.allocate_exact_size(vec2(width, 26.0), Sense::hover());
@@ -396,17 +407,19 @@ pub(crate) fn panel_body(app: &mut LogocraftApp, ui: &mut Ui, id: &str, width: f
         ui.set_width(width - 20.0);
         match DockTab::from_id(id) {
             Some(DockTab::Properties) => {
-                // At least `tall` when the sections are taller: the flyout's area keeps the size its
-                // content needs, and egui sizes a new area at most 400 points high, so a scroll area
-                // that only took the room it was given never grew past it.
+                // Exactly `tall`, the full height: the flyout's area keeps the size its content needs,
+                // and egui sizes a new area at most 400 points high, so a scroll area that only took
+                // the room it was given never grew past it; not shrinking keeps it a full sidebar.
                 egui::ScrollArea::vertical()
                     .id_salt("props-flyout")
                     .max_height(tall)
                     .min_scrolled_height(tall)
-                    .auto_shrink([false, true])
+                    .auto_shrink([false, false])
                     .show(ui, |ui| panels::properties::show(app, ui));
             }
             Some(DockTab::Layers) => {
+                // The full height, as a docked sidebar.
+                ui.set_min_height(tall);
                 ui.set_max_height(tall);
                 panels::layers::show(app, ui);
             }
